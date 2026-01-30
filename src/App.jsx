@@ -1,14 +1,27 @@
-import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  Suspense,
+  lazy,
+} from "react";
+
 import EmployeeForm from "./components/EmployeeForm";
-// import EmployeeTable from "./components/Table"; // ❌ убираем обычный импорт
 import ToastContainer from "./components/ToastContainer.jsx";
+import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
+import SkeletonLoader from "./components/Skeleton";
+
 import { supabase } from "./supabaseClient";
 import { useNotification } from "./hooks/useNotification";
-import { TOAST_MESSAGES, TOAST_TYPES, TOAST_DURATION } from "./utils/toastConfig";
+import {
+  TOAST_MESSAGES,
+  TOAST_TYPES,
+  TOAST_DURATION,
+} from "./utils/toastConfig";
 import { DAYS_THRESHOLD } from "./utils/constants";
-import logo from "./assets/img/logo_PUTEVI.png";
 
-import SkeletonLoader from "./components/Skeleton";
+import logo from "./assets/img/logo_PUTEVI.png";
 
 // ✅ Таблицу грузим лениво (быстрее первый рендер)
 const EmployeeTable = lazy(() => import("./components/Table"));
@@ -18,11 +31,14 @@ function App() {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // ✅ ВАЖНО: эти состояния нужны для фильтра
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("Все");
 
   // Инициализация системы уведомлений
-  const { notifications, addNotification, removeNotification } = useNotification();
+  const { notifications, addNotification, removeNotification } =
+    useNotification();
 
   useEffect(() => {
     initialLoad();
@@ -33,9 +49,14 @@ function App() {
   // Загрузка уникальных организаций из БД
   const fetchOrganizations = async () => {
     try {
-      const { data, error } = await supabase.from("employees").select("organization");
+      const { data, error } = await supabase
+        .from("employees")
+        .select("organization");
+
       if (!error && data) {
-        const uniqueOrgs = [...new Set(data.map((item) => item.organization).filter(Boolean))];
+        const uniqueOrgs = [
+          ...new Set(data.map((item) => item.organization).filter(Boolean)),
+        ];
         setOrganizations(uniqueOrgs.sort());
       }
     } catch (error) {
@@ -47,8 +68,12 @@ function App() {
     setLoading(true);
     try {
       const cloudData = await fetchFromSupabase();
+
       if (cloudData.length === 0) {
-        const localData = JSON.parse(localStorage.getItem("employees") || "[]");
+        const localData = JSON.parse(
+          localStorage.getItem("employees") || "[]"
+        );
+
         if (localData.length > 0) {
           await migrateLocalDataToCloud(localData);
         } else {
@@ -78,11 +103,19 @@ function App() {
         additional_trainings: rest.additionalTrainings || [],
       }));
 
-      const { data, error } = await supabase.from("employees").insert(preparedData).select();
+      const { data, error } = await supabase
+        .from("employees")
+        .insert(preparedData)
+        .select();
+
       if (!error && data) {
         setEmployees(formatDataForApp(data));
         localStorage.removeItem("employees");
-        addNotification("Данные успешно перенесены в облако ☁️", TOAST_TYPES.SUCCESS);
+        addNotification(
+          "Данные успешно перенесены в облако ☁️",
+          TOAST_TYPES.SUCCESS
+        );
+        await fetchOrganizations();
       } else {
         throw error;
       }
@@ -93,7 +126,11 @@ function App() {
   };
 
   const fetchFromSupabase = async () => {
-    const { data, error } = await supabase.from("employees").select("*").order("name", { ascending: true });
+    const { data, error } = await supabase
+      .from("employees")
+      .select("*")
+      .order("name", { ascending: true });
+
     if (error) throw error;
     return formatDataForApp(data);
   };
@@ -101,7 +138,11 @@ function App() {
   const addEmployee = async (newEmployee) => {
     try {
       if (!newEmployee.name || !newEmployee.trainingDate) {
-        addNotification(TOAST_MESSAGES.VALIDATION_ERROR, TOAST_TYPES.WARNING, TOAST_DURATION.LONG);
+        addNotification(
+          TOAST_MESSAGES.VALIDATION_ERROR,
+          TOAST_TYPES.WARNING,
+          TOAST_DURATION.LONG
+        );
         return;
       }
 
@@ -122,16 +163,20 @@ function App() {
         ])
         .select();
 
-      if (!error) {
+      if (!error && data) {
         setEmployees((prev) => [formatDataForApp(data)[0], ...prev]);
         setShowForm(false);
         addNotification(TOAST_MESSAGES.EMPLOYEE_ADDED, TOAST_TYPES.SUCCESS);
-        fetchOrganizations();
+        await fetchOrganizations();
       } else {
         throw error;
       }
     } catch (error) {
-      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
+      addNotification(
+        TOAST_MESSAGES.DB_ERROR,
+        TOAST_TYPES.ERROR,
+        TOAST_DURATION.LONG
+      );
       console.error("Ошибка при добавлении:", error);
     }
   };
@@ -139,7 +184,11 @@ function App() {
   const updateEmployee = async (updated) => {
     try {
       if (!updated.name || !updated.trainingDate) {
-        addNotification(TOAST_MESSAGES.VALIDATION_ERROR, TOAST_TYPES.WARNING, TOAST_DURATION.LONG);
+        addNotification(
+          TOAST_MESSAGES.VALIDATION_ERROR,
+          TOAST_TYPES.WARNING,
+          TOAST_DURATION.LONG
+        );
         return;
       }
 
@@ -159,50 +208,70 @@ function App() {
         .eq("id", updated.id);
 
       if (!error) {
-        setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+        setEmployees((prev) =>
+          prev.map((e) => (e.id === updated.id ? updated : e))
+        );
         cancelEdit();
         addNotification(TOAST_MESSAGES.EMPLOYEE_UPDATED, TOAST_TYPES.SUCCESS);
-        fetchOrganizations();
+        await fetchOrganizations();
       } else {
         throw error;
       }
     } catch (error) {
-      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
+      addNotification(
+        TOAST_MESSAGES.DB_ERROR,
+        TOAST_TYPES.ERROR,
+        TOAST_DURATION.LONG
+      );
       console.error("Ошибка при обновлении:", error);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Удалить сотрудника безвозвратно?")) {
-      try {
-        const { error } = await supabase.from("employees").delete().eq("id", id);
-        if (!error) {
-          setEmployees((prev) => prev.filter((e) => e.id !== id));
-          addNotification(TOAST_MESSAGES.EMPLOYEE_DELETED, TOAST_TYPES.SUCCESS);
-          fetchOrganizations();
-        } else {
-          throw error;
-        }
-      } catch (error) {
-        addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
-        console.error("Ошибка при удалении:", error);
+    if (!window.confirm("Удалить сотрудника безвозвратно?")) return;
+
+    try {
+      const { error } = await supabase.from("employees").delete().eq("id", id);
+      if (!error) {
+        setEmployees((prev) => prev.filter((e) => e.id !== id));
+        addNotification(TOAST_MESSAGES.EMPLOYEE_DELETED, TOAST_TYPES.SUCCESS);
+        await fetchOrganizations();
+      } else {
+        throw error;
       }
+    } catch (error) {
+      addNotification(
+        TOAST_MESSAGES.DB_ERROR,
+        TOAST_TYPES.ERROR,
+        TOAST_DURATION.LONG
+      );
+      console.error("Ошибка при удалении:", error);
     }
   };
 
   const handleRetrain = async (id) => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const { error } = await supabase.from("employees").update({ training_date: today }).eq("id", id);
+
+      const { error } = await supabase
+        .from("employees")
+        .update({ training_date: today })
+        .eq("id", id);
 
       if (!error) {
-        setEmployees((prev) => prev.map((e) => (e.id === id ? { ...e, trainingDate: today } : e)));
+        setEmployees((prev) =>
+          prev.map((e) => (e.id === id ? { ...e, trainingDate: today } : e))
+        );
         addNotification(TOAST_MESSAGES.EMPLOYEE_RETRAINED, TOAST_TYPES.SUCCESS);
       } else {
         throw error;
       }
     } catch (error) {
-      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
+      addNotification(
+        TOAST_MESSAGES.DB_ERROR,
+        TOAST_TYPES.ERROR,
+        TOAST_DURATION.LONG
+      );
       console.error("Ошибка при переподготовке:", error);
     }
   };
@@ -241,19 +310,36 @@ function App() {
     setShowForm(false);
   };
 
+  // ✅ Мемоизация даты
+  const todayText = useMemo(
+    () => new Date().toLocaleDateString("ru-RU"),
+    []
+  );
+
   // ✅ useMemo: фильтр считаем только когда меняются employees/selectedOrg
   const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => (selectedOrg === "Все" ? true : emp.organization === selectedOrg));
+    return employees.filter((emp) =>
+      selectedOrg === "Все" ? true : emp.organization === selectedOrg
+    );
   }, [employees, selectedOrg]);
 
   // ✅ useMemo: счетчик тоже только по изменению filteredEmployees
   const expiredCount = useMemo(() => {
-    return filteredEmployees.filter((emp) => getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD).length;
+    return filteredEmployees.filter(
+      (emp) => getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD
+    ).length;
   }, [filteredEmployees, getDaysDifference]);
 
   const exportCSV = () => {
     try {
-      const headers = ["ФИО", "Организация", "Профессия", "Дата инструктажа", "Статус"];
+      const headers = [
+        "ФИО",
+        "Организация",
+        "Профессия",
+        "Дата инструктажа",
+        "Статус",
+      ];
+
       const rows = filteredEmployees.map((emp) => {
         const days = getDaysDifference(emp.trainingDate);
         const status = days >= DAYS_THRESHOLD ? "Переподготовка" : "Актуален";
@@ -261,20 +347,28 @@ function App() {
       });
 
       const csvContent = headers.join(";") + "\n" + rows.join("\n");
-      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob(["\uFEFF" + csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `report_${new Date().toISOString().slice(0, 10)}.csv`;
       link.click();
       URL.revokeObjectURL(link.href);
+
       addNotification(TOAST_MESSAGES.EXPORT_SUCCESS, TOAST_TYPES.SUCCESS);
     } catch (error) {
-      addNotification(TOAST_MESSAGES.EXPORT_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
+      addNotification(
+        TOAST_MESSAGES.EXPORT_ERROR,
+        TOAST_TYPES.ERROR,
+        TOAST_DURATION.LONG
+      );
       console.error("Ошибка при экспорте:", error);
     }
   };
 
-  // ✅ Вместо текста — Skeleton
+  // ✅ Skeleton на время загрузки
   if (loading) {
     return (
       <div className="app">
@@ -297,8 +391,9 @@ function App() {
         </div>
 
         <div className="info">
-          Сегодня: <strong>{new Date().toLocaleDateString("ru-RU")}</strong> | Показано:{" "}
-          <strong>{filteredEmployees.length}</strong> | Просрочено: <strong>{expiredCount}</strong>
+          Сегодня: <strong>{todayText}</strong> | Показано:{" "}
+          <strong>{filteredEmployees.length}</strong> | Просрочено:{" "}
+          <strong>{expiredCount}</strong>
         </div>
 
         {/* Фильтр по организациям */}
@@ -337,22 +432,37 @@ function App() {
             onUpdateEmployee={updateEmployee}
             onCancelEdit={cancelEdit}
             existingOrganizations={organizations}
-            onPhotoUpload={() => addNotification(TOAST_MESSAGES.PHOTO_UPLOADED, TOAST_TYPES.SUCCESS)}
-            onPhotoError={() => addNotification(TOAST_MESSAGES.PHOTO_UPLOAD_ERROR, TOAST_TYPES.ERROR)}
+            onPhotoUpload={() =>
+              addNotification(TOAST_MESSAGES.PHOTO_UPLOADED, TOAST_TYPES.SUCCESS)
+            }
+            onPhotoError={() =>
+              addNotification(TOAST_MESSAGES.PHOTO_UPLOAD_ERROR, TOAST_TYPES.ERROR)
+            }
           />
         )}
 
-        {/* Таблица (ленивая) */}
+        {/* Таблица (ленивая + виртуализация при больших данных) */}
         <Suspense fallback={<SkeletonLoader rows={8} />}>
-          <EmployeeTable
-            employees={filteredEmployees}
-            getDaysDifference={getDaysDifference}
-            emptyText="Нет данных для отображения"
-            onRetrain={handleRetrain}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
-            onExport={exportCSV}
-          />
+          {filteredEmployees.length > 300 ? (
+            <VirtualEmployeeTable
+              employees={filteredEmployees}
+              getDaysDifference={getDaysDifference}
+              emptyText="Нет данных для отображения"
+              onRetrain={handleRetrain}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+            />
+          ) : (
+            <EmployeeTable
+              employees={filteredEmployees}
+              getDaysDifference={getDaysDifference}
+              emptyText="Нет данных для отображения"
+              onRetrain={handleRetrain}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onExport={exportCSV}
+            />
+          )}
         </Suspense>
       </div>
     </div>

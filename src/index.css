@@ -474,3 +474,48 @@ tr.expired:hover {
   font-size: 18px;
   opacity: 0.5;
 }
+
+/* CSS для виртуальной таблицы */
+.virtual-table {
+  margin-top: 20px;
+}
+
+.virtual-header {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 260px;
+  gap: 12px;
+  padding: 14px 12px;
+  background: #f8fafc;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.virtual-body {
+  height: calc(60vh - 54px);
+}
+
+.virtual-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 260px;
+  gap: 12px;
+  padding: 12px;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  background: white;
+}
+
+.virtual-row.valid {
+  background: #f0fdf4;
+}
+.virtual-row.expired {
+  background: #fef2f2;
+}
+
+.virtual-cell.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+}

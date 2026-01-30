@@ -1,0 +1,173 @@
+/* src/components/Skeleton.css */
+
+/* Цвета/градиент skeleton */
+:root {
+  --sk-base: #e5e7eb; /* базовый серый */
+  --sk-shine: #f3f4f6; /* блик */
+  --sk-radius: 10px;
+}
+
+.skeleton-container {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Верхняя "шапка" как у панели */
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.skeleton-title {
+  height: 18px;
+  width: min(360px, 55%);
+  border-radius: var(--sk-radius);
+}
+
+.skeleton-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.skeleton-btn {
+  height: 36px;
+  width: 120px;
+  border-radius: 10px;
+}
+
+/* Табличная область */
+.skeleton-table {
+  display: grid;
+  gap: 10px;
+}
+
+.skeleton-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 44px 1.4fr 1fr 1fr 0.8fr 88px;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.skeleton-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+}
+
+.skeleton-cell {
+  height: 14px;
+  border-radius: var(--sk-radius);
+}
+
+.skeleton-cell.short {
+  width: 70%;
+}
+
+.skeleton-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.skeleton-btn-small {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+/* Единый shimmer для всех элементов */
+.skeleton-title,
+.skeleton-btn,
+.skeleton-photo,
+.skeleton-cell,
+.skeleton-btn-small {
+  background: linear-gradient(
+    100deg,
+    var(--sk-base),
+    var(--sk-base) 45%,
+    var(--sk-shine) 55%,
+    var(--sk-base) 65%
+  );
+  background-size: 200% 100%;
+  background-attachment: fixed; /* синхронный shimmer по всей странице */
+  animation: sk-shimmer 1.4s ease-out infinite;
+}
+
+/* Анимация shimmer */
+@keyframes sk-shimmer {
+  0% {
+    background-position-x: 200%;
+  }
+  100% {
+    background-position-x: 0%;
+  }
+}
+
+/* Уважение к настройке "меньше анимаций" */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-title,
+  .skeleton-btn,
+  .skeleton-photo,
+  .skeleton-cell,
+  .skeleton-btn-small {
+    animation: none;
+    background: var(--sk-base);
+  }
+}
+
+/* Адаптивность под мобилку */
+@media (max-width: 768px) {
+  .skeleton-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .skeleton-title {
+    width: 100%;
+  }
+
+  .skeleton-buttons {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .skeleton-btn {
+    width: 100%;
+    max-width: 240px;
+  }
+
+  .skeleton-row {
+    grid-template-columns: 44px 1fr;
+    grid-template-areas:
+      "photo main"
+      "photo sub"
+      "actions actions";
+    gap: 10px;
+  }
+
+  .skeleton-photo {
+    grid-area: photo;
+  }
+
+  /* Чтобы визуально похоже на карточку */
+  .skeleton-row .skeleton-cell:nth-child(2) {
+    grid-area: main;
+    height: 16px;
+  }
+
+  .skeleton-row .skeleton-cell:nth-child(3) {
+    grid-area: sub;
+  }
+
+  .skeleton-actions {
+    grid-area: actions;
+    justify-content: flex-start;
+  }
+}

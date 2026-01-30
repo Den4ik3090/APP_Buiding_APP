@@ -1,0 +1,304 @@
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #95a5a6;
+  --success-color: #2ecc71;
+  --warning-color: #f1c40f;
+  --danger-color: #e74c3c;
+  --bg-light: #f4f7f6;
+  --text-dark: #2c3e50;
+  --white: #ffffff;
+  --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  --border-color: #edf2f7;
+}
+
+body {
+  font-family:
+    "Inter",
+    -apple-system,
+    sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* --- Контейнер и Таблица --- */
+.table-container {
+  padding: 20px;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin: 20px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th {
+  background: #f8fafb;
+  padding: 12px 15px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+th:hover {
+  background: #edf2f7;
+}
+
+td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+tr:hover {
+  background-color: #f9fbff;
+}
+
+/* Подсветка строк основной таблицы */
+.row-expired {
+  background-color: #fff5f5;
+}
+.row-warning {
+  background-color: #fffdf2;
+}
+
+/* --- Модальное окно (Overlay & Content) --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--white);
+  border-radius: 12px;
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  background: var(--white);
+  z-index: 10;
+}
+
+/* --- Вкладки [Раздел 2.2] --- */
+.tabs-header {
+  display: flex;
+  padding: 0 20px;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-color);
+  background: #fafafa;
+}
+
+.tab-btn {
+  padding: 14px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--secondary-color);
+  border-bottom: 3px solid transparent;
+  transition: 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.tab-warning-dot {
+  background: var(--danger-color);
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(231, 76, 60, 0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- Формы --- */
+form {
+  padding: 24px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border 0.2s;
+}
+
+input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+}
+
+/* --- Таблица доп. обучений [Раздел 2.2] --- */
+.trainings-section {
+  margin-top: 10px;
+}
+
+.sub-table {
+  width: 100%;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.sub-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #718096;
+  background: #f8fafb;
+}
+
+.row-expired-bg {
+  background-color: #fff1f0 !important;
+}
+
+.status-cell {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.text-red {
+  color: var(--danger-color);
+}
+.text-green {
+  color: var(--success-color);
+}
+
+/* --- Кнопки --- */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background: #fff;
+  color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #fff1f0;
+}
+
+.btn-add-row {
+  background: #f0fff4;
+  color: #2f855a;
+  border: 1px dashed #48bb78;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 700;
+}
+
+.btn-add-row:hover {
+  background: #c6f6d5;
+}
+
+.close__modal {
+  font-size: 24px;
+  color: var(--secondary-color);
+  cursor: pointer;
+  border: none;
+  background: none;
+}

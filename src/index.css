@@ -519,3 +519,61 @@ tr.expired:hover {
   justify-content: flex-end;
   align-items: center;
 }
+
+/* ========================================
+   TELEGRAM BUTTON
+   ======================================== */
+.btn-telegram {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 136, 204, 0.2);
+  margin-left: 1rem;
+}
+
+.btn-telegram:hover {
+  background: linear-gradient(135deg, #0077b5 0%, #006699 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 136, 204, 0.3);
+}
+
+.btn-telegram:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 136, 204, 0.2);
+}
+
+.btn-telegram:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Table header title - flex layout for button */
+.table-header__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .btn-telegram {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    margin-left: 0.5rem;
+  }
+
+  .table-header__title {
+    flex-wrap: wrap;
+  }
+}

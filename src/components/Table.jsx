@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import StatusBadge from './StatusBadge';
 import { DAYS_THRESHOLD, WARNING_THRESHOLD } from '../utils/constants';
+import { sendToTelegram } from '../utils/sendToTelegram';
 
 function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyText, onRetrain, onDelete, onEdit }) {
   const [sortConfig, setSortConfig] = useState({ key: 'days', direction: 'desc' });
@@ -25,6 +26,38 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+  };
+
+  // ✅ НОВАЯ ФУНКЦИЯ ОТПРАВКИ ОТЧЁТА
+  const handleSendReport = async () => {
+    try {
+      const expired = employees.filter(emp => {
+        const days = getDaysDifference(emp.trainingDate);
+        return days > DAYS_THRESHOLD;
+      }).length;
+
+      const warning = employees.filter(emp => {
+        const days = getDaysDifference(emp.trainingDate);
+        return days <= DAYS_THRESHOLD && days > WARNING_THRESHOLD;
+      }).length;
+
+      const valid = employees.length - expired - warning;
+
+      const report = `
+📊 <b>Отчёт по инструктажам</b>
+
+🔴 Просрочено: ${expired}
+🟡 Предупреждение: ${warning}
+🟢 Норма: ${valid}
+📈 Всего: ${employees.length}
+      `.trim();
+
+      await sendToTelegram(report);
+      alert('✅ Отчёт отправлен в Telegram!');
+    } catch (error) {
+      alert('❌ Ошибка отправки');
+      console.error(error);
+    }
   };
 
   const sortedAndFilteredEmployees = useMemo(() => {
@@ -92,6 +125,11 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
       <div className="table-header">
         <div className="table-header__title">
           <h3>📊 Реестр сотрудников ({sortedAndFilteredEmployees.length})</h3>
+          
+          {/* ✅ КНОПКА TELEGRAM */}
+         <button className="btn-telegram" onClick={handleSendReport}>
+  📱 Telegram
+</button>
         </div>
         
         <div className="filters-panel">
@@ -124,7 +162,7 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
           <thead>
             <tr>
               <th>№</th>
-              <th>Фото</th> {/* Новая колонка */}
+              <th>Фото</th>
               <th onClick={() => handleSort('name')} className="sortable">ФИО {getSortIcon('name')}</th>
               <th onClick={() => handleSort('profession')} className="sortable">Должность {getSortIcon('profession')}</th>
               <th onClick={() => handleSort('trainingDate')} className="sortable">Инструктаж {getSortIcon('trainingDate')}</th>
@@ -147,7 +185,6 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
                 >
                   <td>{index + 1}</td>
                   
-                  {/* ОТОБРАЖЕНИЕ ФОТО */}
                   <td>
                     <div className="table-photo-circle">
                       {employee.photo_url ? (
@@ -173,6 +210,7 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
                       <button onClick={() => onEdit(employee)} className="btn-icon" title="Редактировать">✏️</button>
                       <button onClick={() => onRetrain(employee.id)} className="btn-retrain" title="Обновить дату на сегодня">ОБНОВИТЬ</button>
                       <button onClick={() => onDelete(employee.id)} className="btn-icon btn-del" title="Удалить">❌</button>
+                    
                     </div>
                   </td>
                 </tr>

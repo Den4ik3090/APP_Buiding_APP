@@ -111,6 +111,9 @@ h1 {
   background: #5a67d8;
   transform: translateY(-1px);
 }
+.form-actions__btn-add {
+  height: 43px;
+}
 
 .btn-danger {
   background: #f44336;

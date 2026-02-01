@@ -11,14 +11,11 @@ import EmployeeForm from "./components/EmployeeForm";
 import ToastContainer from "./components/ToastContainer.jsx";
 import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
+import AnalyticsDashboard from "./components/AnalyticsDashboard.jsx";
 
 import { supabase } from "./supabaseClient";
 import { useNotification } from "./hooks/useNotification";
-import {
-  TOAST_MESSAGES,
-  TOAST_TYPES,
-  TOAST_DURATION,
-} from "./utils/toastConfig";
+import { TOAST_MESSAGES, TOAST_TYPES, TOAST_DURATION } from "./utils/toastConfig";
 import { DAYS_THRESHOLD } from "./utils/constants";
 
 import logo from "./assets/img/logo_PUTEVI.png";
@@ -35,6 +32,9 @@ function App() {
   // ✅ ВАЖНО: эти состояния нужны для фильтра
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("Все");
+
+  // ✅ View: table | analytics
+  const [view, setView] = useState("table");
 
   // Инициализация системы уведомлений
   const { notifications, addNotification, removeNotification } =
@@ -128,7 +128,7 @@ function App() {
   const fetchFromSupabase = async () => {
     const { data, error } = await supabase
       .from("employees")
-      .select("*")
+      .select("id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at")
       .order("name", { ascending: true });
 
     if (error) throw error;
@@ -288,6 +288,7 @@ function App() {
       photo_url: emp.photo_url || "",
       organization: emp.organization || "",
       additionalTrainings: emp.additional_trainings || [],
+      createdAt: emp.created_at || null,
     }));
 
   const getDaysDifference = useCallback((trainingDate) => {
@@ -298,11 +299,13 @@ function App() {
   const handleEdit = (emp) => {
     setEditingEmployee(emp);
     setShowForm(true);
+    setView("table"); // если редактируем — вернемся на таблицу
   };
 
   const handleAddNew = () => {
     setEditingEmployee(null);
     setShowForm(true);
+    setView("table");
   };
 
   const cancelEdit = () => {
@@ -311,10 +314,7 @@ function App() {
   };
 
   // ✅ Мемоизация даты
-  const todayText = useMemo(
-    () => new Date().toLocaleDateString("ru-RU"),
-    []
-  );
+  const todayText = useMemo(() => new Date().toLocaleDateString("ru-RU"), []);
 
   // ✅ useMemo: фильтр считаем только когда меняются employees/selectedOrg
   const filteredEmployees = useMemo(() => {
@@ -372,7 +372,10 @@ function App() {
   if (loading) {
     return (
       <div className="app">
-        <ToastContainer notifications={notifications} onRemove={removeNotification} />
+        <ToastContainer
+          notifications={notifications}
+          onRemove={removeNotification}
+        />
         <div className="container">
           <SkeletonLoader rows={8} />
         </div>
@@ -387,7 +390,7 @@ function App() {
       <div className="container">
         <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
           <img src={logo} alt="Logo" className="logo__img" />
-          <h1>Управление инструктажами</h1>
+          <h1 style={{ margin: 0 }}>Управление инструктажами</h1>
         </div>
 
         <div className="info">
@@ -396,74 +399,113 @@ function App() {
           <strong>{expiredCount}</strong>
         </div>
 
-        {/* Фильтр по организациям */}
-        <div style={{ marginBottom: "20px", display: "flex", gap: "10px", alignItems: "center" }}>
-          <label htmlFor="org-filter">Организация:</label>
-          <select
-            id="org-filter"
-            value={selectedOrg}
-            onChange={(e) => setSelectedOrg(e.target.value)}
-            className="status-filter"
-          >
-            <option value="Все">Все</option>
-            {organizations.map((org) => (
-              <option key={org} value={org}>
-                {org}
-              </option>
-            ))}
-          </select>
+        {/* Верхняя панель: фильтр + переключатель разделов */}
+        <div
+          style={{
+            marginBottom: "20px",
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+            <label htmlFor="org-filter">Организация:</label>
+            <select
+              id="org-filter"
+              value={selectedOrg}
+              onChange={(e) => setSelectedOrg(e.target.value)}
+              className="status-filter"
+            >
+              <option value="Все">Все</option>
+              {organizations.map((org) => (
+                <option key={org} value={org}>
+                  {org}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              className="btn-primary"
+              onClick={() => setView("table")}
+              title="Таблица"
+              style={{ opacity: view === "table" ? 1 : 0.8 }}
+            >
+              Таблица
+            </button>
+            <button
+              className="btn-export"
+              onClick={() => setView("analytics")}
+              title="Analytics"
+              style={{ opacity: view === "analytics" ? 1 : 0.8 }}
+            >
+              Analytics
+            </button>
+          </div>
         </div>
 
-        {/* Кнопки действий */}
-        <div className="form-actions">
-          <button className="btn-primary" onClick={handleAddNew}>
-            + Добавить сотрудника
-          </button>
-          <button className="btn-export" onClick={exportCSV}>
-            📊 Экспортировать в CSV
-          </button>
-        </div>
-
-        {/* Форма */}
-        {showForm && (
-          <EmployeeForm
-            onAddEmployee={addEmployee}
-            editingEmployee={editingEmployee}
-            onUpdateEmployee={updateEmployee}
-            onCancelEdit={cancelEdit}
-            existingOrganizations={organizations}
-            onPhotoUpload={() =>
-              addNotification(TOAST_MESSAGES.PHOTO_UPLOADED, TOAST_TYPES.SUCCESS)
-            }
-            onPhotoError={() =>
-              addNotification(TOAST_MESSAGES.PHOTO_UPLOAD_ERROR, TOAST_TYPES.ERROR)
-            }
-          />
+        {/* Кнопки действий (только на Таблице) */}
+        {view === "table" && (
+          <div className="form-actions">
+            <button className="btn-primary form-actions__btn-add" onClick={handleAddNew}>
+              + Добавить сотрудника
+            </button>
+            <button className="btn-export" onClick={exportCSV}>
+              📊 Экспортировать в CSV
+            </button>
+          </div>
         )}
 
-        {/* Таблица (ленивая + виртуализация при больших данных) */}
-        <Suspense fallback={<SkeletonLoader rows={8} />}>
-          {filteredEmployees.length > 300 ? (
-            <VirtualEmployeeTable
-              employees={filteredEmployees}
-              getDaysDifference={getDaysDifference}
-              emptyText="Нет данных для отображения"
-              onRetrain={handleRetrain}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-            />
-          ) : (
-            <EmployeeTable
-              employees={filteredEmployees}
-              getDaysDifference={getDaysDifference}
-              emptyText="Нет данных для отображения"
-              onRetrain={handleRetrain}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onExport={exportCSV}
-            />
-          )}
-        </Suspense>
+        {/* Analytics */}
+        {view === "analytics" ? (
+          <AnalyticsDashboard employees={filteredEmployees} getDaysDifference={getDaysDifference} />
+        ) : (
+          <>
+            {/* Форма */}
+            {showForm && (
+              <EmployeeForm
+                onAddEmployee={addEmployee}
+                editingEmployee={editingEmployee}
+                onUpdateEmployee={updateEmployee}
+                onCancelEdit={cancelEdit}
+                existingOrganizations={organizations}
+                onPhotoUpload={() =>
+                  addNotification(TOAST_MESSAGES.PHOTO_UPLOADED, TOAST_TYPES.SUCCESS)
+                }
+                onPhotoError={() =>
+                  addNotification(TOAST_MESSAGES.PHOTO_UPLOAD_ERROR, TOAST_TYPES.ERROR)
+                }
+              />
+            )}
+
+            {/* Таблица (ленивая + виртуализация при больших данных) */}
+            <Suspense fallback={<SkeletonLoader rows={8} />}>
+              {filteredEmployees.length > 300 ? (
+                <VirtualEmployeeTable
+                  employees={filteredEmployees}
+                  getDaysDifference={getDaysDifference}
+                  emptyText="Нет данных для отображения"
+                  onRetrain={handleRetrain}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                />
+              ) : (
+                <EmployeeTable
+                  employees={filteredEmployees}
+                  getDaysDifference={getDaysDifference}
+                  emptyText="Нет данных для отображения"
+                  onRetrain={handleRetrain}
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onExport={exportCSV}
+                />
+              )}
+            </Suspense>
+          </>
+        )}
       </div>
     </div>
   );

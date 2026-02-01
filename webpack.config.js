@@ -54,6 +54,8 @@ module.exports = (env, argv) => {
       port: 3000,
       open: true,
       hot: true,
+      host: "0.0.0.0", // ✅ доступно по IP в локальной сети
+      allowedHosts: "all", // ✅ не блокировать запросы с планшета/мобилы
     },
     resolve: {
       extensions: [".js", ".jsx"],

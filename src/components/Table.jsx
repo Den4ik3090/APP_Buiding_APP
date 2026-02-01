@@ -40,17 +40,33 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
         const days = getDaysDifference(emp.trainingDate);
         return days <= DAYS_THRESHOLD && days > WARNING_THRESHOLD;
       }).length;
+const isToday = (iso) => {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+};
 
+const newToday = employees
+  .filter((e) => isToday(e.createdAt))
+  .map((e) => `• ${e.name} — ${e.organization || "—"}`)
+  .slice(0, 30); // чтобы не было слишком длинно
       const valid = employees.length - expired - warning;
 
-      const report = `
-📊 <b>Отчёт по инструктажам</b>
-
+  const report = `
+Отчёт по инструктажам:
 🔴 Просрочено: ${expired}
 🟡 Предупреждение: ${warning}
 🟢 Норма: ${valid}
 📈 Всего: ${employees.length}
-      `.trim();
+
+Новые сотрудники сегодня:
+${newToday.length ? newToday.join("\n") : "— нет"}
+`.trim();
 
       await sendToTelegram(report);
       alert('✅ Отчёт отправлен в Telegram!');

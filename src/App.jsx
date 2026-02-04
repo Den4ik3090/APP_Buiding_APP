@@ -12,6 +12,7 @@ import ToastContainer from "./components/ToastContainer.jsx";
 import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
 import AnalyticsDashboard from "./components/AnalyticsDashboard.jsx";
+import LoginModal from "./components/LoginModal.jsx";
 
 import { supabase } from "./supabaseClient";
 import { useNotification } from "./hooks/useNotification";
@@ -20,7 +21,6 @@ import { DAYS_THRESHOLD } from "./utils/constants";
 
 import logo from "./assets/img/logo_PUTEVI.png";
 
-// ✅ Таблицу грузим лениво (быстрее первый рендер)
 const EmployeeTable = lazy(() => import("./components/Table"));
 
 function App() {
@@ -29,6 +29,10 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // ✅ AUTH state (в App оставляем только session + authLoading)
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   // ✅ ВАЖНО: эти состояния нужны для фильтра
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("Все");
@@ -36,27 +40,55 @@ function App() {
   // ✅ View: table | analytics
   const [view, setView] = useState("table");
 
-  // Инициализация системы уведомлений
-  const { notifications, addNotification, removeNotification } =
-    useNotification();
+  const { notifications, addNotification, removeNotification } = useNotification();
 
+  // --- AUTH bootstrap: check session + subscribe ---
   useEffect(() => {
+    let isMounted = true;
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) console.error("getSession error:", error);
+      setSession(data?.session ?? null);
+      setAuthLoading(false);
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session ?? null);
+
+      if (event === "SIGNED_OUT") {
+        setEmployees([]);
+        setOrganizations([]);
+        setSelectedOrg("Все");
+        setView("table");
+        setShowForm(false);
+        setEditingEmployee(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      data?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  // --- Load app data ONLY when authorized ---
+  useEffect(() => {
+    if (!session) return;
     initialLoad();
     fetchOrganizations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session]);
 
-  // Загрузка уникальных организаций из БД
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   const fetchOrganizations = async () => {
     try {
-      const { data, error } = await supabase
-        .from("employees")
-        .select("organization");
-
+      const { data, error } = await supabase.from("employees").select("organization");
       if (!error && data) {
-        const uniqueOrgs = [
-          ...new Set(data.map((item) => item.organization).filter(Boolean)),
-        ];
+        const uniqueOrgs = [...new Set(data.map((i) => i.organization).filter(Boolean))];
         setOrganizations(uniqueOrgs.sort());
       }
     } catch (error) {
@@ -70,10 +102,7 @@ function App() {
       const cloudData = await fetchFromSupabase();
 
       if (cloudData.length === 0) {
-        const localData = JSON.parse(
-          localStorage.getItem("employees") || "[]"
-        );
-
+        const localData = JSON.parse(localStorage.getItem("employees") || "[]");
         if (localData.length > 0) {
           await migrateLocalDataToCloud(localData);
         } else {
@@ -111,10 +140,7 @@ function App() {
       if (!error && data) {
         setEmployees(formatDataForApp(data));
         localStorage.removeItem("employees");
-        addNotification(
-          "Данные успешно перенесены в облако ☁️",
-          TOAST_TYPES.SUCCESS
-        );
+        addNotification("Данные успешно перенесены в облако ☁️", TOAST_TYPES.SUCCESS);
         await fetchOrganizations();
       } else {
         throw error;
@@ -128,7 +154,9 @@ function App() {
   const fetchFromSupabase = async () => {
     const { data, error } = await supabase
       .from("employees")
-      .select("id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at")
+      .select(
+        "id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at"
+      )
       .order("name", { ascending: true });
 
     if (error) throw error;
@@ -172,11 +200,7 @@ function App() {
         throw error;
       }
     } catch (error) {
-      addNotification(
-        TOAST_MESSAGES.DB_ERROR,
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.LONG
-      );
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
       console.error("Ошибка при добавлении:", error);
     }
   };
@@ -208,9 +232,7 @@ function App() {
         .eq("id", updated.id);
 
       if (!error) {
-        setEmployees((prev) =>
-          prev.map((e) => (e.id === updated.id ? updated : e))
-        );
+        setEmployees((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
         cancelEdit();
         addNotification(TOAST_MESSAGES.EMPLOYEE_UPDATED, TOAST_TYPES.SUCCESS);
         await fetchOrganizations();
@@ -218,11 +240,7 @@ function App() {
         throw error;
       }
     } catch (error) {
-      addNotification(
-        TOAST_MESSAGES.DB_ERROR,
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.LONG
-      );
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
       console.error("Ошибка при обновлении:", error);
     }
   };
@@ -240,11 +258,7 @@ function App() {
         throw error;
       }
     } catch (error) {
-      addNotification(
-        TOAST_MESSAGES.DB_ERROR,
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.LONG
-      );
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
       console.error("Ошибка при удалении:", error);
     }
   };
@@ -267,11 +281,7 @@ function App() {
         throw error;
       }
     } catch (error) {
-      addNotification(
-        TOAST_MESSAGES.DB_ERROR,
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.LONG
-      );
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
       console.error("Ошибка при переподготовке:", error);
     }
   };
@@ -299,7 +309,7 @@ function App() {
   const handleEdit = (emp) => {
     setEditingEmployee(emp);
     setShowForm(true);
-    setView("table"); // если редактируем — вернемся на таблицу
+    setView("table");
   };
 
   const handleAddNew = () => {
@@ -313,17 +323,14 @@ function App() {
     setShowForm(false);
   };
 
-  // ✅ Мемоизация даты
   const todayText = useMemo(() => new Date().toLocaleDateString("ru-RU"), []);
 
-  // ✅ useMemo: фильтр считаем только когда меняются employees/selectedOrg
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) =>
       selectedOrg === "Все" ? true : emp.organization === selectedOrg
     );
   }, [employees, selectedOrg]);
 
-  // ✅ useMemo: счетчик тоже только по изменению filteredEmployees
   const expiredCount = useMemo(() => {
     return filteredEmployees.filter(
       (emp) => getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD
@@ -332,14 +339,7 @@ function App() {
 
   const exportCSV = () => {
     try {
-      const headers = [
-        "ФИО",
-        "Организация",
-        "Профессия",
-        "Дата инструктажа",
-        "Статус",
-      ];
-
+      const headers = ["ФИО", "Организация", "Профессия", "Дата инструктажа", "Статус"];
       const rows = filteredEmployees.map((emp) => {
         const days = getDaysDifference(emp.trainingDate);
         const status = days >= DAYS_THRESHOLD ? "Переподготовка" : "Актуален";
@@ -347,9 +347,7 @@ function App() {
       });
 
       const csvContent = headers.join(";") + "\n" + rows.join("\n");
-      const blob = new Blob(["\uFEFF" + csvContent], {
-        type: "text/csv;charset=utf-8;",
-      });
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
 
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -359,23 +357,42 @@ function App() {
 
       addNotification(TOAST_MESSAGES.EXPORT_SUCCESS, TOAST_TYPES.SUCCESS);
     } catch (error) {
-      addNotification(
-        TOAST_MESSAGES.EXPORT_ERROR,
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.LONG
-      );
+      addNotification(TOAST_MESSAGES.EXPORT_ERROR, TOAST_TYPES.ERROR, TOAST_DURATION.LONG);
       console.error("Ошибка при экспорте:", error);
     }
   };
 
-  // ✅ Skeleton на время загрузки
+  // --- UI states: auth first ---
+  if (authLoading) {
+    return (
+      <div className="app">
+        <ToastContainer notifications={notifications} onRemove={removeNotification} />
+        <div className="container">
+          <SkeletonLoader rows={8} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="app">
+        <ToastContainer notifications={notifications} onRemove={removeNotification} />
+        <LoginModal
+          logo={logo}
+          onSuccess={() => addNotification("Вход выполнен", TOAST_TYPES.SUCCESS)}
+          onError={(message) =>
+            addNotification(message || "Ошибка входа", TOAST_TYPES.ERROR, TOAST_DURATION.LONG)
+          }
+        />
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="app">
-        <ToastContainer
-          notifications={notifications}
-          onRemove={removeNotification}
-        />
+        <ToastContainer notifications={notifications} onRemove={removeNotification} />
         <div className="container">
           <SkeletonLoader rows={8} />
         </div>
@@ -388,9 +405,24 @@ function App() {
       <ToastContainer notifications={notifications} onRemove={removeNotification} />
 
       <div className="container">
-        <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
-          <img src={logo} alt="Logo" className="logo__img" />
-          <h1 style={{ margin: 0 }}>Управление инструктажами</h1>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 20,
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <img src={logo} alt="Logo" className="logo__img" />
+            <h1 style={{ margin: 0 }}>Управление инструктажами</h1>
+          </div>
+
+          <button className="btn-export" onClick={handleLogout} title="Выйти">
+            Выйти
+          </button>
         </div>
 
         <div className="info">
@@ -399,7 +431,6 @@ function App() {
           <strong>{expiredCount}</strong>
         </div>
 
-        {/* Верхняя панель: фильтр + переключатель разделов */}
         <div
           style={{
             marginBottom: "20px",
@@ -447,7 +478,6 @@ function App() {
           </div>
         </div>
 
-        {/* Кнопки действий (только на Таблице) */}
         {view === "table" && (
           <div className="form-actions">
             <button className="btn-primary form-actions__btn-add" onClick={handleAddNew}>
@@ -459,12 +489,10 @@ function App() {
           </div>
         )}
 
-        {/* Analytics */}
         {view === "analytics" ? (
           <AnalyticsDashboard employees={filteredEmployees} getDaysDifference={getDaysDifference} />
         ) : (
           <>
-            {/* Форма */}
             {showForm && (
               <EmployeeForm
                 onAddEmployee={addEmployee}
@@ -481,7 +509,6 @@ function App() {
               />
             )}
 
-            {/* Таблица (ленивая + виртуализация при больших данных) */}
             <Suspense fallback={<SkeletonLoader rows={8} />}>
               {filteredEmployees.length > 300 ? (
                 <VirtualEmployeeTable

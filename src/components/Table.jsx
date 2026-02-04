@@ -1,22 +1,41 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import StatusBadge from './StatusBadge';
 import { DAYS_THRESHOLD, WARNING_THRESHOLD } from '../utils/constants';
 import { sendToTelegram } from '../utils/sendToTelegram';
 
-function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyText, onRetrain, onDelete, onEdit }) {
+function EmployeeTable({
+  employees,
+  onClear,
+  onExport,
+  getDaysDifference,
+  emptyText,
+  onRetrain,
+  onDelete,
+  onEdit
+}) {
   const [sortConfig, setSortConfig] = useState({ key: 'days', direction: 'desc' });
   const [statusFilter, setStatusFilter] = useState('all');
   const [professionFilter, setProfessionFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Дебаунс поиска по ФИО — чтобы не пересчитывать всё на каждую клавишу
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 400); // можно 300–500 мс
+
+    return () => clearTimeout(id);
+  }, [searchQuery]);
 
   const getStatusInfo = (trainingDate) => {
     const days = getDaysDifference(trainingDate);
     const expired = days >= DAYS_THRESHOLD;
     const warning = days >= WARNING_THRESHOLD && days < DAYS_THRESHOLD;
-    
+
     const nextDate = new Date(trainingDate);
     nextDate.setDate(nextDate.getDate() + DAYS_THRESHOLD);
-    
+
     return { days, expired, warning, nextDate };
   };
 
@@ -28,45 +47,50 @@ function EmployeeTable({ employees, onClear, onExport, getDaysDifference, emptyT
     setSortConfig({ key, direction });
   };
 
-  // ✅ НОВАЯ ФУНКЦИЯ ОТПРАВКИ ОТЧЁТА
+  // Вспомогательная функция для отчёта
+  const isToday = (iso) => {
+    if (!iso) return false;
+    const d = new Date(iso);
+    const now = new Date();
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    );
+  };
+
+  // Предрасчёт days / expired / warning / nextDate, чтобы не считать много раз
+  const preparedEmployees = useMemo(() => {
+    return employees.map((emp) => {
+      const { days, expired, warning, nextDate } = getStatusInfo(emp.trainingDate);
+      return { ...emp, days, expired, warning, nextDate };
+    });
+  }, [employees]);
+
+  // ✅ ОТПРАВКА ОТЧЁТА В TELEGRAM (используем уже подготовленные данные)
   const handleSendReport = async () => {
     try {
-      const expired = employees.filter(emp => {
-        const days = getDaysDifference(emp.trainingDate);
-        return days > DAYS_THRESHOLD;
-      }).length;
+      const expired = preparedEmployees.filter((emp) => emp.days > DAYS_THRESHOLD).length;
+      const warning = preparedEmployees.filter(
+        (emp) => emp.days <= DAYS_THRESHOLD && emp.days > WARNING_THRESHOLD
+      ).length;
+      const valid = preparedEmployees.length - expired - warning;
 
-      const warning = employees.filter(emp => {
-        const days = getDaysDifference(emp.trainingDate);
-        return days <= DAYS_THRESHOLD && days > WARNING_THRESHOLD;
-      }).length;
-const isToday = (iso) => {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-};
+      const newToday = preparedEmployees
+        .filter((e) => isToday(e.createdAt))
+        .map((e) => `• ${e.name} — ${e.organization || '—'}`)
+        .slice(0, 30);
 
-const newToday = employees
-  .filter((e) => isToday(e.createdAt))
-  .map((e) => `• ${e.name} — ${e.organization || "—"}`)
-  .slice(0, 30); // чтобы не было слишком длинно
-      const valid = employees.length - expired - warning;
-
-  const report = `
+      const report = `
 Отчёт по инструктажам:
 🔴 Просрочено: ${expired}
 🟡 Предупреждение: ${warning}
 🟢 Норма: ${valid}
-📈 Всего: ${employees.length}
+📈 Всего: ${preparedEmployees.length}
 
 Новые сотрудники сегодня:
-${newToday.length ? newToday.join("\n") : "— нет"}
-`.trim();
+${newToday.length ? newToday.join('\n') : '— нет'}
+      `.trim();
 
       await sendToTelegram(report);
       alert('✅ Отчёт отправлен в Telegram!');
@@ -77,36 +101,40 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
   };
 
   const sortedAndFilteredEmployees = useMemo(() => {
-    let result = [...employees];
+    let result = [...preparedEmployees];
 
-    if (searchQuery.trim()) {
-      result = result.filter(emp => 
-        emp.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+    // Поиск по ФИО — на основе debouncedSearch
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      result = result.filter((emp) => emp.name.toLowerCase().includes(q));
     }
 
+    // Фильтр по статусу
     if (statusFilter !== 'all') {
-      result = result.filter(emp => {
-        const { expired, warning } = getStatusInfo(emp.trainingDate);
-        if (statusFilter === 'expired') return expired;
-        if (statusFilter === 'warning') return warning;
-        if (statusFilter === 'valid') return !expired && !warning;
+      result = result.filter((emp) => {
+        if (statusFilter === 'expired') return emp.expired;
+        if (statusFilter === 'warning') return emp.warning;
+        if (statusFilter === 'valid') return !emp.expired && !emp.warning;
         return true;
       });
     }
 
+    // Фильтр по должности
     if (professionFilter !== 'all') {
-      result = result.filter(emp => emp.profession === professionFilter);
+      result = result.filter((emp) => emp.profession === professionFilter);
     }
 
+    // Сортировка
     if (sortConfig.key) {
       result.sort((a, b) => {
-        let aValue, bValue;
-        
+        let aValue;
+        let bValue;
+
         if (sortConfig.key === 'days') {
-          aValue = getDaysDifference(a.trainingDate);
-          bValue = getDaysDifference(b.trainingDate);
+          aValue = a.days;
+          bValue = b.days;
         } else if (sortConfig.key === 'trainingDate') {
+          // можно использовать trainingDate или nextDate — оставим trainingDate
           aValue = new Date(a.trainingDate).getTime();
           bValue = new Date(b.trainingDate).getTime();
         } else {
@@ -121,10 +149,10 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
     }
 
     return result;
-  }, [employees, searchQuery, statusFilter, professionFilter, sortConfig]);
+  }, [preparedEmployees, debouncedSearch, statusFilter, professionFilter, sortConfig]);
 
   const professions = useMemo(() => {
-    return ['all', ...new Set(employees.map(emp => emp.profession).filter(Boolean))];
+    return ['all', ...new Set(employees.map((emp) => emp.profession).filter(Boolean))];
   }, [employees]);
 
   const getSortIcon = (columnKey) => {
@@ -133,7 +161,11 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
   };
 
   if (employees.length === 0) {
-    return <div className="empty-state"><p>{emptyText}</p></div>;
+    return (
+      <div className="empty-state">
+        <p>{emptyText}</p>
+      </div>
+    );
   }
 
   return (
@@ -141,13 +173,12 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
       <div className="table-header">
         <div className="table-header__title">
           <h3>📊 Реестр сотрудников ({sortedAndFilteredEmployees.length})</h3>
-          
-          {/* ✅ КНОПКА TELEGRAM */}
-         <button className="btn-telegram" onClick={handleSendReport}>
-  📱 Telegram
-</button>
+
+          <button className="btn-telegram" onClick={handleSendReport}>
+            📱 Telegram
+          </button>
         </div>
-        
+
         <div className="filters-panel">
           <input
             type="text"
@@ -157,14 +188,24 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
             className="search-input"
           />
 
-          <select value={professionFilter} onChange={(e) => setProfessionFilter(e.target.value)}>
+          <select
+            value={professionFilter}
+            onChange={(e) => setProfessionFilter(e.target.value)}
+          >
             <option value="all">Все должности</option>
-            {professions.filter(p => p !== 'all').map(p => (
-              <option key={p} value={p}>{p}</option>
-            ))}
+            {professions
+              .filter((p) => p !== 'all')
+              .map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
           </select>
 
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
             <option value="all">Все статусы</option>
             <option value="valid">✅ Актуален</option>
             <option value="warning">🟡 Скоро истекает</option>
@@ -179,28 +220,39 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
             <tr>
               <th>№</th>
               <th>Фото</th>
-              <th onClick={() => handleSort('name')} className="sortable">ФИО {getSortIcon('name')}</th>
-              <th onClick={() => handleSort('profession')} className="sortable">Должность {getSortIcon('profession')}</th>
-              <th onClick={() => handleSort('trainingDate')} className="sortable">Инструктаж {getSortIcon('trainingDate')}</th>
+              <th onClick={() => handleSort('name')} className="sortable">
+                ФИО {getSortIcon('name')}
+              </th>
+              <th onClick={() => handleSort('profession')} className="sortable">
+                Должность {getSortIcon('profession')}
+              </th>
+              <th onClick={() => handleSort('trainingDate')} className="sortable">
+                Инструктаж {getSortIcon('trainingDate')}
+              </th>
               <th>Следующий</th>
-              <th onClick={() => handleSort('days')} className="sortable">Дней {getSortIcon('days')}</th>
+              <th onClick={() => handleSort('days')} className="sortable">
+                Дней {getSortIcon('days')}
+              </th>
               <th>Статус</th>
               <th>Действия</th>
             </tr>
           </thead>
           <tbody>
             {sortedAndFilteredEmployees.map((employee, index) => {
-              const { days, expired, warning, nextDate } = getStatusInfo(employee.trainingDate);
-              const rowClass = expired ? 'row-expired' : warning ? 'row-warning' : 'row-valid';
+              const rowClass = employee.expired
+                ? 'row-expired'
+                : employee.warning
+                ? 'row-warning'
+                : 'row-valid';
 
               return (
-                <tr 
-                  key={employee.id} 
+                <tr
+                  key={employee.id}
                   className={rowClass}
                   onDoubleClick={() => onEdit(employee)}
                 >
                   <td>{index + 1}</td>
-                  
+
                   <td>
                     <div className="table-photo-circle">
                       {employee.photo_url ? (
@@ -213,20 +265,50 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
 
                   <td className="font-bold">{employee.name}</td>
                   <td>{employee.profession}</td>
-                  <td>{new Date(employee.trainingDate).toLocaleDateString('ru-RU')}</td>
-                  <td>{nextDate.toLocaleDateString('ru-RU')}</td>
-                  <td className={`days-cell ${expired ? 'text-red' : warning ? 'text-orange' : ''}`}>
-                    {days}
+                  <td>
+                    {new Date(employee.trainingDate).toLocaleDateString('ru-RU')}
+                  </td>
+                  <td>{employee.nextDate.toLocaleDateString('ru-RU')}</td>
+                  <td
+                    className={`days-cell ${
+                      employee.expired ? 'text-red' : employee.warning ? 'text-orange' : ''
+                    }`}
+                  >
+                    {employee.days}
                   </td>
                   <td>
-                    <StatusBadge expired={expired} warning={warning} days={days} />
+                    <StatusBadge
+                      expired={employee.expired}
+                      warning={employee.warning}
+                      days={employee.days}
+                    />
                   </td>
                   <td>
-                    <div className='table__action' onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => onEdit(employee)} className="btn-icon" title="Редактировать">✏️</button>
-                      <button onClick={() => onRetrain(employee.id)} className="btn-retrain" title="Обновить дату на сегодня">ОБНОВИТЬ</button>
-                      <button onClick={() => onDelete(employee.id)} className="btn-icon btn-del" title="Удалить">❌</button>
-                    
+                    <div
+                      className="table__action"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() => onEdit(employee)}
+                        className="btn-icon"
+                        title="Редактировать"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => onRetrain(employee.id)}
+                        className="btn-retrain"
+                        title="Обновить дату на сегодня"
+                      >
+                        ОБНОВИТЬ
+                      </button>
+                      <button
+                        onClick={() => onDelete(employee.id)}
+                        className="btn-icon btn-del"
+                        title="Удалить"
+                      >
+                        ❌
+                      </button>
                     </div>
                   </td>
                 </tr>

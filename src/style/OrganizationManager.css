@@ -1,0 +1,102 @@
+/* Контейнер для новой таблицы документов */
+.org-manager-container {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Стилизация таблицы чекбоксов */
+.org-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.org-table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 12px 15px;
+  border-bottom: 2px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.org-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s;
+}
+
+.org-table tr:hover td {
+  background-color: #f1f5f9;
+}
+
+.org-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Стилизация чекбоксов */
+.doc-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+  border-radius: 4px;
+  transition: transform 0.1s ease;
+}
+
+.doc-checkbox:active {
+  transform: scale(0.9);
+}
+
+/* Название организации в первой колонке */
+.org-name-cell {
+  font-weight: 700;
+  color: var(--text-dark);
+  border-right: 1px solid var(--border-color);
+  background-color: #fcfcfc;
+}
+
+/* Заголовок и кнопки управления */
+.org-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 5px;
+}
+
+.org-header-flex h2 {
+  font-size: 1.5rem;
+  color: var(--text-dark);
+}
+.tr__parametr {
+  font-weight: bolder;
+  text-align: center;
+}
+.tr__parametr:hover {
+  background-color: #e2e8f0;
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Адаптивность: прокрутка для мобильных устройств */
+.table-wrapper {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  background: white;
+}

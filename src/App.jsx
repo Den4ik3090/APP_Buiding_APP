@@ -13,11 +13,15 @@ import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
 import AnalyticsDashboard from "./components/AnalyticsDashboard.jsx";
 import LoginModal from "./components/LoginModal.jsx";
-import OrganizationsDocs from "./components/OrganizationManager.jsx"; // Тот самый новый компонент
+import OrganizationsDocs from "./components/OrganizationManager.jsx";
 
 import { supabase } from "./supabaseClient";
 import { useNotification } from "./hooks/useNotification";
-import { TOAST_MESSAGES, TOAST_TYPES, TOAST_DURATION } from "./utils/toastConfig"; 
+import {
+  TOAST_MESSAGES,
+  TOAST_TYPES,
+  TOAST_DURATION,
+} from "./utils/toastConfig";
 import { DAYS_THRESHOLD } from "./utils/constants";
 
 import logo from "./assets/img/logo_PUTEVI.png";
@@ -29,21 +33,22 @@ function App() {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  
-  // Объединяем навигацию в одну переменную activeTab для чистоты кода
-  // Возможные значения: 'table', 'analytics', 'orgs'
-  const [activeTab, setActiveTab] = useState('table');
+
+  // 'table', 'analytics', 'orgs'
+  const [activeTab, setActiveTab] = useState("table");
 
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("Все");
 
-  const { notifications, addNotification, removeNotification } = useNotification();
+  const { notifications, addNotification, removeNotification } =
+    useNotification();
 
   // --- AUTH bootstrap ---
   useEffect(() => {
     let isMounted = true;
+
     supabase.auth.getSession().then(({ data, error }) => {
       if (!isMounted) return;
       if (error) console.error("getSession error:", error);
@@ -82,9 +87,13 @@ function App() {
 
   const fetchOrganizations = async () => {
     try {
-      const { data, error } = await supabase.from("employees").select("organization");
+      const { data, error } = await supabase
+        .from("employees")
+        .select("organization");
       if (!error && data) {
-        const uniqueOrgs = [...new Set(data.map((i) => i.organization).filter(Boolean))];
+        const uniqueOrgs = [
+          ...new Set(data.map((i) => i.organization).filter(Boolean)),
+        ];
         setOrganizations(uniqueOrgs.sort());
       }
     } catch (error) {
@@ -107,18 +116,152 @@ function App() {
   const fetchFromSupabase = async () => {
     const { data, error } = await supabase
       .from("employees")
-      .select("id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at")
+      .select(
+        "id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at"
+      )
       .order("name", { ascending: true });
     if (error) throw error;
     return formatDataForApp(data);
   };
 
-  // ... (addEmployee, updateEmployee, handleDelete, handleRetrain остаются без изменений) ...
-  const addEmployee = async (newEmployee) => { /* твой код из промпта */ };
-  const updateEmployee = async (updated) => { /* твой код из промпта */ };
-  const handleDelete = async (id) => { /* твой код из промпта */ };
-  const handleRetrain = async (id) => { /* твой код из промпта */ };
+  // ---------- Маппинг формы в формат БД ----------
+  const mapFormToDb = (form) => ({
+    name: form.name,
+    profession: form.profession,
+    birth_date: form.birthDate || null,
+    training_date: form.trainingDate,
+    responsible: form.responsible || null,
+    comment: form.comment || null,
+    photo_url: form.photo_url || null,
+    organization: form.organization || null,
+    additional_trainings: form.additionalTrainings || [],
+  });
 
+  // ---------- CRUD ----------
+  const addEmployee = async (newEmployee) => {
+    try {
+      const payload = mapFormToDb(newEmployee);
+      const { data, error } = await supabase
+        .from("employees")
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const mapped = formatDataForApp([data])[0];
+      setEmployees((prev) =>
+        [...prev, mapped].sort((a, b) => a.name.localeCompare(b.name))
+      );
+
+      // большой success‑toast вместо модалки
+      addNotification(
+        TOAST_MESSAGES.EMPLOYEE_ADDED || TOAST_MESSAGES.ADDED,
+        TOAST_TYPES.SUCCESS,
+        TOAST_DURATION.LONG
+      );
+      setShowForm(false);
+      setEditingEmployee(null);
+    } catch (e) {
+      console.error("addEmployee error:", e);
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+    }
+  };
+
+  const updateEmployee = async (updated) => {
+    try {
+      const payload = mapFormToDb(updated);
+
+      const { data, error } = await supabase
+        .from("employees")
+        .update(payload)
+        .eq("id", updated.id)
+        .select(
+          "id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at"
+        )
+        .single();
+
+      if (error) throw error;
+
+      const [mapped] = formatDataForApp([data]);
+
+      setEmployees((prev) =>
+        prev
+          .map((emp) => (emp.id === mapped.id ? mapped : emp))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
+
+      addNotification(
+        TOAST_MESSAGES.EMPLOYEE_UPDATED || TOAST_MESSAGES.UPDATED,
+        TOAST_TYPES.SUCCESS,
+        TOAST_DURATION.NORMAL
+      );
+      setShowForm(false);
+      setEditingEmployee(null);
+    } catch (e) {
+      console.error("updateEmployee error:", e);
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Удалить сотрудника?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("employees")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setEmployees((prev) => prev.filter((emp) => emp.id !== id));
+      addNotification(
+        TOAST_MESSAGES.EMPLOYEE_DELETED || TOAST_MESSAGES.DELETED,
+        TOAST_TYPES.SUCCESS,
+        TOAST_DURATION.NORMAL
+      );
+    } catch (e) {
+      console.error("handleDelete error:", e);
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+    }
+  };
+
+  const handleRetrain = async (id) => {
+    const today = new Date().toISOString().split("T")[0];
+
+    try {
+      const { data, error } = await supabase
+        .from("employees")
+        .update({ training_date: today })
+        .eq("id", id)
+        .select(
+          "id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at"
+        )
+        .single();
+
+      if (error) throw error;
+
+      const [mapped] = formatDataForApp([data]);
+
+      setEmployees((prev) =>
+        prev
+          .map((emp) => (emp.id === mapped.id ? mapped : emp))
+          .sort((a, b) => a.name.localeCompare(b.name))
+      );
+
+      addNotification(
+        TOAST_MESSAGES.EMPLOYEE_RETRAINED || TOAST_MESSAGES.RETRAINED,
+        TOAST_TYPES.SUCCESS,
+        TOAST_DURATION.NORMAL
+      );
+    } catch (e) {
+      console.error("handleRetrain error:", e);
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+    }
+  };
+
+  // ---------- Форматирование данных ----------
   const formatDataForApp = (data) =>
     data.map((emp) => ({
       id: emp.id,
@@ -156,25 +299,33 @@ function App() {
     setShowForm(false);
   };
 
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) =>
-      selectedOrg === "Все" ? true : emp.organization === selectedOrg
-    );
-  }, [employees, selectedOrg]);
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter((emp) =>
+        selectedOrg === "Все" ? true : emp.organization === selectedOrg
+      ),
+    [employees, selectedOrg]
+  );
 
-  const expiredCount = useMemo(() => {
-    return filteredEmployees.filter(
-      (emp) => getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD
-    ).length;
-  }, [filteredEmployees, getDaysDifference]);
+  const expiredCount = useMemo(
+    () =>
+      filteredEmployees.filter(
+        (emp) => getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD
+      ).length,
+    [filteredEmployees, getDaysDifference]
+  );
 
-  const exportCSV = () => { /* твой код из промпта */ };
+  const exportCSV = () => {
+    // TODO: экспорт в CSV
+  };
 
   // --- UI Logic ---
   if (authLoading || loading) {
     return (
       <div className="app">
-        <div className="container"><SkeletonLoader rows={8} /></div>
+        <div className="container">
+          <SkeletonLoader rows={8} />
+        </div>
       </div>
     );
   }
@@ -182,57 +333,99 @@ function App() {
   if (!session) {
     return (
       <div className="app">
-        <LoginModal logo={logo} onSuccess={() => {}} onError={(m) => addNotification(m, TOAST_TYPES.ERROR)} />
+        <LoginModal
+          logo={logo}
+          onSuccess={() => {}}
+          onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
+        />
       </div>
     );
   }
 
   return (
     <div className="app">
-      <ToastContainer notifications={notifications} onRemove={removeNotification} />
+      <ToastContainer
+        notifications={notifications}
+        onRemove={removeNotification}
+      />
 
       <div className="container">
         {/* Header */}
-        <div className="header-main" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div
+          className="header-main"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
             <img src={logo} alt="Logo" className="logo__img" />
             <h1 style={{ margin: 0 }}>Управление инструктажами</h1>
           </div>
-          <button className="btn-danger" onClick={handleLogout}>Выйти</button>
+          <button className="btn-danger" onClick={handleLogout}>
+            Выйти
+          </button>
         </div>
 
         {/* Stats Info */}
         <div className="info">
-          Показано: <strong>{filteredEmployees.length}</strong> | 
-          Просрочено: <strong style={{color: 'red'}}>{expiredCount}</strong>
+          Показано: <strong>{filteredEmployees.length}</strong> | Просрочено:{" "}
+          <strong style={{ color: "red" }}>{expiredCount}</strong>
         </div>
 
         {/* Navigation & Filters */}
-        <div className="toolbar" style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-          <div className="filter-group" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          className="toolbar"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 20,
+          }}
+        >
+          <div
+            className="filter-group"
+            style={{ display: "flex", alignItems: "center", gap: 10 }}
+          >
             <label>Организация:</label>
-            <select value={selectedOrg} onChange={(e) => setSelectedOrg(e.target.value)} className="status-filter">
+            <select
+              value={selectedOrg}
+              onChange={(e) => setSelectedOrg(e.target.value)}
+              className="status-filter"
+            >
               <option value="Все">Все организации</option>
-              {organizations.map((org) => <option key={org} value={org}>{org}</option>)}
+              {organizations.map((org) => (
+                <option key={org} value={org}>
+                  {org}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className="tabs-navigation" style={{ display: "flex", gap: 10 }}>
-            <button 
-              className={activeTab === 'table' ? 'btn-primary' : 'btn-export'} 
-              onClick={() => setActiveTab('table')}
+          <div
+            className="tabs-navigation"
+            style={{ display: "flex", gap: 10 }}
+          >
+            <button
+              className={activeTab === "table" ? "btn-primary" : "btn-export"}
+              onClick={() => setActiveTab("table")}
             >
               📋 Сотрудники
             </button>
-            <button 
-              className={activeTab === 'analytics' ? 'btn-primary' : 'btn-export'} 
-              onClick={() => setActiveTab('analytics')}
+            <button
+              className={
+                activeTab === "analytics" ? "btn-primary" : "btn-export"
+              }
+              onClick={() => setActiveTab("analytics")}
             >
               📊 Аналитика
             </button>
-            <button 
-              className={activeTab === 'orgs' ? 'btn-primary' : 'btn-export'} 
-              onClick={() => setActiveTab('orgs')}
+            <button
+              className={activeTab === "orgs" ? "btn-primary" : "btn-export"}
+              onClick={() => setActiveTab("orgs")}
             >
               🏢 Организации
             </button>
@@ -240,11 +433,15 @@ function App() {
         </div>
 
         {/* Main Content Render */}
-        {activeTab === 'table' && (
+        {activeTab === "table" && (
           <>
             <div className="form-actions" style={{ marginBottom: 15 }}>
-              <button className="btn-primary" onClick={handleAddNew}>+ Добавить сотрудника</button>
-              <button className="btn-export" onClick={exportCSV}>📊 Экспорт CSV</button>
+              <button className="btn-primary" onClick={handleAddNew}>
+                + Добавить сотрудника
+              </button>
+              <button className="btn-export" onClick={exportCSV}>
+                📊 Экспорт CSV
+              </button>
             </div>
 
             {showForm && (
@@ -254,8 +451,20 @@ function App() {
                 onUpdateEmployee={updateEmployee}
                 onCancelEdit={cancelEdit}
                 existingOrganizations={organizations}
-                onPhotoUpload={() => addNotification(TOAST_MESSAGES.PHOTO_UPLOADED, TOAST_TYPES.SUCCESS)}
-                onPhotoError={() => addNotification(TOAST_MESSAGES.PHOTO_UPLOAD_ERROR, TOAST_TYPES.ERROR)}
+                onPhotoUpload={() =>
+                  addNotification(
+                    TOAST_MESSAGES.PHOTO_UPLOADED,
+                    TOAST_TYPES.SUCCESS,
+                    TOAST_DURATION.NORMAL
+                  )
+                }
+                onPhotoError={() =>
+                  addNotification(
+                    TOAST_MESSAGES.PHOTO_UPLOAD_ERROR,
+                    TOAST_TYPES.ERROR,
+                    TOAST_DURATION.NORMAL
+                  )
+                }
               />
             )}
 
@@ -281,13 +490,14 @@ function App() {
           </>
         )}
 
-        {activeTab === 'analytics' && (
-          <AnalyticsDashboard employees={filteredEmployees} getDaysDifference={getDaysDifference} />
+        {activeTab === "analytics" && (
+          <AnalyticsDashboard
+            employees={filteredEmployees}
+            getDaysDifference={getDaysDifference}
+          />
         )}
 
-        {activeTab === 'orgs' && (
-          <OrganizationsDocs employees={employees} />
-        )}
+        {activeTab === "orgs" && <OrganizationsDocs employees={employees} />}
       </div>
     </div>
   );

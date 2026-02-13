@@ -12,19 +12,29 @@
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(46, 46, 59, 1) 0%,
+    rgba(60, 60, 75, 1) 40%,
+    rgba(0, 0, 0, 1) 100%
+  );
   min-height: 100vh;
   padding: 20px;
+}
+
+.app {
+  min-height: 100vh;
 }
 
 .container {
   max-width: 1600px;
   margin: 0 auto;
   background: white;
+  border: solid 4px #0759fc;
   border-radius: 12px;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
   padding: 30px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 h1 {
@@ -111,6 +121,7 @@ h1 {
   background: #5a67d8;
   transform: translateY(-1px);
 }
+
 .form-actions__btn-add {
   height: 43px;
 }
@@ -334,7 +345,7 @@ tr.expired:hover {
   border: 2px solid #e5e7eb;
 }
 
-/* Р¤РёР»СЊС‚СЂС‹ Рё СЃРѕСЂС‚РёСЂРѕРІРєР° */
+/* Фильтры и сортировка */
 .status-filter {
   padding: 8px 12px;
   border: 2px solid #3498db;
@@ -361,7 +372,7 @@ tr.expired:hover {
   padding: 8px 12px;
 }
 
-/* РђРґР°РїС‚РёРІРЅРѕСЃС‚СЊ */
+/* Адаптивность */
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
@@ -387,8 +398,7 @@ tr.expired:hover {
   }
 }
 
-/* РЎС‚СЂРѕРєР° РїРѕРёСЃРєР°  */
-/* РЎС‚СЂРѕРєР° РїРѕРёСЃРєР° */
+/* Строка поиска */
 .search-input {
   border: 2px solid #667eea;
   border-radius: 8px;
@@ -421,7 +431,7 @@ tr.expired:hover {
   border-radius: 10px;
 }
 
-/* РЎРµРєС†РёСЏ Р·Р°РіСЂСѓР·РєРё С„РѕС‚Рѕ  */
+/* Фото */
 
 .photo-section {
   display: flex;
@@ -431,6 +441,7 @@ tr.expired:hover {
   background: #fdfdfd;
   border-bottom: 1px solid #eee;
 }
+
 .photo-preview {
   width: 80px;
   height: 80px;
@@ -442,11 +453,13 @@ tr.expired:hover {
   justify-content: center;
   border: 2px solid #3498db;
 }
+
 .photo-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .photo-upload-label {
   margin-top: 8px;
   color: #3498db;
@@ -512,6 +525,7 @@ tr.expired:hover {
 .virtual-row.valid {
   background: #f0fdf4;
 }
+
 .virtual-row.expired {
   background: #fef2f2;
 }
@@ -579,4 +593,79 @@ tr.expired:hover {
   .table-header__title {
     flex-wrap: wrap;
   }
+}
+
+/* ========================================
+   SUCCESS MODAL (добавление сотрудника)
+   ======================================== */
+.success-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+}
+
+.success-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  color: #111827;
+}
+
+.success-modal__icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.success-modal__title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #0f172a;
+}
+
+.success-modal__text {
+  font-size: 14px;
+  color: #475569;
+  margin-bottom: 20px;
+}
+
+.success-modal__button {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
+  transition: all 0.2s ease;
+}
+
+.success-modal__button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 40px rgba(34, 197, 94, 0.6);
+}
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.success-modal__icon {
+  font-size: 3rem;
+  color: #22c55e;
+  margin-bottom: 1rem;
+  text-align: center;
 }

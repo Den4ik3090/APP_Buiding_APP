@@ -1,4 +1,5 @@
 import React, { useCallback, memo } from "react";
+import WorkerTrainingDownloadButton from "./WorkerTrainingDownloadButton";
 import { AutoSizer } from "react-virtualized-auto-sizer";
 import { List } from "react-window";
 
@@ -13,6 +14,7 @@ function VirtualEmployeeTable({
   onRetrain,
   onDelete,
   onEdit,
+  addNotification,
 }) {
   const Row = useCallback(
     ({ index, style }) => {
@@ -32,6 +34,11 @@ function VirtualEmployeeTable({
             <div className="virtual-cell date">{trainingDate || "—"}</div>
 
             <div className="virtual-cell actions">
+              <WorkerTrainingDownloadButton
+                workerId={emp?.id}
+                workerName={emp?.name}
+                addNotification={addNotification}
+              />
               <button
                 className="btn-retrain"
                 onClick={() => onRetrain(emp.id)}
@@ -64,7 +71,7 @@ function VirtualEmployeeTable({
         </div>
       );
     },
-    [employees, getDaysDifference, onDelete, onEdit, onRetrain]
+    [employees, getDaysDifference, onDelete, onEdit, onRetrain, addNotification]
   );
 
   if (!employees || employees.length === 0) {
@@ -101,3 +108,5 @@ function VirtualEmployeeTable({
 }
 
 export default memo(VirtualEmployeeTable);
+
+

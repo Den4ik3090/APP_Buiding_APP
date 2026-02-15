@@ -318,8 +318,8 @@ function EmployeeForm({
                       onChange={handleChange}
                     >
                       <option value="">-- Выбрать --</option>
-                      {existingOrganizations.map((org) => (
-                        <option key={org} value={org}>
+                      {existingOrganizations.map((org, idx) => (
+                        <option key={`${org}-${idx}`} value={org}>
                           {org}
                         </option>
                       ))}
@@ -394,8 +394,8 @@ function EmployeeForm({
                               }
                               style={{ width: '100%' }}
                             >
-                              {ADDITIONAL_TRAINING_TYPES.map((type) => (
-                                <option key={type} value={type}>
+                              {ADDITIONAL_TRAINING_TYPES.map((type, idx) => (
+                                <option key={`${type}-${idx}`} value={type}>
                                   {type}
                                 </option>
                               ))}

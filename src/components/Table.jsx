@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import StatusBadge from "./StatusBadge";
 import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "../utils/constants";
 import { sendToTelegram } from "../utils/sendToTelegram";
+import WorkerTrainingDownloadButton from "./WorkerTrainingDownloadButton";
 
 /**
  * Современная таблица сотрудников (2026)
@@ -13,6 +14,7 @@ function EmployeeTable({
   onRetrain,
   onDelete,
   onEdit,
+  addNotification,
 }) {
   const [sortConfig, setSortConfig] = useState({
     key: "days",
@@ -264,7 +266,7 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
                 Дней {getSortIcon("days")}
               </th>
               <th style={{ width: "140px" }}>Статус</th>
-              <th style={{ width: "190px" }}>Действия</th>
+              <th style={{ width: "260px" }}>Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -322,6 +324,11 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
 
                 <td>
                   <div className="table__action">
+                    <WorkerTrainingDownloadButton
+                      workerId={employee.id}
+                      workerName={employee.name}
+                      addNotification={addNotification}
+                    />
                     <button
                       type="button"
                       className="btn-retrain"
@@ -380,3 +387,6 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
 }
 
 export default EmployeeTable;
+
+
+

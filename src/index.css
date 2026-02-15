@@ -202,6 +202,55 @@ h1 {
   background: #059669;
 }
 
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 28px;
+}
+
+.btn-download:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+}
+
+.btn-download:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-download__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-download__spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btn-download-spin 0.8s linear infinite;
+}
+
+@keyframes btn-download-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .table-container {
   margin-top: 20px;
 }
@@ -499,7 +548,7 @@ tr.expired:hover {
 
 .virtual-header {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 260px;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 360px;
   gap: 12px;
   padding: 14px 12px;
   background: #f8fafc;
@@ -515,7 +564,7 @@ tr.expired:hover {
 
 .virtual-row {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 260px;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 360px;
   gap: 12px;
   padding: 12px;
   align-items: center;

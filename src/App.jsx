@@ -582,6 +582,7 @@ function App() {
                   onRetrain={handleRetrain}
                   onDelete={handleDelete}
                   onEdit={handleEdit}
+                  addNotification={addNotification}
                 />
               ) : (
                 <EmployeeTable
@@ -590,6 +591,7 @@ function App() {
                   onRetrain={handleRetrain}
                   onDelete={handleDelete}
                   onEdit={handleEdit}
+                  addNotification={addNotification}
                 />
               )}
             </Suspense>
@@ -610,3 +612,4 @@ function App() {
 }
 
 export default App;
+

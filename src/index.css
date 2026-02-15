@@ -24,6 +24,7 @@ body {
 
 .app {
   min-height: 100vh;
+  background-color: rgb(255, 255, 255);
 }
 
 .container {
@@ -545,6 +546,7 @@ tr.expired:hover {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
+  margin-right: 10px;
   background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%);
   color: white;
   border: none;

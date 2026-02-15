@@ -187,10 +187,10 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
           <h3>Список сотрудников</h3>
           <button
             type="button"
-            className="btn-telegram"
+            className="btn-telegram btn-sm  "
             onClick={handleSendReport}
           >
-            📲 Отправить отчёт в Telegram
+            Telegram
           </button>
         </div>
 

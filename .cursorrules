@@ -1,0 +1,54 @@
+# Project: instruction-table-pos (Таблица инструктажа ПОС)
+
+## Stack
+
+- Frontend: React 18, Webpack, JSX
+- Backend: Supabase (Postgres, Auth, Storage, Edge Functions)
+
+## Naming
+
+- Components: PascalCase (EmployeeForm, Table, StatusBadge)
+- Files: PascalCase for components (Table.jsx), camelCase for utils/hooks (sendToTelegram.js, useNotification.js)
+- Constants: UPPER_SNAKE_CASE (DAYS_THRESHOLD, TOAST_MESSAGES)
+- React state/setState: camelCase (employees, setEmployees, activeTab)
+
+## Architecture
+
+- Single source of truth for employees: Supabase table `employees`. Local state in App is a cache; all writes go through Supabase first, then state updates on success.
+- No global state library; keep shared UI state in App and pass via props/callbacks.
+- New features that touch employees: add/update/delete must go through the same data layer (Supabase client); do not duplicate Supabase calls in random components.
+
+## Allowed patterns
+
+- useCallback for handlers passed to children (onRetrain, onDelete, onEdit)
+- useMemo for derived data (filteredEmployees, expiredCount, sortedAndFilteredEmployees)
+- Lazy loading for heavy components (e.g. Table) via React.lazy + Suspense
+- Toast notifications for user feedback (success/error) via useNotification
+- Virtual list (VirtualEmployeeTable) when list length > 300
+
+## Forbidden
+
+- Do not hardcode Supabase URL or keys in source. Use environment variables (e.g. REACT_APP_SUPABASE_URL, REACT_APP_SUPABASE_KEY or project-equivalent) and document in README.
+- Do not commit .env or any file containing real keys/tokens.
+- Do not add console.log of user data or auth headers in Edge Functions or production paths.
+- Do not update local state before Supabase write succeeds for employees; avoid optimistic updates unless you add explicit rollback on error.
+- Do not duplicate business constants (DAYS_THRESHOLD, WARNING_THRESHOLD) in multiple files; import from utils/constants.js (and in Edge Functions either import from a shared place or document the single source).
+
+## Testing
+
+- Manual testing required for: login, add employee, edit employee, delete employee, retrain, filter by organization, Telegram report from table, photo upload.
+- New code that changes CRUD or auth must be manually verified before merge.
+- (Optional later: add Jest + React Testing Library for critical paths.)
+
+## Security
+
+- Supabase anon key is public by design; RLS must restrict rows by auth if needed. Do not use service_role key in frontend.
+- Edge Functions that need DB access use service_role only server-side; do not expose service_role to client.
+- File uploads: keep size and type checks (e.g. 5MB, image/\*) in EmployeeForm or upload utility.
+
+## New modules
+
+- New React components: under src/components/; one main component per file; use existing style folders (style/\*.css).
+- New utils: under src/utils/; pure functions or small modules; no Supabase in generic utils except dedicated api/supabase helpers.
+- New hooks: under src/hooks/; name useXxx.
+- Supabase Edge Functions: under supabase/functions/<name>/; do not log request bodies or secrets.

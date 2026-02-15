@@ -324,7 +324,7 @@ input:focus {
 }
 
 .login-form {
-  background: var(--white);
+  background: grey;
   padding: 24px; /* Increased padding for better spacing */
   border-radius: 12px;
   box-shadow: var(--shadow); /* Add shadow for depth */
@@ -337,7 +337,7 @@ input:focus {
 
 .login-info-text {
   font-size: 13px; /* Slightly larger font size */
-  color: var(--secondary-color); /* Using a defined color variable */
+  color: white; /* Using a defined color variable */
   text-align: center; /* Center the info text */
   margin-top: 10px; /* Add some margin above the text */
 }

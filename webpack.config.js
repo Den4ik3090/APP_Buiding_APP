@@ -10,6 +10,7 @@ module.exports = (env, argv) => {
     entry: "./src/index.js",
     output: {
       path: path.resolve(__dirname, "dist"),
+      publicPath: isProduction ? undefined : "/",
       filename: isProduction ? "[name].[contenthash:8].js" : "bundle.js",
       chunkFilename: isProduction
         ? "[name].[contenthash:8].chunk.js"
@@ -21,9 +22,9 @@ module.exports = (env, argv) => {
     },
     module: {
       rules: [
-        // JS/JSX
+        // JS/JSX/TS/TSX
         {
-          test: /\.(js|jsx)$/,
+          test: /\.(js|jsx|ts|tsx)$/,
           exclude: /node_modules/,
           use: {
             loader: "babel-loader",
@@ -37,6 +38,7 @@ module.exports = (env, argv) => {
                   },
                 ],
                 "@babel/preset-react",
+                "@babel/preset-typescript",
               ],
               cacheDirectory: true,
             },
@@ -104,9 +106,12 @@ module.exports = (env, argv) => {
       port: 3000,
       open: true,
       hot: true,
+      client: {
+        logging: "warn",
+      },
     },
     resolve: {
-      extensions: [".js", ".jsx", ".css"],
+      extensions: [".ts", ".tsx", ".js", ".jsx", ".css"],
       alias: {
         "@": path.resolve(__dirname, "src"),
       },

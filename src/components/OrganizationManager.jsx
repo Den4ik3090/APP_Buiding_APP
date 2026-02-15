@@ -1,29 +1,26 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabaseClient";
-import '../style/OrganizationManager.css';
+import "../style/OrganizationManager.css";
 
 export default function OrganizationManager({ employees = [] }) {
   const [docsData, setDocsData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Создаем список уникальных организаций
   const uniqueOrgs = useMemo(() => {
     if (!employees || !Array.isArray(employees)) return [];
-    return [...new Set(employees.map(e => e.organization).filter(Boolean))];
+    return [...new Set(employees.map((e) => e.organization).filter(Boolean))];
   }, [employees]);
 
-  // Стандартный набор документов
   const getDefaultDocs = () => ({
     "Акт допуск": false,
-    "Приказы": false,
-    "Удостоверения": false,
+    Приказы: false,
+    Удостоверения: false,
     "Проектная док.": false,
-    "Инструкции": false,
-    "Журналы": false,
+    Инструкции: false,
+    Журналы: false,
     "Обучения сотрудников": false,
   });
 
-  // 2. Загрузка данных (Мост с базой)
   const fetchDocs = async () => {
     setLoading(true);
     try {
@@ -31,8 +28,8 @@ export default function OrganizationManager({ employees = [] }) {
       if (error) throw error;
 
       const currentDbData = data || [];
-      const merged = uniqueOrgs.map(orgName => {
-        const existing = currentDbData.find(d => d.org_name === orgName);
+      const merged = uniqueOrgs.map((orgName) => {
+        const existing = currentDbData.find((d) => d.org_name === orgName);
         return existing || { org_name: orgName, docs_status: getDefaultDocs() };
       });
 
@@ -48,127 +45,173 @@ export default function OrganizationManager({ employees = [] }) {
     fetchDocs();
   }, [uniqueOrgs]);
 
-  // 3. Переключение чекбокса
   const handleCheck = async (orgName, key) => {
-    const targetOrg = docsData.find(d => d.org_name === orgName);
+    const targetOrg = docsData.find((d) => d.org_name === orgName);
     if (!targetOrg) return;
 
-    const updatedStatus = { 
-      ...targetOrg.docs_status, 
-      [key]: !targetOrg.docs_status[key] 
+    const updatedStatus = {
+      ...targetOrg.docs_status,
+      [key]: !targetOrg.docs_status[key],
     };
 
-    // Оптимистичное обновление UI
-    setDocsData(prev => prev.map(d => 
-      d.org_name === orgName ? { ...d, docs_status: updatedStatus } : d
-    ));
+    setDocsData((prev) =>
+      prev.map((d) =>
+        d.org_name === orgName ? { ...d, docs_status: updatedStatus } : d
+      )
+    );
 
-    await supabase.from("organization_docs").upsert({
-      org_name: orgName,
-      docs_status: updatedStatus,
-      updated_at: new Date()
-    }, { onConflict: 'org_name' });
+    await supabase
+      .from("organization_docs")
+      .upsert(
+        {
+          org_name: orgName,
+          docs_status: updatedStatus,
+          updated_at: new Date(),
+        },
+        { onConflict: "org_name" }
+      );
   };
 
-  // 4. Добавление новой колонки (Локально + сохранение при клике)
   const addColumn = () => {
     const name = prompt("Введите название нового документа:");
     if (!name) return;
-    setDocsData(prev => prev.map(d => ({
-      ...d, 
-      docs_status: { ...d.docs_status, [name]: false }
-    })));
+    setDocsData((prev) =>
+      prev.map((d) => ({
+        ...d,
+        docs_status: { ...d.docs_status, [name]: false },
+      }))
+    );
   };
 
-  // 5. ОПТИМИЗИРОВАННОЕ удаление (Массовое обновление)
   const removeColumn = async (columnName) => {
-    if (!window.confirm(`Вы уверены, что хотите удалить "${columnName}" для всех организаций?`)) return;
+    if (
+      !window.confirm(
+        `Удалить колонку «${columnName}» для всех организаций?`
+      )
+    )
+      return;
 
-    setLoading(true); // Пока идет тяжелая операция, покажем загрузку
+    setLoading(true);
     try {
-      // Подготавливаем данные для всех строк разом
-      const payload = docsData.map(org => {
+      const payload = docsData.map((org) => {
         const newStatus = { ...org.docs_status };
         delete newStatus[columnName];
         return {
           org_name: org.org_name,
           docs_status: newStatus,
-          updated_at: new Date()
+          updated_at: new Date(),
         };
       });
 
-      // ОДИН запрос вместо цикла!
       const { error } = await supabase
         .from("organization_docs")
-        .upsert(payload, { onConflict: 'org_name' });
+        .upsert(payload, { onConflict: "org_name" });
 
       if (error) throw error;
-
-      // Обновляем экран только после успеха в базе
       setDocsData(payload);
-      alert("Параметр удален успешно");
     } catch (err) {
-      console.error("Ошибка при массовом удалении:", err);
-      alert("Не удалось удалить параметр. Проверьте интернет.");
+      console.error("Ошибка при удалении:", err);
+      alert("Не удалось удалить параметр. Проверьте подключение.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div style={{ padding: 20 }}>Обработка данных...</div>;
+  if (loading) {
+    return (
+      <div className="org-manager org-manager--loading">
+        <div className="org-manager__skeleton">
+          <div className="org-manager__skeleton-header" />
+          <div className="org-manager__skeleton-table">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="org-manager__skeleton-row" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="table-container">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ margin: 0 }}>Документация организаций ({uniqueOrgs.length})</h2>
-        <button className="btn-primary" onClick={addColumn}>+ Добавить колонку</button>
-      </div>
+    <section className="org-manager" aria-labelledby="org-manager-title">
+      <header className="org-manager__header">
+        <div className="org-manager__header-content">
+          <h2 id="org-manager-title" className="org-manager__title">
+            Документация организаций
+          </h2>
+          <p className="org-manager__subtitle">
+            Отметки наличия документов по каждой организации
+          </p>
+        </div>
+        <div className="org-manager__header-actions">
+          <span className="org-manager__badge">{uniqueOrgs.length} орг.</span>
+          <button
+            type="button"
+            className="org-manager__btn-add"
+            onClick={addColumn}
+          >
+            <span className="org-manager__btn-add-icon" aria-hidden>+</span>
+            Добавить колонку
+          </button>
+        </div>
+      </header>
 
-      <div className="table-wrapper">
-        <table className="employee-table">
+      <div className="org-manager__table-wrap">
+        <table className="org-table" role="grid">
           <thead>
             <tr>
-              <th className="th__ogranization">Организация</th>
-              {docsData.length > 0 && docsData[0].docs_status ? (
-                Object.keys(docsData[0].docs_status).map(col => (
-                  <th key={col} className="tr__parametr">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      {col}
-                      <span 
-                        onClick={() => removeColumn(col)} 
-                        style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: '14px' }}
-                        title="Удалить этот параметр у всех"
-                      >
-                        🗑️
-                      </span>
-                    </div>
+              <th className="org-table__th org-table__th--org">Организация</th>
+              {docsData.length > 0 &&
+                docsData[0].docs_status &&
+                Object.keys(docsData[0].docs_status).map((col) => (
+                  <th key={col} className="org-table__th org-table__th--doc">
+                    <span className="org-table__doc-name">{col}</span>
+                    <button
+                      type="button"
+                      className="org-table__doc-remove"
+                      onClick={() => removeColumn(col)}
+                      title={`Удалить «${col}» у всех организаций`}
+                      aria-label={`Удалить колонку ${col}`}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                        <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                        <path d="M10 11v6M14 11v6" />
+                      </svg>
+                    </button>
                   </th>
-                ))
-              ) : null}
+                ))}
             </tr>
           </thead>
           <tbody>
-            {docsData.map(org => (
-  <tr key={org.org_name}>
-    <td style={{ fontWeight: 'bold' }}>{org.org_name}</td>
-    
-    {/* ГЛАВНОЕ ИСПРАВЛЕНИЕ ТУТ: */}
-    {/* Мы берем ключи из первой организации (заголовки) и по ним отрисовываем ячейки для всех */}
-    {docsData[0] && Object.keys(docsData[0].docs_status).map(key => (
-      <td key={key} style={{ textAlign: 'center' }}>
-        <input 
-          type="checkbox" 
-          checked={org.docs_status[key] || false} // Если ключа нет - ставим false
-          onChange={() => handleCheck(org.org_name, key)}
-          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-        />
-      </td>
-    ))}
-  </tr>
-))}
+            {docsData.map((org, rowIndex) => (
+              <tr
+                key={org.org_name}
+                className="org-table__row"
+                style={{ animationDelay: `${rowIndex * 0.02}s` }}
+              >
+                <td className="org-table__cell org-table__cell--org">
+                  <span className="org-table__org-name">{org.org_name}</span>
+                </td>
+                {docsData[0] &&
+                  Object.keys(docsData[0].docs_status).map((key) => (
+                    <td key={key} className="org-table__cell org-table__cell--check">
+                      <label className="org-table__check-label">
+                        <input
+                          type="checkbox"
+                          className="org-table__checkbox doc-checkbox"
+                          checked={!!org.docs_status[key]}
+                          onChange={() => handleCheck(org.org_name, key)}
+                          aria-label={`${org.org_name}, ${key}`}
+                        />
+                        <span className="org-table__check-mark" aria-hidden />
+                      </label>
+                    </td>
+                  ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

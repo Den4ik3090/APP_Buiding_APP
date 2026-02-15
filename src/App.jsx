@@ -12,7 +12,7 @@ import ToastContainer from "./components/ToastContainer.jsx";
 import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
 import Dashboard from "./components/Dashboard.jsx";
-import LoginModal from "./components/LoginModal.jsx";
+import { LoginPage } from "./auth";
 import OrganizationsDocs from "./components/OrganizationManager.jsx";
 
 import { supabase } from "./supabaseClient";
@@ -39,6 +39,7 @@ function App() {
 
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("Все");
 
@@ -49,11 +50,20 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) setAuthLoading(false);
+    }, 10000);
+
     supabase.auth.getSession().then(({ data, error }) => {
       if (!isMounted) return;
       if (error) console.error("getSession error:", error);
       setSession(data?.session ?? null);
       setAuthLoading(false);
+    }).catch((err) => {
+      if (isMounted) {
+        console.error("getSession failed:", err);
+        setAuthLoading(false);
+      }
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -70,13 +80,17 @@ function App() {
 
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
       data?.subscription?.unsubscribe();
     };
   }, []);
 
   // --- Load app data ---
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     initialLoad();
     fetchOrganizations();
   }, [session]);
@@ -103,11 +117,25 @@ function App() {
 
   const initialLoad = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const cloudData = await fetchFromSupabase();
+      const timeoutMs = 15000;
+      const cloudData = await Promise.race([
+        fetchFromSupabase(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), timeoutMs)
+        ),
+      ]);
       setEmployees(cloudData);
     } catch (error) {
-      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+      console.error("initialLoad error:", error);
+      setLoadError(true);
+      addNotification(
+        error?.message === "timeout"
+          ? "Превышено время ожидания. Проверьте интернет и обновите страницу."
+          : TOAST_MESSAGES.DB_ERROR,
+        TOAST_TYPES.ERROR
+      );
     } finally {
       setLoading(false);
     }
@@ -376,6 +404,28 @@ function App() {
       <div className="app">
         <div className="container">
           <SkeletonLoader rows={8} />
+          {loading && (
+            <p style={{ textAlign: "center", marginTop: 16, color: "#666", fontSize: 14 }}>
+              Загрузка данных...
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && employees.length === 0) {
+    return (
+      <div className="app">
+        <div className="container" style={{ padding: 40 }}>
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <p style={{ color: "#666", marginBottom: 12 }}>
+              Не удалось загрузить таблицу. Проверьте интернет и доступ к Supabase.
+            </p>
+            <button type="button" className="btn-primary" onClick={initialLoad}>
+              Повторить загрузку
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -383,13 +433,18 @@ function App() {
 
   if (!session) {
     return (
-      <div className="app">
-        <LoginModal
-          logo={logo}
-          onSuccess={() => {}}
-          onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
-        />
-      </div>
+      <LoginPage
+        logoSrc={logo}
+        onSuccess={() => {}}
+        onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
+        signIn={async (email, password) => {
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) throw new Error(error.message);
+        }}
+      />
     );
   }
 

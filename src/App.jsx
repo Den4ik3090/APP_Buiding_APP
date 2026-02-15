@@ -11,7 +11,7 @@ import EmployeeForm from "./components/EmployeeForm";
 import ToastContainer from "./components/ToastContainer.jsx";
 import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
-import AnalyticsDashboard from "./components/AnalyticsDashboard.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 import LoginModal from "./components/LoginModal.jsx";
 import OrganizationsDocs from "./components/OrganizationManager.jsx";
 
@@ -542,7 +542,7 @@ function App() {
         )}
 
         {activeTab === "analytics" && (
-          <AnalyticsDashboard
+          <Dashboard
             employees={filteredEmployees}
             getDaysDifference={getDaysDifference}
           />

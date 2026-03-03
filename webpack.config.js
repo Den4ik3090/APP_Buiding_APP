@@ -71,6 +71,17 @@ module.exports = (env, argv) => {
               : "assets/fonts/[name][ext]",
           },
         },
+        {
+          test: /\.scss$/,
+          use: isProduction
+            ? [
+                MiniCssExtractPlugin.loader,
+                "css-loader",
+                "postcss-loader",
+                "sass-loader",
+              ]
+            : ["style-loader", "css-loader", "postcss-loader", "sass-loader"],
+        },
         // Inline SVG
         {
           test: /\.svg$/i,
@@ -111,7 +122,7 @@ module.exports = (env, argv) => {
       },
     },
     resolve: {
-      extensions: [".ts", ".tsx", ".js", ".jsx", ".css"],
+      extensions: [".ts", ".tsx", ".js", ".jsx", ".css", ".scss"],
       alias: {
         "@": path.resolve(__dirname, "src"),
       },

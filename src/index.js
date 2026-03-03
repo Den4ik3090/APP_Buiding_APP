@@ -14,7 +14,10 @@ if (typeof module !== "undefined" && module.hot) {
     }
   });
   const isHmrChunkError = (msg) =>
-    (msg && typeof msg === "string" && (msg.includes("Loading hot update chunk") || msg.includes("ChunkLoadError")));
+    msg &&
+    typeof msg === "string" &&
+    (msg.includes("Loading hot update chunk") ||
+      msg.includes("ChunkLoadError"));
   window.addEventListener("error", (e) => {
     if (isHmrChunkError(e.message)) {
       e.preventDefault();
@@ -32,6 +35,6 @@ if (typeof module !== "undefined" && module.hot) {
 const root = createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <App/>
   </React.StrictMode>,
 );

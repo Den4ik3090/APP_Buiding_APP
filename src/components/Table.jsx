@@ -3,6 +3,8 @@ import StatusBadge from "./StatusBadge";
 import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "../utils/constants";
 import { sendToTelegram } from "../utils/sendToTelegram";
 import WorkerTrainingDownloadButton from "./WorkerTrainingDownloadButton";
+import { hasExpiredAdditional } from "./utils/helpers";
+import OrganizationTelegramReport from "./OrganizationTelegramReport";
 
 /**
  * Современная таблица сотрудников (2026)
@@ -15,15 +17,18 @@ function EmployeeTable({
   onDelete,
   onEdit,
   addNotification,
+  statusFilterValue,
+  onStatusFilterChange,
 }) {
   const [sortConfig, setSortConfig] = useState({
     key: "days",
     direction: "desc",
   });
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(statusFilterValue || "all");
   const [professionFilter, setProfessionFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [showOrgReport, setShowOrgReport] = useState(false);
 
   // Дебаунс поиска по ФИО
   useEffect(() => {
@@ -32,6 +37,12 @@ function EmployeeTable({
     }, 400);
     return () => clearTimeout(id);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (typeof statusFilterValue === "string") {
+      setStatusFilter(statusFilterValue);
+    }
+  }, [statusFilterValue]);
 
   const getStatusInfo = (trainingDate) => {
     const days = getDaysDifference(trainingDate);
@@ -68,13 +79,14 @@ function EmployeeTable({
         const { days, expired, warning, nextDate } = getStatusInfo(
           emp.trainingDate
         );
-        return { ...emp, days, expired, warning, nextDate };
+        const additionalExpired = hasExpiredAdditional(emp.additionalTrainings);
+        return { ...emp, days, expired, warning, nextDate, additionalExpired };
       }),
     [employees]
   );
 
-  // Отчёт в Telegram
-  const handleSendReport = async () => {
+  // Общий отчёт в Telegram
+  const handleSendGeneralReport = async () => {
     try {
       const expired = preparedEmployees.filter(
         (emp) => emp.days > DAYS_THRESHOLD
@@ -90,18 +102,21 @@ function EmployeeTable({
         .slice(0, 30);
 
       const report = `
-Отчёт по инструктажам:
+📊 ОБЩИЙ ОТЧЕТ ПО ИНСТРУКТАЖАМ
+━━━━━━━━━━━━━━━━━━━━
 🔴 Просрочено: ${expired}
 🟡 Предупреждение: ${warning}
 🟢 Норма: ${valid}
 📈 Всего: ${preparedEmployees.length}
 
-Новые сотрудники сегодня:
+👥 Новые сотрудники сегодня:
 ${newToday.length ? newToday.join("\n") : "— нет"}
+
+📅 Дата: ${new Date().toLocaleDateString("ru-RU")} ${new Date().toLocaleTimeString("ru-RU")}
       `.trim();
 
       await sendToTelegram(report);
-      alert("✅ Отчёт отправлен в Telegram!");
+      alert("✅ Общий отчёт отправлен в Telegram!");
     } catch (error) {
       alert("❌ Ошибка отправки");
       console.error(error);
@@ -183,17 +198,39 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
 
   return (
     <div className="table-container">
+      {/* Компонент отправки отчетов по организациям */}
+      {showOrgReport && (
+        <OrganizationTelegramReport
+          employees={preparedEmployees}
+          getDaysDifference={getDaysDifference}
+        />
+      )}
+
       {/* Шапка таблицы */}
       <div className="table-header">
         <div className="table-header__title">
           <h3>Список сотрудников</h3>
-          <button
-            type="button"
-            className="btn-telegram btn-sm  "
-            onClick={handleSendReport}
-          >
-            Telegram
-          </button>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              type="button"
+              className="btn-telegram btn-sm"
+              onClick={() => setShowOrgReport(!showOrgReport)}
+              style={{
+                background: showOrgReport
+                  ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                  : "#64748b",
+              }}
+            >
+              {showOrgReport ? "📊 Скрыть отчет" : "📊 Отчет по организации"}
+            </button>
+            <button
+              type="button"
+              className="btn-telegram btn-sm"
+              onClick={handleSendGeneralReport}
+            >
+              📈 Общий отчет
+            </button>
+          </div>
         </div>
 
         <div>
@@ -208,7 +245,10 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
           <select
             className="status-filter"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              onStatusFilterChange?.(e.target.value);
+            }}
           >
             <option value="all">Все статусы</option>
             <option value="valid">Норма</option>
@@ -274,11 +314,11 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
               <tr
                 key={employee.id}
                 className={
-                  employee.expired
+                  (employee.expired
                     ? "expired"
                     : employee.warning
                     ? "warning"
-                    : "valid"
+                    : "valid") + (employee.additionalExpired ? " additional-expired" : "")
                 }
               >
                 <td>{index + 1}</td>
@@ -387,6 +427,3 @@ ${newToday.length ? newToday.join("\n") : "— нет"}
 }
 
 export default EmployeeTable;
-
-
-

@@ -1,6 +1,5 @@
-// supabase/functions/telegram-webhook/index.ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2"; // Supabase Edge Functions поддерживают npm: импорты [web:109]
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") ?? "";
@@ -21,15 +20,13 @@ const WARNING_THRESHOLD = 75;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+// --- Вспомогательные функции ---
+
 function isToday(iso: string) {
   if (!iso) return false;
   const d = new Date(iso);
   const n = new Date();
-  return (
-    d.getFullYear() === n.getFullYear() &&
-    d.getMonth() === n.getMonth() &&
-    d.getDate() === n.getDate()
-  );
+  return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 }
 
 function daysSince(dateIso: string) {
@@ -38,12 +35,17 @@ function daysSince(dateIso: string) {
   return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+// Ультра-очистка для поиска
+function superClean(str: string) {
+  if (!str) return "";
+  return str.toLowerCase()
+    .replace(/["'«»„“]/g, '') // Убираем кавычки
+    .replace(/[^а-яёa-z0-9]/g, '') // Только буквы и цифры
+    .replace(/c/g, 'с').replace(/a/g, 'а').replace(/e/g, 'е').replace(/b/g, 'в').replace(/p/g, 'р').replace(/o/g, 'о'); // Латиница -> Кириллица
+}
+//Отправка текстового сообщения пользователю в телеграмм (Асинхронно)
 async function telegramSendMessage(chatId: number, text: string) {
-  if (!BOT_TOKEN) {
-    console.error("TELEGRAM_BOT_TOKEN is empty");
-    return null;
-  }
-
+  if (!BOT_TOKEN) return null;
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
   const res = await fetch(url, {
     method: "POST",
@@ -51,79 +53,49 @@ async function telegramSendMessage(chatId: number, text: string) {
     body: JSON.stringify({
       chat_id: chatId,
       text,
-      // parse_mode: "Markdown",
+      parse_mode: "Markdown", // Включаем поддержку разметки
       disable_web_page_preview: true,
     }),
   });
-
-  const json = await res.json().catch(() => null);
-  if (!json?.ok) console.error("Telegram sendMessage error:", json);
-  return json;
+  return await res.json().catch(() => null);
 }
-
-function normalize(s: string) {
-  return (s || "").trim().toLowerCase();
-}
-
-// Надёжный парсер команды: берём bot_command из entities (если есть),
-// иначе fallback на первое слово, и убираем @BotName. [web:215]
-function getCommand(msg: any): { cmd: string; arg: string; text: string } {
+// Получает входящее сообщение от пользователя, выделяет из него команды 
+function getCommand(msg: any) {
   const text: string = (msg?.text ?? "").toString().trim();
   const entities = Array.isArray(msg?.entities) ? msg.entities : [];
   const ent = entities.find((e: any) => e?.type === "bot_command" && e?.offset === 0);
-
-  let cmdRaw = "";
-  if (ent && typeof ent.length === "number") {
-    cmdRaw = text.slice(0, ent.length);
-  } else {
-    cmdRaw = (text.split(/\s+/)[0] ?? "");
-  }
-
-  const cmd = cmdRaw.split("@")[0].trim(); // /help@Bot -> /help
+  let cmdRaw = ent ? text.slice(0, ent.length) : (text.split(/\s+/)[0] ?? "");
+  const cmd = cmdRaw.split("@")[0].trim();
   const arg = text.slice(cmdRaw.length).trim();
   return { cmd, arg, text };
 }
 
+// --- Основной обработчик ---
+
 Deno.serve(async (req) => {
-  // Проверка Telegram secret_token через заголовок X-Telegram-Bot-Api-Secret-Token,
-  // который Telegram присылает, если вы установили webhook с secret_token. [web:163]
   const secret = req.headers.get("x-telegram-bot-api-secret-token");
-  if (WEBHOOK_SECRET) {
-    if (!secret || secret !== WEBHOOK_SECRET) {
-      return new Response("Unauthorized", { status: 401 });
-    }
-  }
+  if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) return new Response("Unauthorized", { status: 401 });
 
   const update = await req.json().catch(() => null);
-  console.log("UPDATE:", JSON.stringify(update));
-console.log("SECRET_HDR:", req.headers.get("x-telegram-bot-api-secret-token"));
-
-
-  // Обрабатываем обычные сообщения и отредактированные
   const msg = update?.message ?? update?.edited_message;
-  if (!msg) return new Response("ok", { status: 200 });
+  if (!msg?.chat?.id) return new Response("ok", { status: 200 });
 
-  const chatId = msg?.chat?.id;
-  if (!chatId) return new Response("ok", { status: 200 });
-
+  const chatId = msg.chat.id;
   const { cmd, arg, text } = getCommand(msg);
-
-  // Если нет текста — просто подтверждаем доставку
   if (!text) return new Response("ok", { status: 200 });
 
-  // Ограничение по chat_id (если задан список)
   if (ALLOWED_CHAT_IDS.size > 0 && !ALLOWED_CHAT_IDS.has(Number(chatId))) {
     await telegramSendMessage(Number(chatId), "⛔ Доступ запрещён.");
     return new Response("ok", { status: 200 });
   }
 
+  // Загружаем данные
   const { data: employees, error } = await supabase
     .from("employees")
     .select("name, organization, training_date, created_at");
 
   if (error || !employees) {
-    console.error("DB error:", error);
-    await telegramSendMessage(Number(chatId), "❌ Ошибка доступа к базе данных.");
+    await telegramSendMessage(Number(chatId), "❌ Ошибка БД.");
     return new Response("ok", { status: 200 });
   }
 
@@ -133,125 +105,91 @@ console.log("SECRET_HDR:", req.headers.get("x-telegram-bot-api-secret-token"));
       const days = daysSince(e.training_date);
       const expired = days >= DAYS_THRESHOLD;
       const warning = days >= WARNING_THRESHOLD && days < DAYS_THRESHOLD;
-      const valid = !expired && !warning;
-
       return {
-        name: e?.name ?? "—",
-        organization: e?.organization ?? "—",
-        created_at: e?.created_at ?? null,
+        name: e.name ?? "—",
+        organization: e.organization ?? "—",
+        created_at: e.created_at,
         days,
         expired,
         warning,
-        valid,
-        overdueDays: expired ? Math.max(0, days - DAYS_THRESHOLD) : 0,
+        valid: !expired && !warning
       };
     });
 
-  const expiredCount = rows.filter((r: any) => r.expired).length;
-  const warningCount = rows.filter((r: any) => r.warning).length;
-  const validCount = rows.filter((r: any) => r.valid).length;
-  const total = rows.length;
-
-  // Команды
+  // Логика команд
   if (cmd === "/help" || cmd === "help") {
-    await telegramSendMessage(
-      Number(chatId),
-      [
-        "*Команды:*",
-        "/stats — сводка",
-        "/new — новые сотрудники сегодня",
-        "/expired 10 — топ просроченных (1..50)",
-        "/org <название> — сводка по организации",
-        "/id — показать chat_id (для настройки доступа)",
-      ].join("\n"),
+    await telegramSendMessage(Number(chatId), 
+      "*Команды:*\n/stats — общая сводка\n/org <имя> — по организации\n/expired — топ должников\n/new — добавленные сегодня\n/id — ваш ID"
     );
-    return new Response("ok", { status: 200 });
   }
 
-  if (cmd === "/id") {
-    await telegramSendMessage(Number(chatId), `Ваш chat_id: \`${chatId}\``);
-    return new Response("ok", { status: 200 });
+  else if (cmd === "/id") {
+    await telegramSendMessage(Number(chatId), `Ваш ID: \`${chatId}\``);
   }
 
-  if (cmd === "/stats") {
-    const cr = total ? ((validCount / total) * 100).toFixed(1) : "0.0";
-    const overdueList = rows.filter((r: any) => r.expired).map((r: any) => r.overdueDays);
-    const avgOverdue =
-      overdueList.length === 0
-        ? 0
-        : overdueList.reduce((a: number, b: number) => a + b, 0) / overdueList.length;
-
-    await telegramSendMessage(
-      Number(chatId),
-      [
-        "*Отчёт по инструктажам*",
-        `📈 Всего: ${total}`,
-        `🟢 В норме: ${validCount} (${cr}%)`,
-        `🟡 Предупреждение: ${warningCount}`,
-        `🔴 Просрочено: ${expiredCount}`,
-        `⏱ Средняя просрочка: ${avgOverdue.toFixed(1)} дн.`,
-      ].join("\n"),
-    );
-    return new Response("ok", { status: 200 });
+  else if (cmd === "/stats") {
+    const t = rows.length;
+    const ok = rows.filter(r => r.valid).length;
+    const wr = rows.filter(r => r.warning).length;
+    const ex = rows.filter(r => r.expired).length;
+    const cr = t ? ((ok / t) * 100).toFixed(1) : "0";
+    await telegramSendMessage(Number(chatId), `*Отчёт:*\n📈 Всего: ${t}\n🟢 Норма: ${ok} (${cr}%)\n🟡 Скоро: ${wr}\n🔴 Просрочено: ${ex}`);
   }
 
-  if (cmd === "/new") {
-    const today = employees
-      .filter((e: any) => e?.created_at && isToday(e.created_at))
-      .map((e: any) => `• ${e?.name ?? "—"} — ${e?.organization ?? "—"}`);
-
-    await telegramSendMessage(
-      Number(chatId),
-      ["*Новые сотрудники сегодня*", today.length ? today.slice(0, 40).join("\n") : "— нет"].join(
-        "\n",
-      ),
-    );
-    return new Response("ok", { status: 200 });
-  }
-
-  if (cmd === "/expired") {
-    const limit = Math.min(Math.max(parseInt(arg || "10", 10) || 10, 1), 50);
-
-    const list = rows
-      .filter((r: any) => r.expired)
-      .sort((a: any, b: any) => b.days - a.days)
-      .slice(0, limit)
-      .map((r: any) => `• ${r.name} — ${r.organization} (${r.days} дн.)`);
-
-    await telegramSendMessage(
-      Number(chatId),
-      [`*Просроченные (топ ${limit})*`, list.length ? list.join("\n") : "— нет"].join("\n"),
-    );
-    return new Response("ok", { status: 200 });
-  }
-
-  if (cmd === "/org") {
-    const q = normalize(arg);
+  else if (cmd === "/org") {
+    const q = superClean(arg);
     if (!q) {
-      await telegramSendMessage(Number(chatId), "Напишите так: /org ПУТЕВИ");
+      await telegramSendMessage(Number(chatId), "Напишите: `/org Эра` или `/org сб` ");
       return new Response("ok", { status: 200 });
     }
 
-    const orgRows = rows.filter((r: any) => normalize(r.organization).includes(q));
-    const t = orgRows.length;
-    const exp = orgRows.filter((r: any) => r.expired).length;
-    const warn = orgRows.filter((r: any) => r.warning).length;
-    const ok = orgRows.filter((r: any) => r.valid).length;
-    const cr = t ? ((ok / t) * 100).toFixed(1) : "0.0";
+    const orgRows = rows.filter(r => superClean(r.organization).includes(q));
 
-    await telegramSendMessage(
-      Number(chatId),
-      [
-        `*Организация:* ${arg}`,
-        `📈 Всего: ${t}`,
-        `🟢 В норме: ${ok} (${cr}%)`,
-        `🟡 Предупреждение: ${warn}`,
-        `🔴 Просрочено: ${exp}`,
-      ].join("\n"),
-    );
-    return new Response("ok", { status: 200 });
+    if (orgRows.length === 0) {
+      const allOrgs = Array.from(new Set(rows.map(r => r.organization)));
+      const suggested = allOrgs.filter(o => superClean(o).includes(q.slice(0, 3))).slice(0, 5);
+      let failMsg = `❌ Организация "${arg}" не найдена.`;
+      if (suggested.length > 0) failMsg += `\n\nВозможно: \n• ${suggested.join('\n• ')}`;
+      await telegramSendMessage(Number(chatId), failMsg);
+      return new Response("ok", { status: 200 });
+    }
+
+    const t = orgRows.length;
+    const ex = orgRows.filter(r => r.expired);
+    const wr = orgRows.filter(r => r.warning).length;
+    const ok = orgRows.filter(r => r.valid).length;
+    const displayOrg = orgRows[0].organization;
+
+    let report = [
+      `🏢 *${displayOrg}*`,
+      `━━━━━━━━━━━━━━`,
+      `🟢 Норма: ${ok}`,
+      `🟡 Внимание: ${wr}`,
+      `🔴 Просрочено: ${ex.length}`,
+      `━━━━━━━━━━━━━━`
+    ].join("\n");
+
+    if (ex.length > 0) {
+      report += `\n*Критическая просрочка:*`;
+      ex.sort((a,b) => b.days - a.days).slice(0, 5).forEach(e => {
+        report += `\n• ${e.name} (${e.days} дн.)`;
+      });
+    }
+
+    await telegramSendMessage(Number(chatId), report);
   }
 
-  await telegramSendMessage(Number(chatId), "Не понял команду. Напишите /help");
+  else if (cmd === "/new") {
+    const today = employees.filter(e => e.created_at && isToday(e.created_at));
+    const list = today.map(e => `• ${e.name} (${e.organization})`).join("\n");
+    await telegramSendMessage(Number(chatId), `*Новые сегодня:*\n${list || "— нет"}`);
+  }
+
+  else if (cmd === "/expired") {
+    const list = rows.filter(r => r.expired).sort((a,b) => b.days - a.days).slice(0, 15);
+    const text = list.map(r => `• ${r.name} — ${r.organization} (*${r.days}* дн.)`).join("\n");
+    await telegramSendMessage(Number(chatId), `*Топ просрочек:*\n${text || "— нет"}`);
+  }
+
   return new Response("ok", { status: 200 });
 });

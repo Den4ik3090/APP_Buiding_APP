@@ -1,9 +1,6 @@
-node_modules
-# В корне проекта создаём файл .gitignore
-cat > .gitignore << 'EOF'
 # Dependencies
 node_modules/
-/.pnp
+.pnp
 .pnp.js
 
 # Testing
@@ -12,30 +9,44 @@ node_modules/
 # Production
 /build
 /dist
+/out
 
-# Misc
-.DS_Store
+# Vite & Next.js (Стандарт 2026)
+.vite/
+.next/
+.turbo/
+
+# AI Tools (Критично для твоей ошибки!)
+.continue/
+.copilot/
+*.prompt
+
+# Секреты и ключи
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.pem
+*.key
 
+# IDE & Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-Thumbs.db
-
-# Logs
-logs/
-*.log
-EOF
+# Local History (расширения VS Code)
+.history/

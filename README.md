@@ -1,67 +1,11 @@
 # 📊 Система учёта инструктажей и обучений сотрудников
 
-> Комплексное веб-приложение для контроля сроков проведения обязательных инструктажей, профессиональных обучений и действия удостоверений с интеграцией Telegram-уведомлений
-
-
-
----
-
-## 🎯 Описание проекта
-
-Система автоматизирует полный цикл учёта обязательных мероприятий по охране труда в строительных и производственных организациях в соответствии с требованиями законодательства РФ. Приложение контролирует:
-
-- 📋 **Инструктажи по охране труда** (вводный, первичный, повторный)
-- 🎓 **Профессиональные обучения** (рабочие профессии, специальности)
-- 📜 **Удостоверения и сертификаты** (допуски, разрешения, квалификационные документы)
-- 🔔 **Автоматические уведомления** о приближающихся сроках истечения
-
-### Основные возможности
-
-- ✅ **Регистрация сотрудников** с фото, ФИО, должностью и датой инструктажа
-- 📚 **Дополнительные обучения** — фиксация курсов повышения квалификации, специальных допусков
-- 📜 **Учёт удостоверений** — контроль сроков действия сертификатов, лицензий, допусков
-- 🔔 **Автоматическая индикация статусов** (актуально / скоро истекает / просрочено)
-- 🔍 **Фильтрация и поиск** по ФИО, должности, типу документа и статусу
-- 📱 **Telegram-интеграция** для мгновенной отправки отчётов и уведомлений
-- ⏰ **Проактивные напоминания** за 30/15/7 дней до истечения срока
-- 📊 **Визуальная статистика** с цветовым кодированием критичных записей
-- 🔄 **Массовые операции** (обновление дат, экспорт, очистка)
-- 📱 **Адаптивный дизайн** для работы на мобильных устройствах
-
----
-
-## 🛠 Технологический стек
-
-### Frontend
-- **React 18.3** — UI-компоненты и управление состоянием
-- **Webpack 5** — сборка модулей и оптимизация
-- **Babel** — транспиляция современного JavaScript
-- **CSS3** — кастомные стили без фреймворков
-
-### Backend
-- **Supabase** — PostgreSQL база данных + аутентификация
-- **Supabase Edge Functions** (Deno) — serverless API для Telegram
-- **Supabase Storage** — хранение фотографий и скан-копий документов
-
-### Интеграции
-- **Telegram Bot API** — отправка уведомлений и отчётов
-
----
-
-## 🚀 Быстрый старт
-
-Отлично! Вот обновленная версия README с расширенным функционалом:
-
-text
-# 📊 Система учёта инструктажей и обучений сотрудников
-
-> Комплексное веб-приложение для контроля сроков проведения обязательных инструктажей, профессиональных обучений и действия удостоверений с интеграцией Telegram-уведомлений
+> Комплексное веб-приложение для контроля сроков проведения обязательных инструктажей, профессиональных обучений и действия удостоверений с интеграцией Telegram-уведомлений.
 
 [![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react)](https://react.dev/)
 [![Webpack](https://img.shields.io/badge/Webpack-5-8DD6F9?logo=webpack)](https://webpack.js.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase)](https://supabase.com/)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram)](https://telegram.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
@@ -69,56 +13,53 @@ text
 
 Система автоматизирует полный цикл учёта обязательных мероприятий по охране труда в строительных и производственных организациях в соответствии с требованиями законодательства РФ. Приложение контролирует:
 
-- 📋 **Инструктажи по охране труда** (вводный, первичный, повторный)
-- 🎓 **Профессиональные обучения** (рабочие профессии, специальности)
-- 📜 **Удостоверения и сертификаты** (допуски, разрешения, квалификационные документы)
-- 🔔 **Автоматические уведомления** о приближающихся сроках истечения
+- **Инструктажи по охране труда** (вводный, первичный, повторный)
+- **Профессиональные обучения** (рабочие профессии, специальности)
+- **Удостоверения и сертификаты** (допуски, разрешения, квалификационные документы)
+- **Автоматические уведомления** о приближающихся сроках истечения
 
 ### Основные возможности
 
-- ✅ **Регистрация сотрудников** с фото, ФИО, должностью и датой инструктажа
-- 📚 **Дополнительные обучения** — фиксация курсов повышения квалификации, специальных допусков
-- 📜 **Учёт удостоверений** — контроль сроков действия сертификатов, лицензий, допусков
-- 🔔 **Автоматическая индикация статусов** (актуально / скоро истекает / просрочено)
-- 🔍 **Фильтрация и поиск** по ФИО, должности, типу документа и статусу
-- 📱 **Telegram-интеграция** для мгновенной отправки отчётов и уведомлений
-- ⏰ **Проактивные напоминания** за 30/15/7 дней до истечения срока
-- 📊 **Визуальная статистика** с цветовым кодированием критичных записей
-- 🔄 **Массовые операции** (обновление дат, экспорт, очистка)
-- 📱 **Адаптивный дизайн** для работы на мобильных устройствах
+- **Регистрация сотрудников** - профили с фото, должностями и историей инструктажей.
+- **Дополнительные обучения** - фиксация курсов повышения квалификации и аттестаций.
+- **Учёт удостоверений** - строгий контроль сроков действия лицензий и допусков.
+- **Умная индикация** - цветовое кодирование статусов (актуально / истекает / просрочено).
+- **Telegram-интеграция** - мгновенная отправка отчётов и уведомлений через Edge Functions.
+- **Проактивные напоминания** - автоматические алерты за 30, 15 и 7 дней до дедлайна.
+- **Адаптивность** - полноценная работа на десктопах, планшетах и смартфонах.
 
 ---
 
 ## 🛠 Технологический стек
 
-### Frontend
-- **React 18.3** — UI-компоненты и управление состоянием
-- **Webpack 5** — сборка модулей и оптимизация
-- **Babel** — транспиляция современного JavaScript
-- **CSS3** — кастомные стили без фреймворков
-
-### Backend
-- **Supabase** — PostgreSQL база данных + аутентификация
-- **Supabase Edge Functions** (Deno) — serverless API для Telegram
-- **Supabase Storage** — хранение фотографий и скан-копий документов
-
-### Интеграции
-- **Telegram Bot API** — отправка уведомлений и отчётов
+- **Frontend:** React 18.3, Webpack 5, Sass (SCSS), Babel.
+- **Backend:** Supabase (PostgreSQL), Edge Functions (Deno runtime).
+- **Storage:** Supabase Storage для хранения скан-копий и фото.
+- **API:** Telegram Bot API для предиктивных уведомлений.
 
 ---
 
 ## 🚀 Быстрый старт
 
 ### Предварительные требования
+- Node.js >= 18.x
+- npm >= 9.x
+- Аккаунт в Supabase
 
-
-1. Клонирование репозитория
-2. Установка зависимостей
+### 1. Клонирование и установка
+```bash
+git clone [https://github.com/YourUsername/YourRepo.git](https://github.com/YourUsername/YourRepo.git)
+cd YourRepo
 npm install
-3. Настройка Supabase
-3.1 Создайте проект в Supabase Dashboard
-3.2 Создайте таблицу employees
-sql
+
+
+
+
+2. Настройка базы данных (SQL)
+Выполните следующие запросы в SQL Editor вашего Supabase проекта:
+
+SQL
+-- Таблица сотрудников
 CREATE TABLE employees (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -128,128 +69,47 @@ CREATE TABLE employees (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Индекс для быстрого поиска по дате инструктажа
-CREATE INDEX idx_training_date ON employees(training_date);
-3.3 Создайте таблицу additional_trainings (обучения)
-sql
+-- Таблица обучений
 CREATE TABLE additional_trainings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
   training_name TEXT NOT NULL,
-  training_type TEXT NOT NULL, -- 'Курсы', 'Допуск', 'Аттестация' и т.д.
+  training_type TEXT NOT NULL,
   issue_date DATE NOT NULL,
   expiry_date DATE NOT NULL,
-  certificate_number TEXT,
-  document_url TEXT, -- Ссылка на скан удостоверения
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  document_url TEXT
 );
 
+-- Индексы для оптимизации
+CREATE INDEX idx_training_date ON employees(training_date);
 CREATE INDEX idx_expiry_date ON additional_trainings(expiry_date);
-CREATE INDEX idx_employee_id ON additional_trainings(employee_id);
-3.4 Создайте таблицу certificates (удостоверения)
-sql
-CREATE TABLE certificates (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
-  certificate_type TEXT NOT NULL, -- 'Удостоверение', 'Сертификат', 'Лицензия'
-  certificate_name TEXT NOT NULL,
-  number TEXT NOT NULL,
-  issue_date DATE NOT NULL,
-  expiry_date DATE NOT NULL,
-  issuing_authority TEXT, -- Кем выдано
-  document_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+3. Переменные окружения
+Создайте файл .env (не забудьте добавить его в .gitignore!) или настройте src/supabaseClient.js:
 
-CREATE INDEX idx_cert_expiry ON certificates(expiry_date);
-CREATE INDEX idx_cert_employee ON certificates(employee_id);
-3.5 Настройте Row Level Security (RLS)
-sql
--- Для employees
-ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow all for authenticated users"
-ON employees FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
--- Для additional_trainings
-ALTER TABLE additional_trainings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow all for authenticated users"
-ON additional_trainings FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
--- Для certificates
-ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow all for authenticated users"
-ON certificates FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-3.6 Настройте Storage для документов
-В Supabase Dashboard:
-
-Storage → Create Bucket → employee-photos (Public)
-
-Storage → Create Bucket → certificates (Public или Private)
-
-Storage → Create Bucket → training-documents (Private)
-
-4. Настройка переменных окружения
-Создайте файл src/supabaseClient.js:
-
-javascript
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://your-project-ref.supabase.co';
+JavaScript
+const supabaseUrl = '[https://your-project-ref.supabase.co](https://your-project-ref.supabase.co)';
 const supabaseKey = 'your-anon-public-key';
+4. Настройка Telegram уведомлений
+Получите токен у @BotFather.
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-5. Настройка Telegram Bot
-5.1 Создайте бота через @BotFather
-text
-/newbot
-Название: OT Tracker Bot
-Username: YourCompanyOT_bot
-Сохраните полученный TELEGRAM_BOT_TOKEN.
+Установите секреты в Supabase CLI:
 
-5.2 Получите Chat ID
-Напишите боту любое сообщение, затем откройте:
-
-text
-https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
-Найдите "chat":{"id": 123456789} и сохраните это число.
-
-5.3 Настройте Edge Function
-bash
-# Авторизуйтесь в Supabase CLI
-npx supabase login
-
-# Привяжите проект
-npx supabase link --project-ref your-project-ref
-
-# Установите секреты
-npx supabase secrets set TELEGRAM_BOT_TOKEN=your_bot_token
+Bash
+npx supabase secrets set TELEGRAM_BOT_TOKEN=your_token
 npx supabase secrets set TELEGRAM_CHAT_ID=your_chat_id
+Деплой функции:
 
-# Деплой функции
-npx supabase functions deploy telegram-notify --no-verify-jwt
-6. Запуск приложения
-bash
-# Development режим с hot reload
-npm start
+Bash
+npx supabase functions deploy telegram-notify
+5. Запуск
+Bash
+npm start # Режим разработки
+npm run build # Сборка для продакшна
+📊 Планы по развитию (Roadmap)
+Внедрение системы ролей (Админ / Менеджер / Аудитор).
 
-# Production сборка
-npm run build
-Откройте http://localhost:3000
+Экспорт отчётов в форматы PDF и Excel.
 
-```bash
-Node.js >= 18.x
-npm >= 9.x
-Supabase CLI >= 1.x
-Telegram Bot Token (от @BotFather)
+Интеграция с реестрами обучений через API.
+
+Добавление темной темы интерфейса.

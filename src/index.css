@@ -22,9 +22,70 @@ body {
   padding: 20px;
 }
 
+.header__title {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+  padding: 0.5rem 0;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 2px;
+  }
+
+  animation: slideInUp 0.8s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header__title:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .header__title {
+    background: linear-gradient(135deg, #a8b3ff, #d9a9ff);
+    &::after {
+      background: linear-gradient(90deg, #a8b3ff, #d9a9ff);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .header__title {
+    font-size: clamp(1.8rem, 8vw, 2.8rem);
+    padding: 1rem 1rem;
+  }
+}
+
 .app {
-  min-height: 100vh;
+  min-height: auto;
   background-color: rgb(255, 255, 255);
+  border-radius: 12px;
 }
 
 .container {
@@ -141,9 +202,11 @@ h1 {
   color: #ffffff;
   font-weight: 600;
   background-color: #f97316;
-  padding: 6px 12px;
+  padding: 0px 12px;
   border-radius: 20px;
   font-size: 12px;
+  text-align: center;
+  align-items: center;
   height: 28px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -320,6 +383,10 @@ tr.valid {
 
 tr.expired {
   background: #fef2f2;
+}
+
+tr.additional-expired {
+  box-shadow: inset 4px 0 0 #f59e0b;
 }
 
 tr.valid:hover {
@@ -578,6 +645,10 @@ tr.expired:hover {
 
 .virtual-row.expired {
   background: #fef2f2;
+}
+
+.virtual-row.additional-expired {
+  box-shadow: inset 4px 0 0 #f59e0b;
 }
 
 .virtual-cell.actions {

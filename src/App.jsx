@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   Suspense,
   lazy,
 } from "react";
@@ -11,7 +12,6 @@ import EmployeeForm from "./components/EmployeeForm";
 import ToastContainer from "./components/ToastContainer.jsx";
 import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
-import Dashboard from "./components/Dashboard.jsx";
 import { LoginPage } from "./auth";
 import OrganizationsDocs from "./components/OrganizationManager.jsx";
 
@@ -22,11 +22,15 @@ import {
   TOAST_TYPES,
   TOAST_DURATION,
 } from "./utils/toastConfig";
-import { DAYS_THRESHOLD } from "./utils/constants";
+import { DAYS_THRESHOLD, getStatusKey } from "./utils/constants";
+import { hasExpiredAdditional } from "./components/utils/helpers";
 
 import logo from "./assets/img/logo_PUTEVI.png";
 
 const EmployeeTable = lazy(() => import("./components/Table"));
+const AnalyticsDashboard = lazy(() =>
+  import("./components/AnalyticsDashboard.jsx")
+);
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -42,9 +46,11 @@ function App() {
   const [loadError, setLoadError] = useState(false);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("Все");
+  const [tableStatusFilter, setTableStatusFilter] = useState("all");
 
   const { notifications, addNotification, removeNotification } =
     useNotification();
+  const prevExpiredRef = useRef(null);
 
   // --- AUTH bootstrap ---
   useEffect(() => {
@@ -327,6 +333,11 @@ function App() {
     setShowForm(false);
   };
 
+  const handleShowExpired = () => {
+    setActiveTab("table");
+    setTableStatusFilter("expired");
+  };
+
   const filteredEmployees = useMemo(
     () =>
       employees.filter((emp) =>
@@ -335,13 +346,42 @@ function App() {
     [employees, selectedOrg]
   );
 
-  const expiredCount = useMemo(
-    () =>
-      filteredEmployees.filter(
-        (emp) => getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD
-      ).length,
-    [filteredEmployees, getDaysDifference]
-  );
+  const expiredCount = useMemo(() => {
+    return filteredEmployees.filter((emp) => {
+      const mainExpired =
+        emp.trainingDate && getDaysDifference(emp.trainingDate) >= DAYS_THRESHOLD;
+      const additionalExpired = hasExpiredAdditional(emp.additionalTrainings);
+      return mainExpired || additionalExpired;
+    }).length;
+  }, [filteredEmployees, getDaysDifference]);
+
+  useEffect(() => {
+    if (prevExpiredRef.current === null) {
+      prevExpiredRef.current = expiredCount;
+      return;
+    }
+    if (expiredCount > prevExpiredRef.current) {
+      addNotification(
+        `Просрочено у ${expiredCount} сотрудников`,
+        TOAST_TYPES.WARNING,
+        TOAST_DURATION.NORMAL
+      );
+    }
+    prevExpiredRef.current = expiredCount;
+  }, [expiredCount, addNotification]);
+
+  const tableEmployees = useMemo(() => {
+    if (tableStatusFilter === "all") return filteredEmployees;
+    return filteredEmployees.filter((emp) => {
+      const days = emp.trainingDate ? getDaysDifference(emp.trainingDate) : 0;
+      const status = getStatusKey(days);
+      const additionalExpired = hasExpiredAdditional(emp.additionalTrainings);
+      if (tableStatusFilter === "expired") return status === "expired" || additionalExpired;
+      if (tableStatusFilter === "warning") return status === "warning";
+      if (tableStatusFilter === "valid") return status === "valid" && !additionalExpired;
+      return true;
+    });
+  }, [filteredEmployees, tableStatusFilter, getDaysDifference]);
 
   const exportCSV = () => {
     const SEP = ";";
@@ -468,7 +508,7 @@ function App() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
             <img src={logo} alt="Logo" className="logo__img" />
-            <h1 style={{ margin: 0 }}>Управление инструктажами</h1>
+            <h1 className="header__title">Управление инструктажами</h1>
           </div>
           <button className="btn-danger" onClick={handleLogout}>
             Выйти
@@ -478,7 +518,21 @@ function App() {
         {/* Stats Info */}
         <div className="info">
           Показано: <strong>{filteredEmployees.length}</strong> | Просрочено:{" "}
-          <strong style={{ color: "red" }}>{expiredCount}</strong>
+          <button
+            type="button"
+            onClick={handleShowExpired}
+            style={{
+              background: "none",
+              border: "none",
+              color: "red",
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: 0,
+            }}
+            title="�������� ������������"
+          >
+            {expiredCount}
+          </button>
         </div>
 
         {/* Navigation & Filters */}
@@ -508,6 +562,17 @@ function App() {
                   {org}
                 </option>
               ))}
+            </select>
+            <select
+              value={tableStatusFilter}
+              onChange={(e) => setTableStatusFilter(e.target.value)}
+              className="status-filter"
+            >
+           <option value="all">Все статусы</option>
+            <option value="valid">Действительные</option>
+              <option value="warning">Скоро истекают</option>
+            <option value="expired">Просроченные</option>
+
             </select>
           </div>
 
@@ -577,7 +642,7 @@ function App() {
             <Suspense fallback={<SkeletonLoader rows={8} />}>
               {filteredEmployees.length > 300 ? (
                 <VirtualEmployeeTable
-                  employees={filteredEmployees}
+                  employees={tableEmployees}
                   getDaysDifference={getDaysDifference}
                   onRetrain={handleRetrain}
                   onDelete={handleDelete}
@@ -586,12 +651,14 @@ function App() {
                 />
               ) : (
                 <EmployeeTable
-                  employees={filteredEmployees}
+                  employees={tableEmployees}
                   getDaysDifference={getDaysDifference}
                   onRetrain={handleRetrain}
                   onDelete={handleDelete}
                   onEdit={handleEdit}
                   addNotification={addNotification}
+                  statusFilterValue={tableStatusFilter}
+                  onStatusFilterChange={setTableStatusFilter}
                 />
               )}
             </Suspense>
@@ -599,10 +666,12 @@ function App() {
         )}
 
         {activeTab === "analytics" && (
-          <Dashboard
-            employees={filteredEmployees}
-            getDaysDifference={getDaysDifference}
-          />
+          <Suspense fallback={<SkeletonLoader rows={6} />}>
+            <AnalyticsDashboard
+              employees={tableEmployees}
+              getDaysDifference={getDaysDifference}
+            />
+          </Suspense>
         )}
 
         {activeTab === "orgs" && <OrganizationsDocs employees={employees} />}
@@ -612,4 +681,8 @@ function App() {
 }
 
 export default App;
+
+
+
+
 

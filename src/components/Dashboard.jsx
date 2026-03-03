@@ -62,7 +62,7 @@ export default function Dashboard({ employees, getDaysDifference }) {
       }))
       .filter(
         (e) =>
-          e.days >= DAYS_THRESHOLD - 30 && e.days < DAYS_THRESHOLD
+          e.days >= DAYS_THRESHOLD - 10 && e.days < DAYS_THRESHOLD
       )
       .sort((a, b) => b.days - a.days)
       .slice(0, 5);

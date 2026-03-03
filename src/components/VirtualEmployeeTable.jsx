@@ -4,6 +4,7 @@ import { AutoSizer } from "react-virtualized-auto-sizer";
 import { List } from "react-window";
 
 import { DAYS_THRESHOLD } from "../utils/constants";
+import { hasExpiredAdditional } from "./utils/helpers";
 
 const ROW_HEIGHT = 64;
 
@@ -24,10 +25,15 @@ function VirtualEmployeeTable({
       const trainingDate = emp?.trainingDate || "";
       const days = trainingDate ? getDaysDifference(trainingDate) : 0;
       const isExpired = trainingDate ? days >= DAYS_THRESHOLD : false;
+      const additionalExpired = hasExpiredAdditional(emp?.additionalTrainings);
 
       return (
         <div style={style}>
-          <div className={`virtual-row ${isExpired ? "expired" : "valid"}`}>
+          <div
+            className={`virtual-row ${isExpired ? "expired" : "valid"}${
+              additionalExpired ? " additional-expired" : ""
+            }`}
+          >
             <div className="virtual-cell name">{emp?.name || "—"}</div>
             <div className="virtual-cell org">{emp?.organization || "—"}</div>
             <div className="virtual-cell prof">{emp?.profession || "—"}</div>

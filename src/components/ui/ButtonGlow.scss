@@ -1,0 +1,64 @@
+.btn-glow-container {
+  padding: 5px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  cursor: pointer;
+
+  // Эффект свечения
+  .btn-glow-effect {
+    position: absolute;
+    inset: 0;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    border-radius: 0.375rem; // rounded-md
+    filter: blur(16px); // blur-lg
+    background: linear-gradient(to right, #6366f1, #ec4899, #fbbf24); // indigo-pink-yellow
+  }
+
+  // Тело кнопки
+  .btn-glow-body {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    background-color: #10b981; // bg-gray-900
+    padding: 0.5rem 2rem; // py-2 px-8
+    font-size: 1.125rem; // text-lg
+    font-weight: 600;
+    color: #ffffff;
+    transition: all 0.2s ease;
+    border: none;
+    outline: none;
+  
+
+    .btn-glow-icon {
+      margin-top: 0.125rem;
+      margin-left: 0.5rem;
+      margin-right: -0.25rem;
+      height: 1.25rem;
+      width: 1.25rem;
+      transition: transform 0.2s ease;
+    }
+  }
+
+  // Ховер эффекты
+  &:hover {
+    .btn-glow-effect {
+      opacity: 1;
+    }
+
+    .btn-glow-body {
+      background-color: #1f2937; // bg-gray-800
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(75, 85, 99, 0.3);
+
+      .btn-glow-icon {
+        transform: translateX(4px);
+      }
+    }
+  }
+}

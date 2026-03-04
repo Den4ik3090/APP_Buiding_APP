@@ -27,6 +27,9 @@ import { hasExpiredAdditional } from "./components/utils/helpers";
 
 import logo from "./assets/img/logo_PUTEVI.png";
 
+// Компоненты UI
+import { ButtonGlow } from "./components/ui/ButtonGlow.jsx";
+
 const EmployeeTable = lazy(() => import("./components/Table"));
 const AnalyticsDashboard = lazy(() =>
   import("./components/AnalyticsDashboard.jsx")
@@ -607,12 +610,20 @@ function App() {
         {activeTab === "table" && (
           <>
             <div className="form-actions" style={{ marginBottom: 15 }}>
-              <button className="btn-primary" onClick={handleAddNew}>
+              {/* <button className="btn-primary" onClick={handleAddNew}>
                 + Добавить сотрудника
-              </button>
-              <button className="btn-export" onClick={exportCSV}>
+              </button> */}
+              <ButtonGlow 
+              text="Добавить сотрудника" 
+              onClick={handleAddNew} 
+  />
+               <ButtonGlow 
+              text="Экспорт CSV" 
+              onClick={exportCSV} 
+  />
+              {/* <button className="btn-export" onClick={exportCSV}>
                 📊 Экспорт CSV
-              </button>
+              </button> */}
             </div>
 
             {showForm && (

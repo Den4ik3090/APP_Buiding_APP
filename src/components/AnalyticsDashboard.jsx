@@ -1,3 +1,4 @@
+// Импортируем хуки для работы с React и библиотеками 
 import React, {
   useCallback,
   useEffect,
@@ -32,6 +33,7 @@ const MANAGER_COLORS = [
 const ROW_HEIGHT = 62;
 const DROPDOWN_MAX_HEIGHT = 200;
 
+// Функция парсит дату в локальный формат Ruru
 const formatDate = (value) => {
   if (!value) return "—";
   const parsed = new Date(value);
@@ -39,8 +41,9 @@ const formatDate = (value) => {
     ? "—"
     : parsed.toLocaleDateString("ru-RU");
 };
-
-export default function AnalyticsDashboard({ employees, getDaysDifference }) {
+// Создание компонента AnalyticsDashboards
+export default function AnalyticsDashboard({ employees, getDaysDifference }) {  //принимает масси сотрудрников и функцию расчета дней 
+  // 
   const [professionFilter, setProfessionFilter] = useState("all");
   const [openResponsible, setOpenResponsible] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -71,6 +74,7 @@ export default function AnalyticsDashboard({ employees, getDaysDifference }) {
       }
     };
   }, []);
+
 // Закрытие дропдауна по клику наружу (useEffect #2)
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -81,6 +85,8 @@ export default function AnalyticsDashboard({ employees, getDaysDifference }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+
 // Запись данных професии и сотрировка\фильтр
   const enrichedEmployees = useMemo(
     () =>
@@ -94,7 +100,7 @@ export default function AnalyticsDashboard({ employees, getDaysDifference }) {
       })),
     [employees, getDaysDifference]
   );
-
+// Уникальны профессии по фильтру 
   const professionOptions = useMemo(() => {
     const unique = new Set(enrichedEmployees.map((emp) => emp.professionLabel));
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
@@ -106,7 +112,7 @@ export default function AnalyticsDashboard({ employees, getDaysDifference }) {
       (emp) => emp.professionLabel === professionFilter
     );
   }, [enrichedEmployees, professionFilter]);
-
+// Группировка по ответственным 
   const responsibleGroups = useMemo(() => {
     const collector = new Map();
     filteredEmployees.forEach((emp) => {
@@ -122,10 +128,11 @@ export default function AnalyticsDashboard({ employees, getDaysDifference }) {
       }))
       .sort((a, b) => b.count - a.count);
   }, [filteredEmployees]);
-// Топ 6 профессий + Другие для диаграммы 
+
+// Топ 6 профессий + Другие для  Круговой диаграммы 
   const managerPieData = useMemo(() => {
     if (!responsibleGroups.length) return [{ name: "Нет данных", value: 1 }];
-    const top = responsibleGroups.slice(0, 6).map((group) => ({
+    const top = responsibleGroups.slice(0, 10).map((group) => ({
       name: group.name,
       value: group.count,
     }));

@@ -14,6 +14,8 @@ import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
 import SkeletonLoader from "./components/Skeleton";
 import { LoginPage } from "./auth";
 import OrganizationsDocs from "./components/OrganizationManager.jsx";
+import AdditionalTrainingsManager from "./components/AdditionalTrainingsManager.jsx";
+
 
 import { supabase } from "./supabaseClient";
 import { useNotification } from "./hooks/useNotification";
@@ -603,6 +605,12 @@ function App() {
             >
               🏢 Организации
             </button>
+          <button
+            className={activeTab === "trainings" ? "btn-primary" : "btn-export"}
+            onClick={() => setActiveTab("trainings")}
+            >
+             🎓 Дополнительные обучения
+            </button>
           </div>
         </div>
 
@@ -686,6 +694,7 @@ function App() {
         )}
 
         {activeTab === "orgs" && <OrganizationsDocs employees={employees} />}
+        {activeTab === "trainings" && <AdditionalTrainingsManager employees={employees} />}
       </div>
     </div>
   );

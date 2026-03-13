@@ -1,0 +1,273 @@
+.permits-registry {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.permits-header {
+  margin-bottom: 16px;
+}
+
+.permits-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.permits-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.permits-header-title h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.permits-header-title p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.btn-create-permit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Табы */
+.permits-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.permits-tabs .tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.permits-tabs .tab.active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+
+/* Таблица */
+.permits-table-wrapper {
+  margin-top: 12px;
+}
+
+.permits-filters {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.permits-filters-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.permits-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.permits-search input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  min-width: 200px;
+}
+
+.permits-filter-selects {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.permits-filter-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 12px;
+}
+
+.permits-filter-select select {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  background: transparent;
+}
+
+/* Таблица */
+.permits-table-container {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: white;
+}
+
+.permits-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.permits-table th,
+.permits-table td {
+  padding: 10px 8px;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.permits-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #4b5563;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.permits-table th svg {
+  margin-left: 4px;
+}
+
+.permits-table tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.permits-table tr:hover {
+  background: #eff6ff;
+}
+
+.permits-table tr.permit-row-expired {
+  background: #fef2f2;
+}
+
+.permits-table tr.permit-row-expired:hover {
+  background: #fee2e2;
+}
+
+.permit-actions,
+.permit-actions button {
+  pointer-events: auto;
+}
+
+.permits-empty {
+  text-align: center;
+  padding: 20px 8px;
+  color: #6b7280;
+}
+
+/* Модалка формы */
+.permits-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.permits-modal {
+  background: white;
+  padding: 20px 22px;
+  border-radius: 16px;
+  max-width: 560px;
+  width: 95%;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
+}
+
+.permits-modal h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
+}
+
+/* Форма */
+.permits-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permits-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.permits-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.permits-form-group input,
+.permits-form-group select,
+.permits-form-group textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.permits-form-group textarea {
+  resize: vertical;
+}
+
+.permits-error {
+  font-size: 11px;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.permits-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Адаптив */
+@media (max-width: 640px) {
+  .permits-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .permits-search input {
+    min-width: 140px;
+  }
+}

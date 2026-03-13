@@ -15,6 +15,7 @@ import SkeletonLoader from "./components/Skeleton";
 import { LoginPage } from "./auth";
 import OrganizationsDocs from "./components/OrganizationManager.jsx";
 import AdditionalTrainingsManager from "./components/AdditionalTrainingsManager.jsx";
+import PermitsRegistry from "./components/PermitsRegistry/PermitsRegistry.jsx";
 
 
 import { supabase } from "./supabaseClient";
@@ -444,20 +445,20 @@ function App() {
   };
 
   // --- UI Logic ---
-  if (authLoading || loading) {
-    return (
-      <div className="app">
-        <div className="container">
-          <SkeletonLoader rows={8} />
-          {loading && (
-            <p style={{ textAlign: "center", marginTop: 16, color: "#666", fontSize: 14 }}>
-              Загрузка данных...
-            </p>
-          )}
-        </div>
+if (authLoading || loading) {
+  return (
+    <div className="app app__loading">
+      <div className="app__container">
+        <SkeletonLoader rows={8} />
+        {loading && (
+          <p style={{ textAlign: "center", marginTop: 16, color: "#666", fontSize: 14 }}>
+            Загрузка данных...
+          </p>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (loadError && employees.length === 0) {
     return (
@@ -611,6 +612,12 @@ function App() {
             >
              🎓 Дополнительные обучения
             </button>
+           <button
+  className={activeTab === "permits" ? "btn-primary" : "btn-export"}
+  onClick={() => setActiveTab("permits")}
+>
+  📄 Наряды‑допуски
+</button>
           </div>
         </div>
 
@@ -695,6 +702,9 @@ function App() {
 
         {activeTab === "orgs" && <OrganizationsDocs employees={employees} />}
         {activeTab === "trainings" && <AdditionalTrainingsManager employees={employees} />}
+        {activeTab === "permits" && (
+          <PermitsRegistry addNotification={addNotification} />
+        )}
       </div>
     </div>
   );

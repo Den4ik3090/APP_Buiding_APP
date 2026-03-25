@@ -1,0 +1,30 @@
+[33m4677cdc[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mbackup_current-stable[m[33m, [m[1;32mbackup/current-stable[m[33m, [m[1;32mbackup-current-stable[m[33m)[m Merge pull request #3 from Den4ik3090/feature/New_Function_workNariad
+[33md2a0bf5[m[33m ([m[1;31morigin/feature/New_Function_workNariad[m[33m, [m[1;32mfeature/New_Function_workNariad[m[33m)[m complete:TabPermitsRegistry
+[33m9019870[m Merge pull request #2 from Den4ik3090/feature/new_function_04/03/2026
+[33m288922c[m[33m ([m[1;31morigin/feature/new_function_04/03/2026[m[33m, [m[1;32mfeature/new_function_04/03/2026[m[33m)[m new-section: trainings_manager
+[33m5e0394d[m Final clean build without secrets
+[33m02598ed[m Update README.md
+[33m3e99512[m Update README.md
+[33m1124cc0[m Merge pull request #1 from Den4ik3090/feature/refactoring-logic
+[33mc5b02a0[m[33m ([m[1;31morigin/feature/refactoring-logic[m[33m)[m feat: complete table logic and security hardening
+[33m69b7267[m add: добавлена функция скачивания таблицы обучений каждого сотрудника
+[33m9c74861[m checkUp
+[33m63a9cf2[m fix: улучшен дизайн варификации
+[33m47eaecb[m add: оптимизирован дашборд
+[33m22dce39[m feat: добавлен экспорт таблицы сотрудников в CSV с поддержкой кириллицы
+[33m15b148e[m fix:add new style and add new toast
+[33m3829d08[m feat: добавлена вкладка управления документами организаций и стили
+[33m1dd7cad[m[33m ([m[1;32mdesign-restart-4141ea2[m[33m)[m Optimize EmployeeTable sorting & filters
+[33m78cee01[m Merge branch 'main' of github.com:Den4ik3090/APP_Buiding_APP into design-restart-4141ea2
+[33m298f3d3[m feat:реализация модального окна входа(логин-пароль)
+[33mcfcc7c0[m full_style_project
+[33m700c2a3[m save_good_status-work
+[33m4141ea2[m точка_востановлени:начало обновления дизайна
+[33mb95099b[m Merge branch 'main' of github.com:Den4ik3090/APP_Buiding_APP
+[33m50ee5f7[m full: style css
+[33meefcfea[m Update README.md
+[33m38f30b3[m feat: добавлена интеграция с Telegram для отправки отчётов
+[33m16933b9[m perf: virtual table uses DAYS_THRESHOLD + stable row rendering
+[33mb09c9dc[m perf: skeleton loader + lazy table + memoized filters
+[33m288232f[m Project_Building
+[33m0cfa8ff[m Initial commit

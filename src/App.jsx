@@ -16,6 +16,7 @@ import { LoginPage } from "./auth";
 import OrganizationsDocs from "./components/OrganizationManager.jsx";
 import AdditionalTrainingsManager from "./components/AdditionalTrainingsManager.jsx";
 import PermitsRegistry from "./components/PermitsRegistry/PermitsRegistry.jsx";
+import OrdersRegistry from "./components/OrderRegistry/OrdersRegistry.jsx";
 
 
 import { supabase } from "./supabaseClient";
@@ -131,7 +132,7 @@ function App() {
     setLoading(true);
     setLoadError(false);
     try {
-      const timeoutMs = 15000;
+      const timeoutMs = 30000;
       const cloudData = await Promise.race([
         fetchFromSupabase(),
         new Promise((_, reject) =>
@@ -610,14 +611,20 @@ if (authLoading || loading) {
             className={activeTab === "trainings" ? "btn-primary" : "btn-export"}
             onClick={() => setActiveTab("trainings")}
             >
-             🎓 Дополнительные обучения
+              🎓 Дополнительные обучения
             </button>
-           <button
-  className={activeTab === "permits" ? "btn-primary" : "btn-export"}
-  onClick={() => setActiveTab("permits")}
->
-  📄 Наряды‑допуски
-</button>
+            <button
+              className={activeTab === "permits" ? "btn-primary" : "btn-export"}
+              onClick={() => setActiveTab("permits")}
+              >
+              📄 Наряды‑допуски
+            </button>
+            <button
+              className={activeTab === "orders" ? "btn-primary" : "btn-export"}
+              onClick={() => setActiveTab("orders")}
+              >
+              Приказы
+            </button>
           </div>
         </div>
 
@@ -703,8 +710,9 @@ if (authLoading || loading) {
         {activeTab === "orgs" && <OrganizationsDocs employees={employees} />}
         {activeTab === "trainings" && <AdditionalTrainingsManager employees={employees} />}
         {activeTab === "permits" && (
-          <PermitsRegistry addNotification={addNotification} />
-        )}
+          <PermitsRegistry addNotification={addNotification} />)}
+        {activeTab === "orders" && (
+          <OrdersRegistry addNotification={addNotification} />)}
       </div>
     </div>
   );

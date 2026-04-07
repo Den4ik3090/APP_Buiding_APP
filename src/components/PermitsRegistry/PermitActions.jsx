@@ -199,7 +199,7 @@ export default function PermitActions({
       setClosing(false);
     }
   };
-
+//Рендер кнопок действия по нарядам 
   return (
     <div className="permit-actions" style={styles.container}>
       {/* Продлить */}
@@ -287,7 +287,7 @@ export default function PermitActions({
     </div>
   );
 }
-
+// Константы стилей кнопок 
 const styles = {
   container: {
     display: 'flex',
@@ -327,9 +327,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '32px',
-    height: '32px',
-    padding: 0,
+   width:'70px',
+    padding:' 0px 10px 0px 10px',
     color: '#3b82f6',
     background: '#dbeafe',
     border: '1px solid #93c5fd',
@@ -343,7 +342,8 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'center',
     gap: '4px',
-    padding: '6px 16px',
+     width:'70px',
+    padding:' 0px 10px 0px 10px',
     fontSize: '13px',
     color: '#ef4444',
     background: '#fee2e2',

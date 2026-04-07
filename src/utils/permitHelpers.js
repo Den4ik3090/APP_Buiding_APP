@@ -1,4 +1,6 @@
-// Генерация номера: 12-03-1
+//PermitsHelpers
+
+//Генерация номера наряда
 export function generatePermitNumber(issueDate, existingPermits) {
   const date = new Date(issueDate);
   const day = String(date.getDate()).padStart(2, "0");
@@ -27,13 +29,14 @@ export function calculateExtendedDate(expiryDate) {
   return date;
 }
 
+// Работа со статусами
 function normalizeStatus(status) {
   return String(status || "")
     .trim()
     .toLowerCase()
     .replace(/ё/g, "е");
 }
-
+//Проверяет закрыт ли наряд
 export function isClosedStatus(status) {
   return normalizeStatus(status) === "закрыт";
 }
@@ -76,9 +79,7 @@ export function getPermitStatus(permit) {
 export function canExtend(permit) {
   const extensionCount = Number(permit?.extension_count || 0);
   return (
-    !permit.is_extended &&
-    extensionCount < 1 &&
-    !isClosedStatus(permit.status)
+    !permit.is_extended && extensionCount < 1 && !isClosedStatus(permit.status)
   );
 }
 

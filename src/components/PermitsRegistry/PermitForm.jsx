@@ -9,12 +9,13 @@ import {
 import { supabase } from "../../supabaseClient";
 
 
-
+//Константа по умолчанию( Первый тип из списка как значение по умолчанию)
 const DEFAULT_TYPE =
   Array.isArray(PERMIT_TYPES) && PERMIT_TYPES.length > 0
     ? PERMIT_TYPES[0]
     : "";
 
+//Основной компонент 
 export default function PermitForm({
   permit,
   employees = [],
@@ -23,7 +24,9 @@ export default function PermitForm({
   onSave,
   addNotification = () => {},
 }) {
+ //Локальное состояние и вычисление 
   const isEdit = Boolean(permit);
+  //СОбирает все уникальные организации из списка сотрудников 
   const organizations = useMemo(
     () =>
       Array.from(
@@ -35,6 +38,7 @@ export default function PermitForm({
       ).sort(),
     [employees]
   );
+  //Основное состояние формы
   const [form, setForm] = useState({
     permit_type: DEFAULT_TYPE,
     issue_date: new Date().toISOString().slice(0, 10),
@@ -42,10 +46,12 @@ export default function PermitForm({
     organization: "",
     comments: "",
   });
-
+// Состояние загрузки
   const [saving, setSaving] = useState(false);
+  // Объект ошибок валидации
   const [errors, setErrors] = useState({});
 
+//UseEffect - загрузка данных при редактировании 
   useEffect(() => {
     if (permit) {
       setForm({
@@ -58,13 +64,15 @@ export default function PermitForm({
     }
   }, [permit]);
 
+// Обработчик изменений полей
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
+  // Важно: Основная логика сохранения 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    // -Валидация 
     const validation = validatePermitData(form);
     if (!validation.valid) {
       setErrors(validation.errors || {});
@@ -75,9 +83,10 @@ export default function PermitForm({
     try {
       setSaving(true);
       const issueDate = new Date(form.issue_date);
+      //-Расчет даты окончания
       const expiryDate = calculateExpiryDate(issueDate);
       const expiryStr = expiryDate.toISOString().slice(0, 10);
-
+      //-Редактирование таблицы
       if (isEdit) {
         const { error } = await supabase
           .from("permits")
@@ -93,6 +102,7 @@ export default function PermitForm({
 
         if (error) throw error;
       } else {
+        //Создание нового
         const number = generatePermitNumber(issueDate, permits || []);
 
         const { error } = await supabase.from("permits").insert({
@@ -113,6 +123,7 @@ export default function PermitForm({
 
       if (onSave) await onSave();
     } catch (error) {
+      //При ошибке сохранении наряда 
       console.error("Ошибка сохранения наряда:", error);
       if (error?.code === "23514") {
         addNotification(
@@ -126,7 +137,7 @@ export default function PermitForm({
       setSaving(false);
     }
   };
-
+// JSX разметка формы 
   return (
     <div className="permits-modal-overlay" onClick={onClose}>
       <div className="permits-modal" onClick={(e) => e.stopPropagation()}>

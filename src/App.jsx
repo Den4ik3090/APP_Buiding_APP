@@ -17,6 +17,7 @@ import OrganizationsDocs from "./components/OrganizationManager.jsx";
 import AdditionalTrainingsManager from "./components/AdditionalTrainingsManager.jsx";
 import PermitsRegistry from "./components/PermitsRegistry/PermitsRegistry.jsx";
 import OrdersRegistry from "./components/OrderRegistry/OrdersRegistry.jsx";
+import PrescriptionsRegistry from "./components/Prescriptions/PrescriptionsRegistry.jsx";
 
 
 import { supabase } from "./supabaseClient";
@@ -625,6 +626,12 @@ if (authLoading || loading) {
               >
               Приказы
             </button>
+            <button
+              className={activeTab === "prescriptions" ? "btn-primary" : "btn-export"}
+              onClick={() => setActiveTab("prescriptions")}
+              >
+              Предписания 
+            </button>
           </div>
         </div>
 
@@ -673,7 +680,7 @@ if (authLoading || loading) {
             )}
 
             <Suspense fallback={<SkeletonLoader rows={8} />}>
-              {filteredEmployees.length > 300 ? (
+              {filteredEmployees.length > 1000 ? (
                 <VirtualEmployeeTable
                   employees={tableEmployees}
                   getDaysDifference={getDaysDifference}
@@ -713,6 +720,8 @@ if (authLoading || loading) {
           <PermitsRegistry addNotification={addNotification} />)}
         {activeTab === "orders" && (
           <OrdersRegistry addNotification={addNotification} />)}
+        {activeTab === "prescriptions" && (
+          <PrescriptionsRegistry addNotification={addNotification} />)}
       </div>
     </div>
   );

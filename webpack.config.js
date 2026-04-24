@@ -89,27 +89,31 @@ module.exports = (env, argv) => {
         },
       ],
     },
-    plugins: [
-      new HtmlWebpackPlugin({
-        template: "./public/index.html",
-        minify: isProduction
-          ? {
-              removeComments: true,
-              collapseWhitespace: true,
-              removeRedundantAttributes: true,
-              removeScriptTypeAttributes: true,
-              removeStyleLinkTypeAttributes: true,
-              minifyCSS: true,
-              minifyJS: true,
-            }
-          : false,
-        inject: true,
-      }),
-      // CSS отдельно (длинный кэш)
-      new MiniCssExtractPlugin({
-        filename: isProduction ? "[name].[contenthash:8].css" : "[name].css",
-      }),
-    ],
+    plugins: 
+    [
+  new HtmlWebpackPlugin({
+    template: "./public/index.html",
+    minify: isProduction
+      ? {
+          removeComments: true,
+          collapseWhitespace: true,
+          removeRedundantAttributes: true,
+          removeScriptTypeAttributes: true,
+          removeStyleLinkTypeAttributes: true,
+          minifyCSS: true,
+          minifyJS: true,
+        }
+      : false,
+    inject: true,
+  }),
+  ...(isProduction
+    ? [
+        new MiniCssExtractPlugin({
+          filename: "[name].[contenthash:8].css",
+        }),
+      ]
+    : []),
+],
     devServer: {
       static: {
         directory: path.resolve(__dirname, "dist"),

@@ -421,8 +421,8 @@ function App() {
       const status = days >= DAYS_THRESHOLD ? "Переподготовка" : "Актуален";
       const addTrain = Array.isArray(emp.additionalTrainings)
         ? emp.additionalTrainings
-            .map((t) => (typeof t === "string" ? t : String(t)))
-            .join("; ")
+          .map((t) => (typeof t === "string" ? t : String(t)))
+          .join("; ")
         : "";
 
       return [
@@ -447,20 +447,20 @@ function App() {
   };
 
   // --- UI Logic ---
-if (authLoading || loading) {
-  return (
-    <div className="app app__loading">
-      <div className="app__container">
-        <SkeletonLoader rows={8} />
-        {loading && (
-          <p style={{ textAlign: "center", marginTop: 16, color: "#666", fontSize: 14 }}>
-            Загрузка данных...
-          </p>
-        )}
+  if (authLoading || loading) {
+    return (
+      <div className="app app__loading">
+        <div className="app__container">
+          <SkeletonLoader rows={8} />
+          {loading && (
+            <p style={{ textAlign: "center", marginTop: 16, color: "#666", fontSize: 14 }}>
+              Загрузка данных...
+            </p>
+          )}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (loadError && employees.length === 0) {
     return (
@@ -483,7 +483,7 @@ if (authLoading || loading) {
     return (
       <LoginPage
         logoSrc={logo}
-        onSuccess={() => {}}
+        onSuccess={() => { }}
         onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
         signIn={async (email, password) => {
           const { error } = await supabase.auth.signInWithPassword({
@@ -576,63 +576,70 @@ if (authLoading || loading) {
               onChange={(e) => setTableStatusFilter(e.target.value)}
               className="status-filter"
             >
-           <option value="all">Все статусы</option>
-            <option value="valid">Действительные</option>
+              <option value="all">Все статусы</option>
+              <option value="valid">Действительные</option>
               <option value="warning">Скоро истекают</option>
-            <option value="expired">Просроченные</option>
+              <option value="expired">Просроченные</option>
 
             </select>
           </div>
 
-          <div
-            className="tabs-navigation"
-            style={{ display: "flex", gap: 10 }}
-          >
+          <div className="tabs-navigation">
             <button
-              className={activeTab === "table" ? "btn-primary" : "btn-export"}
+              className={`tab-btn ${activeTab === "table" ? "tab-btn--active" : ""}`}
               onClick={() => setActiveTab("table")}
             >
-              📋 Сотрудники
+              <span className="tab-btn__icon">📋</span>
+              <span className="tab-btn__label">Сотрудники</span>
             </button>
+
             <button
-              className={
-                activeTab === "analytics" ? "btn-primary" : "btn-export"
-              }
+              className={`tab-btn ${activeTab === "analytics" ? "tab-btn--active" : ""}`}
               onClick={() => setActiveTab("analytics")}
             >
-              📊 Аналитика
+              <span className="tab-btn__icon">📊</span>
+              <span className="tab-btn__label">Аналитика</span>
             </button>
+
             <button
-              className={activeTab === "orgs" ? "btn-primary" : "btn-export"}
+              className={`tab-btn ${activeTab === "orgs" ? "tab-btn--active" : ""}`}
               onClick={() => setActiveTab("orgs")}
             >
-              🏢 Организации
+              <span className="tab-btn__icon">🏢</span>
+              <span className="tab-btn__label">Организации</span>
             </button>
-          <button
-            className={activeTab === "trainings" ? "btn-primary" : "btn-export"}
-            onClick={() => setActiveTab("trainings")}
+
+            <button
+              className={`tab-btn ${activeTab === "trainings" ? "tab-btn--active" : ""}`}
+              onClick={() => setActiveTab("trainings")}
             >
-              🎓 Дополнительные обучения
+              <span className="tab-btn__icon">🎓</span>
+              <span className="tab-btn__label">Дополнительные обучения</span>
             </button>
+
             <button
-              className={activeTab === "permits" ? "btn-primary" : "btn-export"}
+              className={`tab-btn ${activeTab === "permits" ? "tab-btn--active" : ""}`}
               onClick={() => setActiveTab("permits")}
-              >
-              📄 Наряды‑допуски
+            >
+              <span className="tab-btn__icon">📄</span>
+              <span className="tab-btn__label">Наряды-допуски</span>
             </button>
+
             <button
-              className={activeTab === "orders" ? "btn-primary" : "btn-export"}
+              className={`tab-btn ${activeTab === "orders" ? "tab-btn--active" : ""}`}
               onClick={() => setActiveTab("orders")}
-              >
-              Приказы
+            >
+              <span className="tab-btn__label">Приказы</span>
             </button>
+
             <button
-              className={activeTab === "prescriptions" ? "btn-primary" : "btn-export"}
+              className={`tab-btn ${activeTab === "prescriptions" ? "tab-btn--active" : ""}`}
               onClick={() => setActiveTab("prescriptions")}
-              >
-              Предписания 
+            >
+              <span className="tab-btn__label">Предписания</span>
             </button>
           </div>
+
         </div>
 
         {/* Main Content Render */}
@@ -642,14 +649,14 @@ if (authLoading || loading) {
               {/* <button className="btn-primary" onClick={handleAddNew}>
                 + Добавить сотрудника
               </button> */}
-              <ButtonGlow 
-              text="Добавить сотрудника" 
-              onClick={handleAddNew} 
-  />
-               <ButtonGlow 
-              text="Экспорт CSV" 
-              onClick={exportCSV} 
-  />
+              <ButtonGlow
+                text="Добавить сотрудника"
+                onClick={handleAddNew}
+              />
+              <ButtonGlow
+                text="Экспорт CSV"
+                onClick={exportCSV}
+              />
               {/* <button className="btn-export" onClick={exportCSV}>
                 📊 Экспорт CSV
               </button> */}

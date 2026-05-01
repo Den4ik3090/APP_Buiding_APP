@@ -14,6 +14,9 @@ import SkeletonLoader from "@/shared/ui/Skeleton";
 import { TOAST_TYPES } from "@/shared/constants/toast";
 import logo from "@/assets/img/logo_PUTEVI.png";
 
+// Импорт стилей Vanilla Extract
+import * as styles from "./theme.css";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -24,31 +27,29 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [session, setSession] = useState<any>(null); // Типизация сессии Supabase
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  // Состояние темы
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    return false;
+  });
+
   const navigate = useNavigate();
   const { notifications, addNotification, removeNotification } = useNotificationContext();
 
   useEffect(() => {
     let isMounted = true;
 
-    const fallbackTimer = setTimeout(() => {
-      if (isMounted) setAuthLoading(false);
-    }, 10000);
-
-    supabase.auth
-      .getSession()
-      .then(({ data, error }) => {
-        if (!isMounted) return;
-        if (error) console.error("getSession error:", error);
-        setSession(data?.session ?? null);
-        setAuthLoading(false);
-      })
-      .catch((err) => {
-        if (!isMounted) return;
-        console.error("getSession failed:", err);
-        setAuthLoading(false);
-      });
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!isMounted) return;
+      if (error) console.error("getSession error:", error);
+      setSession(data?.session ?? null);
+      setAuthLoading(false);
+    });
 
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!isMounted) return;
@@ -58,7 +59,6 @@ export default function App() {
 
     return () => {
       isMounted = false;
-      clearTimeout(fallbackTimer);
       data?.subscription?.unsubscribe();
     };
   }, [navigate]);
@@ -67,46 +67,55 @@ export default function App() {
     await supabase.auth.signOut();
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    setIsDark((prev) => !prev);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="app">
-        <div key="toast-host">
+      {/* Применяем сгенерированный класс темы */}
+      <div className={isDark ? styles.darkThemeClass : styles.lightThemeClass}>
+        <div className="app">
           <ToastContainer
             notifications={notifications}
             onRemove={removeNotification}
           />
-        </div>
 
-        <div className="container">
-          {authLoading ? (
-            <div className="app app__loading">
-              <div className="app__container">
-                <SkeletonLoader rows={8} />
+          <div className="container">
+            {authLoading ? (
+              <div className="app app__loading">
+                <div className="app__container">
+                  <SkeletonLoader rows={8} />
+                </div>
               </div>
-            </div>
-          ) : !session ? (
-            <LoginPage
-              logoSrc={logo}
-              onSuccess={() => { }}
-              onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
-              signIn={async (email, password) => {
-                const { error } = await supabase.auth.signInWithPassword({
-                  email,
-                  password,
-                });
-                if (error) throw new Error(error.message);
-              }}
-            />
-          ) : (
-            <EmployeeProvider>
-              <AppHeader onLogout={handleLogout} />
-              <StatsBar />
-              <AppNav />
-              <div key="app-router-shell">
-                <AppRouter />
-              </div>
-            </EmployeeProvider>
-          )}
+            ) : !session ? (
+              <LoginPage
+                logoSrc={logo}
+                onSuccess={() => { }}
+                onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
+                signIn={async (email, password) => {
+                  const { error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                  });
+                  if (error) throw new Error(error.message);
+                }}
+              />
+            ) : (
+              <EmployeeProvider>
+                <AppHeader
+                  onLogout={handleLogout}
+                  onToggleTheme={toggleTheme}
+                  isDark={isDark}
+                />
+                <StatsBar />
+                <AppNav />
+                <div key="app-router-shell">
+                  <AppRouter />
+                </div>
+              </EmployeeProvider>
+            )}
+          </div>
         </div>
       </div>
     </QueryClientProvider>

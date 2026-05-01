@@ -1,8 +1,10 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./auth/auth.css"; // Tailwind + auth keyframes (animated gradient, blobs)
-import "./index.css"; // ✅ Основные стили приложения
+import { HashRouter } from "react-router-dom";
+import App from "./app/App";
+import { NotificationProvider } from "./app/providers/NotificationProvider";
+import "./auth/auth.css";
+import "./index.css";
 import "./style/modal.css";
 import "./style/toast.css";
 
@@ -35,6 +37,10 @@ if (typeof module !== "undefined" && module.hot) {
 const root = createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App/>
-  </React.StrictMode>,
+    <HashRouter>
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
+    </HashRouter>
+  </React.StrictMode>
 );

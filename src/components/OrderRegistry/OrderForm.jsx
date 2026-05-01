@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { Building2, FileText, Upload, Users, X } from "lucide-react";
-import { supabase } from "../../supabaseClient";
-import { TOAST_DURATION, TOAST_TYPES } from "../../utils/toastConfig";
+import { supabase } from "@/shared/api/supabase";
+import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
 import ResponsiblePersonsMultiSelect from "./ResponsiblePersonMultiSelect";
 
 const getTodayDateValue = () => {

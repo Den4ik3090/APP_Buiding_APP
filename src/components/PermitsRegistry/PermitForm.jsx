@@ -6,7 +6,7 @@ import {
   formatDateInput,
   validatePermitData,
 } from "../../utils/permitHelpers";
-import { supabase } from "../../supabaseClient";
+import { supabase } from "@/shared/api/supabase";
 
 
 //Константа по умолчанию( Первый тип из списка как значение по умолчанию)

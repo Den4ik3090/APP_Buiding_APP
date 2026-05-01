@@ -1,4 +1,4 @@
-import { supabase } from "../supabaseClient";
+import { supabase } from "@/shared/api/supabase";
 
 const SEP = ";";
 const BOM = "\uFEFF";

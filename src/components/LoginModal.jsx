@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "@/shared/api/supabase";
 import "../style/modal.css"; // Import the modal.css file
 
 export default function LoginModal({ logo, onSuccess, onError }) {

@@ -12,7 +12,7 @@
  */
 import React from "react";
 import { LoginPage } from "../auth";
-import { supabase } from "../supabaseClient";
+import { supabase } from "@/shared/api/supabase";
 
 // Optional: logo for the login page
 import logo from "../assets/img/logo_PUTEVI.png";

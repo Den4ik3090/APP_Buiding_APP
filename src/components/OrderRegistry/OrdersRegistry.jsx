@@ -13,8 +13,9 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { supabase } from "../../supabaseClient";
-import { TOAST_DURATION, TOAST_TYPES } from "../../utils/toastConfig";
+import { supabase } from "@/shared/api/supabase";
+import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
+import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import OrderForm from "./OrderForm";
 import OrdersTable from "./OrdersTable";
 import "./OrdersRegistry.css";
@@ -26,10 +27,9 @@ const collator = new Intl.Collator("ru", {
 
 const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
-/**
- * Главный компонент модуля "Реестр приказов и распорядительных документов"
- */
-export default function OrdersRegistry({ addNotification = () => {} }) {
+export default function OrdersRegistry() {
+  const { addNotification } = useNotificationContext();
+
   const [orders, setOrders] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -202,25 +202,24 @@ export default function OrdersRegistry({ addNotification = () => {} }) {
     setEditingOrder(null);
   }, []);
 
-const handleSaveOrder = useCallback(
-  async ({ isEdit, order: updatedOrder }) => {
-    // Обновить state сразу
-    if (isEdit) {
-      setOrders(prev => 
-        prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o)
+  const handleSaveOrder = useCallback(
+    async ({ isEdit, order: updatedOrder }) => {
+      if (isEdit) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
+        );
+      }
+
+      addNotification(
+        isEdit ? "Изменения сохранены." : "Приказ создан.",
+        TOAST_TYPES.SUCCESS,
+        TOAST_DURATION.NORMAL
       );
-    }
 
-    addNotification(
-      isEdit ? "Изменения сохранены." : "Приказ создан.",
-      TOAST_TYPES.SUCCESS,
-      TOAST_DURATION.NORMAL
-    );
-
-    handleCloseForm();
-  },
-  [addNotification, handleCloseForm]
-);
+      handleCloseForm();
+    },
+    [addNotification, handleCloseForm]
+  );
 
   const handleDeleteOrder = useCallback(
     async (orderId) => {

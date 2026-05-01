@@ -3,16 +3,16 @@ import { FileText, Plus, TrendingUp } from "lucide-react";
 import PermitsTable from "./PermitsTable";
 import PermitsDashboard from "./PermitsDashboard";
 import PermitForm from "./PermitForm";
-import { supabase } from "../../supabaseClient";
-import { TOAST_TYPES, TOAST_DURATION } from "../../utils/toastConfig";
+import { supabase } from "@/shared/api/supabase";
+import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
 import { PERMIT_STATUSES } from "../../utils/permitConstants";
 import { isClosedStatus, getPermitStatus } from "../../utils/permitHelpers";
+import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import "./PermitsRegistry.css";
 
-/**
- * Главный компонент модуля "Реестр учета Нарядов-Допусков"
- */
-export default function PermitsRegistry({ addNotification = () => {} }) {
+export default function PermitsRegistry() {
+  const { addNotification } = useNotificationContext();
+
   const [permits, setPermits] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,15 +95,14 @@ export default function PermitsRegistry({ addNotification = () => {} }) {
     return true;
   };
 
-  // Загрузка данных
   useEffect(() => {
     loadData();
-    
-    // Подписка на изменения в реальном времени
+
     const permitsSubscription = supabase
-      .channel('permits_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'permits' },
+      .channel("permits_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "permits" },
         () => {
           loadPermits();
         }
@@ -265,7 +264,6 @@ export default function PermitsRegistry({ addNotification = () => {} }) {
 
   return (
     <div className="permits-registry">
-      {/* Шапка модуля */}
       <div className="permits-header">
         <div className="permits-header-content">
           <div className="permits-header-title">
@@ -284,7 +282,6 @@ export default function PermitsRegistry({ addNotification = () => {} }) {
           </button>
         </div>
 
-        {/* Табы */}
         <div className="permits-tabs">
           <button
             className={`tab ${activeTab === "registry" ? "active" : ""}`}
@@ -303,7 +300,6 @@ export default function PermitsRegistry({ addNotification = () => {} }) {
         </div>
       </div>
 
-      {/* Контент */}
       <div className="permits-content">
         {activeTab === "registry" && (
           <PermitsTable
@@ -321,7 +317,6 @@ export default function PermitsRegistry({ addNotification = () => {} }) {
         )}
       </div>
 
-      {/* Модальное окно формы */}
       {showForm && (
         <PermitForm
           permit={editingPermit}

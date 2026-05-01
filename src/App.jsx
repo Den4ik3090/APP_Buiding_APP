@@ -4,41 +4,25 @@ import React, {
   useCallback,
   useMemo,
   useRef,
-  Suspense,
-  lazy,
 } from "react";
+import { useNavigate, useSearchParams, NavLink } from "react-router-dom";
 
-import EmployeeForm from "./components/EmployeeForm";
-import ToastContainer from "./components/ToastContainer.jsx";
-import VirtualEmployeeTable from "./components/VirtualEmployeeTable.jsx";
-import SkeletonLoader from "./components/Skeleton";
+import ToastContainer from "@/shared/ui/Toast/ToastContainer";
+import SkeletonLoader from "@/shared/ui/Skeleton";
 import { LoginPage } from "./auth";
-import OrganizationsDocs from "./components/OrganizationManager.jsx";
-import AdditionalTrainingsManager from "./components/AdditionalTrainingsManager.jsx";
-import PermitsRegistry from "./components/PermitsRegistry/PermitsRegistry.jsx";
-import OrdersRegistry from "./components/OrderRegistry/OrdersRegistry.jsx";
-import PrescriptionsRegistry from "./components/Prescriptions/PrescriptionsRegistry.jsx";
+import { AppRouter } from "./app/router";
 
-
-import { supabase } from "./supabaseClient";
-import { useNotification } from "./hooks/useNotification";
+import { supabase } from "@/shared/api/supabase";
+import { useNotificationContext } from "./app/providers/NotificationProvider";
 import {
   TOAST_MESSAGES,
   TOAST_TYPES,
   TOAST_DURATION,
-} from "./utils/toastConfig";
+} from "@/shared/constants/toast";
 import { DAYS_THRESHOLD, getStatusKey } from "./utils/constants";
 import { hasExpiredAdditional } from "./components/utils/helpers";
 
 import logo from "./assets/img/logo_PUTEVI.png";
-
-// Компоненты UI
-import { ButtonGlow } from "./components/ui/ButtonGlow.jsx";
-
-const EmployeeTable = lazy(() => import("./components/Table"));
-const AnalyticsDashboard = lazy(() =>
-  import("./components/AnalyticsDashboard.jsx")
-);
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -46,18 +30,43 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 'table', 'analytics', 'orgs'
-  const [activeTab, setActiveTab] = useState("table");
-
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [organizations, setOrganizations] = useState([]);
-  const [selectedOrg, setSelectedOrg] = useState("Все");
-  const [tableStatusFilter, setTableStatusFilter] = useState("all");
+
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const selectedOrg = searchParams.get("org") ?? "Все";
+  const tableStatusFilter = searchParams.get("status") ?? "all";
+
+  const setSelectedOrg = (org) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (org === "Все") next.delete("org");
+        else next.set("org", org);
+        return next;
+      },
+      { replace: true }
+    );
+  };
+
+  const setTableStatusFilter = (status) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (status === "all") next.delete("status");
+        else next.set("status", status);
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   const { notifications, addNotification, removeNotification } =
-    useNotification();
+    useNotificationContext();
   const prevExpiredRef = useRef(null);
 
   // --- AUTH bootstrap ---
@@ -85,10 +94,9 @@ function App() {
       if (event === "SIGNED_OUT") {
         setEmployees([]);
         setOrganizations([]);
-        setSelectedOrg("Все");
-        setActiveTab("table");
         setShowForm(false);
         setEditingEmployee(null);
+        navigate("/");
       }
     });
 
@@ -97,7 +105,7 @@ function App() {
       clearTimeout(fallbackTimer);
       data?.subscription?.unsubscribe();
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Load app data ---
   useEffect(() => {
@@ -166,7 +174,6 @@ function App() {
     return formatDataForApp(data);
   };
 
-  // ---------- Маппинг формы в формат БД ----------
   const mapFormToDb = (form) => ({
     name: form.name,
     profession: form.profession,
@@ -196,7 +203,6 @@ function App() {
         [...prev, mapped].sort((a, b) => a.name.localeCompare(b.name))
       );
 
-      // большой success‑toast вместо модалки
       addNotification(
         TOAST_MESSAGES.EMPLOYEE_ADDED || TOAST_MESSAGES.ADDED,
         TOAST_TYPES.SUCCESS,
@@ -303,7 +309,6 @@ function App() {
     }
   };
 
-  // ---------- Форматирование данных ----------
   const formatDataForApp = (data) =>
     data.map((emp) => ({
       id: emp.id,
@@ -327,13 +332,13 @@ function App() {
   const handleEdit = (emp) => {
     setEditingEmployee(emp);
     setShowForm(true);
-    setActiveTab("table");
+    navigate("/");
   };
 
   const handleAddNew = () => {
     setEditingEmployee(null);
     setShowForm(true);
-    setActiveTab("table");
+    navigate("/");
   };
 
   const cancelEdit = () => {
@@ -342,8 +347,9 @@ function App() {
   };
 
   const handleShowExpired = () => {
-    setActiveTab("table");
-    setTableStatusFilter("expired");
+    const next = new URLSearchParams(searchParams);
+    next.set("status", "expired");
+    navigate({ pathname: "/", search: next.toString() });
   };
 
   const filteredEmployees = useMemo(
@@ -393,7 +399,7 @@ function App() {
 
   const exportCSV = () => {
     const SEP = ";";
-    const BOM = "\uFEFF";
+    const BOM = "﻿";
     const headers = [
       "ФИО",
       "Организация",
@@ -483,7 +489,7 @@ function App() {
     return (
       <LoginPage
         logoSrc={logo}
-        onSuccess={() => { }}
+        onSuccess={() => {}}
         onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
         signIn={async (email, password) => {
           const { error } = await supabase.auth.signInWithPassword({
@@ -537,7 +543,7 @@ function App() {
               cursor: "pointer",
               padding: 0,
             }}
-            title="�������� ������������"
+            title="Показать просроченных"
           >
             {expiredCount}
           </button>
@@ -580,163 +586,104 @@ function App() {
               <option value="valid">Действительные</option>
               <option value="warning">Скоро истекают</option>
               <option value="expired">Просроченные</option>
-
             </select>
           </div>
 
-          <div className="tabs-navigation">
-            <button
-              className={`tab-btn ${activeTab === "table" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("table")}
+          <nav className="tabs-navigation">
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__icon">📋</span>
               <span className="tab-btn__label">Сотрудники</span>
-            </button>
+            </NavLink>
 
-            <button
-              className={`tab-btn ${activeTab === "analytics" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("analytics")}
+            <NavLink
+              to="/analytics"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__icon">📊</span>
               <span className="tab-btn__label">Аналитика</span>
-            </button>
+            </NavLink>
 
-            <button
-              className={`tab-btn ${activeTab === "orgs" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("orgs")}
+            <NavLink
+              to="/organizations"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__icon">🏢</span>
               <span className="tab-btn__label">Организации</span>
-            </button>
+            </NavLink>
 
-            <button
-              className={`tab-btn ${activeTab === "trainings" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("trainings")}
+            <NavLink
+              to="/additional-trainings"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__icon">🎓</span>
               <span className="tab-btn__label">Дополнительные обучения</span>
-            </button>
+            </NavLink>
 
-            <button
-              className={`tab-btn ${activeTab === "permits" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("permits")}
+            <NavLink
+              to="/permits"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__icon">📄</span>
               <span className="tab-btn__label">Наряды-допуски</span>
-            </button>
+            </NavLink>
 
-            <button
-              className={`tab-btn ${activeTab === "orders" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("orders")}
+            <NavLink
+              to="/orders"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__label">Приказы</span>
-            </button>
+            </NavLink>
 
-            <button
-              className={`tab-btn ${activeTab === "prescriptions" ? "tab-btn--active" : ""}`}
-              onClick={() => setActiveTab("prescriptions")}
+            <NavLink
+              to="/prescriptions"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
             >
               <span className="tab-btn__label">Предписания</span>
-            </button>
-          </div>
-
+            </NavLink>
+          </nav>
         </div>
 
-        {/* Main Content Render */}
-        {activeTab === "table" && (
-          <>
-            <div className="form-actions" style={{ marginBottom: 15 }}>
-              {/* <button className="btn-primary" onClick={handleAddNew}>
-                + Добавить сотрудника
-              </button> */}
-              <ButtonGlow
-                text="Добавить сотрудника"
-                onClick={handleAddNew}
-              />
-              <ButtonGlow
-                text="Экспорт CSV"
-                onClick={exportCSV}
-              />
-              {/* <button className="btn-export" onClick={exportCSV}>
-                📊 Экспорт CSV
-              </button> */}
-            </div>
-
-            {showForm && (
-              <EmployeeForm
-                onAddEmployee={addEmployee}
-                editingEmployee={editingEmployee}
-                onUpdateEmployee={updateEmployee}
-                onCancelEdit={cancelEdit}
-                existingOrganizations={organizations}
-                onPhotoUpload={() =>
-                  addNotification(
-                    TOAST_MESSAGES.PHOTO_UPLOADED,
-                    TOAST_TYPES.SUCCESS,
-                    TOAST_DURATION.NORMAL
-                  )
-                }
-                onPhotoError={() =>
-                  addNotification(
-                    TOAST_MESSAGES.PHOTO_UPLOAD_ERROR,
-                    TOAST_TYPES.ERROR,
-                    TOAST_DURATION.NORMAL
-                  )
-                }
-              />
-            )}
-
-            <Suspense fallback={<SkeletonLoader rows={8} />}>
-              {filteredEmployees.length > 1000 ? (
-                <VirtualEmployeeTable
-                  employees={tableEmployees}
-                  getDaysDifference={getDaysDifference}
-                  onRetrain={handleRetrain}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                  addNotification={addNotification}
-                />
-              ) : (
-                <EmployeeTable
-                  employees={tableEmployees}
-                  getDaysDifference={getDaysDifference}
-                  onRetrain={handleRetrain}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                  addNotification={addNotification}
-                  statusFilterValue={tableStatusFilter}
-                  onStatusFilterChange={setTableStatusFilter}
-                />
-              )}
-            </Suspense>
-          </>
-        )}
-
-        {activeTab === "analytics" && (
-          <Suspense fallback={<SkeletonLoader rows={6} />}>
-            <AnalyticsDashboard
-              employees={tableEmployees}
-              getDaysDifference={getDaysDifference}
-            />
-          </Suspense>
-        )}
-
-        {activeTab === "orgs" && <OrganizationsDocs employees={employees} />}
-        {activeTab === "trainings" && <AdditionalTrainingsManager employees={employees} />}
-        {activeTab === "permits" && (
-          <PermitsRegistry addNotification={addNotification} />)}
-        {activeTab === "orders" && (
-          <OrdersRegistry addNotification={addNotification} />)}
-        {activeTab === "prescriptions" && (
-          <PrescriptionsRegistry addNotification={addNotification} />)}
+        {/* Main Content */}
+        <AppRouter
+          employees={employees}
+          tableEmployees={tableEmployees}
+          getDaysDifference={getDaysDifference}
+          showForm={showForm}
+          editingEmployee={editingEmployee}
+          onAddEmployee={addEmployee}
+          onUpdateEmployee={updateEmployee}
+          onCancelEdit={cancelEdit}
+          onDelete={handleDelete}
+          onRetrain={handleRetrain}
+          onEdit={handleEdit}
+          onAddNew={handleAddNew}
+          organizations={organizations}
+          addNotification={addNotification}
+          onExportCSV={exportCSV}
+          statusFilterValue={tableStatusFilter}
+          onStatusFilterChange={setTableStatusFilter}
+        />
       </div>
     </div>
   );
 }
 
 export default App;
-
-
-
-
-

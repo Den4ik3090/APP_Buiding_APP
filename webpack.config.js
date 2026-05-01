@@ -2,6 +2,8 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const path = require("path");
+const webpack = require("webpack");
+require("dotenv").config();
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === "production";
@@ -89,8 +91,11 @@ module.exports = (env, argv) => {
         },
       ],
     },
-    plugins: 
-    [
+    plugins: [
+  new webpack.DefinePlugin({
+    "process.env.REACT_APP_SUPABASE_URL": JSON.stringify(process.env.REACT_APP_SUPABASE_URL),
+    "process.env.REACT_APP_SUPABASE_KEY": JSON.stringify(process.env.REACT_APP_SUPABASE_KEY),
+  }),
   new HtmlWebpackPlugin({
     template: "./public/index.html",
     minify: isProduction

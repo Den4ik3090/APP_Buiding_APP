@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { sendToTelegram } from "../utils/sendToTelegram";
+import { sendToTelegram } from "@/shared/api/telegram";
 import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "../utils/constants";
 
 /**

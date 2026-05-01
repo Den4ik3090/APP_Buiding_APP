@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ADDITIONAL_TRAINING_TYPES } from '../utils/constants';
-import { supabase } from '../supabaseClient';
+import { supabase } from '@/shared/api/supabase';
 
 function EmployeeForm({
   onAddEmployee,

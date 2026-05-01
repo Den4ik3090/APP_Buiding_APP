@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Clock, CheckCircle } from 'lucide-react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '@/shared/api/supabase';
 import {
   calculateExtendedDate,
   canExtend,
@@ -10,7 +10,7 @@ import {
   NOTIFICATION_MESSAGES,
   PERMIT_STATUSES,
 } from '../../utils/permitConstants';
-import { TOAST_TYPES, TOAST_DURATION } from '../../utils/toastConfig';
+import { TOAST_TYPES, TOAST_DURATION } from '@/shared/constants/toast';
 
 /**
  * Компонент кнопок действий для наряда

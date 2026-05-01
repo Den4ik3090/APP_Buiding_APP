@@ -16,8 +16,9 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
-import { supabase } from "../../supabaseClient";
-import { TOAST_DURATION, TOAST_TYPES } from "../../utils/toastConfig";
+import { supabase } from "@/shared/api/supabase";
+import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
+import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import PrescriptionForm from "./PrescriptionForm.jsx";
 import PrescriptionsTable from "./PrescriptionsTable.jsx";
 import "./PrescriptionsRegistryStyle.css";
@@ -29,7 +30,6 @@ const collator = new Intl.Collator("ru", {
 
 const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
-// Статусы предписаний
 export const PRESCRIPTION_STATUSES = {
   OPEN: "open",
   IN_PROGRESS: "in_progress",
@@ -44,10 +44,9 @@ export const PRESCRIPTION_STATUS_LABELS = {
   [PRESCRIPTION_STATUSES.OVERDUE]: "Просрочено",
 };
 
-/**
- * Главный компонент модуля "Реестр предписаний"
- */
-export default function PrescriptionsRegistry({ addNotification = () => {} }) {
+export default function PrescriptionsRegistry() {
+  const { addNotification } = useNotificationContext();
+
   const [prescriptions, setPrescriptions] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,7 +142,6 @@ export default function PrescriptionsRegistry({ addNotification = () => {} }) {
         ? employeesById.get(prescription.responsible_person_id)
         : null;
 
-      // Определяем реальный статус с учетом просрочки
       let actualStatus = prescription.status;
       if (
         prescription.status !== PRESCRIPTION_STATUSES.COMPLETED &&

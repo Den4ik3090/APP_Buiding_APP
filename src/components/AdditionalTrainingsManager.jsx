@@ -427,7 +427,7 @@ function EditTrainingModal({ training, onClose, employees }) {
       };
 
       // Импортируем supabase
-      const { supabase } = await import("../supabaseClient");
+      const { supabase } = await import("@/shared/api/supabase");
 
       // Сохраняем в базу данных
       const { error } = await supabase

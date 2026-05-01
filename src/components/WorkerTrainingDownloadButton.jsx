@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { downloadWorkerTrainings } from "../utils/downloadWorkerTrainings";
-import { TOAST_TYPES, TOAST_DURATION } from "../utils/toastConfig";
+import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
 import '../style/WorkerTrainingDownloadButton.scss';
 
 function WorkerTrainingDownloadButton({ workerId, workerName, addNotification }) {

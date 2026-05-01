@@ -103,6 +103,10 @@ export function AppNav() {
         <NavLink to="/prescriptions" className={navClass}>
           <span className="tab-btn__label">Предписания</span>
         </NavLink>
+        <NavLink to="/tasks" className={navClass}>
+          <span className="tab-btn__icon">✅</span>
+          <span className="tab-btn__label">Задачи</span>
+        </NavLink>
       </nav>
     </div>
   );

@@ -11,6 +11,7 @@ const AdditionalTrainingsPage = lazy(
 const PermitsPage = lazy(() => import("@/pages/permits/PermitsPage"));
 const OrdersPage = lazy(() => import("@/pages/orders/OrdersPage"));
 const PrescriptionsPage = lazy(() => import("@/pages/prescriptions/PrescriptionsPage"));
+const TasksPage = lazy(() => import("@/pages/tasks/TasksPage"));
 
 export function AppRouter() {
   return (
@@ -23,6 +24,7 @@ export function AppRouter() {
         <Route path="/permits" element={<PermitsPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/prescriptions" element={<PrescriptionsPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
       </Routes>
     </Suspense>
   );

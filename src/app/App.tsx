@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase";
 import { useNotificationContext } from "./providers/NotificationProvider";
 import { LoginPage } from "@/auth";
@@ -13,6 +14,15 @@ import SkeletonLoader from "@/shared/ui/Skeleton";
 import { TOAST_TYPES } from "@/shared/constants/toast";
 import logo from "@/assets/img/logo_PUTEVI.png";
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      retry: 1,
+    },
+  },
+});
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -21,19 +31,28 @@ export default function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const fallbackTimer = setTimeout(() => { if (isMounted) setAuthLoading(false); }, 10000);
 
-    supabase.auth.getSession().then(({ data, error }) => {
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) setAuthLoading(false);
+    }, 10000);
+
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) console.error("getSession error:", error);
+        setSession(data?.session ?? null);
+        setAuthLoading(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.error("getSession failed:", err);
+        setAuthLoading(false);
+      });
+
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!isMounted) return;
-      if (error) console.error("getSession error:", error);
-      setSession(data?.session ?? null);
-      setAuthLoading(false);
-    }).catch((err) => {
-      if (isMounted) { console.error("getSession failed:", err); setAuthLoading(false); }
-    });
-
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session ?? null);
+      setSession(nextSession ?? null);
       if (event === "SIGNED_OUT") navigate("/");
     });
 
@@ -42,47 +61,54 @@ export default function App() {
       clearTimeout(fallbackTimer);
       data?.subscription?.unsubscribe();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
   }, []);
 
-  if (authLoading) {
-    return (
-      <div className="app app__loading">
-        <div className="app__container">
-          <SkeletonLoader rows={8} />
+  return (
+    <QueryClientProvider client={queryClient}>
+      <div className="app">
+        <div key="toast-host">
+          <ToastContainer
+            notifications={notifications}
+            onRemove={removeNotification}
+          />
+        </div>
+
+        <div className="container">
+          {authLoading ? (
+            <div className="app app__loading">
+              <div className="app__container">
+                <SkeletonLoader rows={8} />
+              </div>
+            </div>
+          ) : !session ? (
+            <LoginPage
+              logoSrc={logo}
+              onSuccess={() => { }}
+              onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
+              signIn={async (email, password) => {
+                const { error } = await supabase.auth.signInWithPassword({
+                  email,
+                  password,
+                });
+                if (error) throw new Error(error.message);
+              }}
+            />
+          ) : (
+            <EmployeeProvider>
+              <AppHeader onLogout={handleLogout} />
+              <StatsBar />
+              <AppNav />
+              <div key="app-router-shell">
+                <AppRouter />
+              </div>
+            </EmployeeProvider>
+          )}
         </div>
       </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <LoginPage
-        logoSrc={logo}
-        onSuccess={() => {}}
-        onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
-        signIn={async (email, password) => {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw new Error(error.message);
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="app">
-      <ToastContainer notifications={notifications} onRemove={removeNotification} />
-      <div className="container">
-        <EmployeeProvider>
-          <AppHeader onLogout={handleLogout} />
-          <StatsBar />
-          <AppNav />
-          <AppRouter />
-        </EmployeeProvider>
-      </div>
-    </div>
+    </QueryClientProvider>
   );
 }

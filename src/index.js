@@ -1,14 +1,17 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./app/App";
 import { NotificationProvider } from "./app/providers/NotificationProvider";
+import '@coreui/coreui/dist/css/coreui.min.css'
 import "./auth/auth.css";
 import "./index.css";
 import "./style/modal.css";
 import "./style/toast.css";
 
-// Recovery from HMR chunk load errors (e.g. after dev server restart): full reload
+const queryClient = new QueryClient();
+
 if (typeof module !== "undefined" && module.hot) {
   module.hot.addStatusHandler((status) => {
     if (status === "fail") {
@@ -37,10 +40,12 @@ if (typeof module !== "undefined" && module.hot) {
 const root = createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <HashRouter>
-      <NotificationProvider>
-        <App />
-      </NotificationProvider>
-    </HashRouter>
+    <QueryClientProvider client={queryClient}>
+      <HashRouter>
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
+      </HashRouter>
+    </QueryClientProvider>
   </React.StrictMode>
 );

@@ -489,7 +489,7 @@ function App() {
     return (
       <LoginPage
         logoSrc={logo}
-        onSuccess={() => {}}
+        onSuccess={() => { }}
         onError={(m) => addNotification(m, TOAST_TYPES.ERROR)}
         signIn={async (email, password) => {
           const { error } = await supabase.auth.signInWithPassword({
@@ -505,6 +505,7 @@ function App() {
   return (
     <div className="app">
       <ToastContainer
+        key={`toast-v1-${notifications.length}-${notifications.map(n => n.id || 'tmp').join('-')}`}
         notifications={notifications}
         onRemove={removeNotification}
       />
@@ -658,11 +659,20 @@ function App() {
             >
               <span className="tab-btn__label">Предписания</span>
             </NavLink>
+            <NavLink
+              to="/tasks"
+              className={({ isActive }) =>
+                `tab-btn${isActive ? " tab-btn--active" : ""}`
+              }
+            >
+              <span className="tab-btn__label">Задачи</span>
+            </NavLink>
           </nav>
         </div>
 
         {/* Main Content */}
         <AppRouter
+          key={`app-router-v1-${tableStatusFilter}-${showForm ? 'form' : 'noform'}-${employees.length}`}
           employees={employees}
           tableEmployees={tableEmployees}
           getDaysDifference={getDaysDifference}

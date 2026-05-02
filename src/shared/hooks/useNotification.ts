@@ -1,44 +1,48 @@
-
 import { useState, useCallback } from 'react';
 
-/**
- * Кастомный хук для управления Toast уведомлениями
- * Использование:
- * const { notifications, addNotification, removeNotification } = useNotification();
- */
+export interface Notification {
+  id: number;
+  message: string;
+  type: string;
+  duration?: number;
+  timer?: ReturnType<typeof setTimeout>;
+}
+
 export const useNotification = () => {
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((message, type = 'success', duration = 4000) => {
-    const id = Date.now();
-    const notification = { id, message, type };
+  const addNotification = useCallback(
+    (message: string, type: string = 'success', duration: number = 4000): number => {
+      const id = Date.now();
+      const notification: Notification = { id, message, type, duration };
 
-    setNotifications((prev) => [...prev, notification]);
+      setNotifications((prev) => [...prev, notification]);
 
-    // Автоматически удалить уведомление через duration миллисекунд
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        removeNotification(id);
-      }, duration);
+      if (duration > 0) {
+        const timer = setTimeout(() => {
+          removeNotification(id);
+        }, duration);
 
-      // Сохраняем таймер для возможности отмены
-      notification.timer = timer;
-    }
+        notification.timer = timer;
+      }
 
-    return id;
-  }, []);
+      return id;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
-  const removeNotification = useCallback((id) => {
+  const removeNotification = useCallback((id: number): void => {
     setNotifications((prev) => {
       const notification = prev.find((n) => n.id === id);
-      if (notification && notification.timer) {
+      if (notification?.timer) {
         clearTimeout(notification.timer);
       }
       return prev.filter((n) => n.id !== id);
     });
   }, []);
 
-  const removeAllNotifications = useCallback(() => {
+  const removeAllNotifications = useCallback((): void => {
     setNotifications((prev) => {
       prev.forEach((n) => {
         if (n.timer) clearTimeout(n.timer);

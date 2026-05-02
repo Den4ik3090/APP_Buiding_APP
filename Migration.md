@@ -3,61 +3,64 @@
 ## Status
 - Этап 1 ✅ — .env подключён, supabaseClient читает из process.env
 - Этап 2 ✅ — NotificationContext создан, prop drilling убран из 3 registry
-- Этап 3 ✅ — Shared UI перемещён в src/shared/ui/
-- Этап 4 ✅ — Shared API/utils/hooks перемещены в src/shared/
-- Этап 5 🔲
-- Этап 6 ✅ — activeTab → URL navigation (HashRouter, 7 routes, NavLink, search params)
-- Этап 7 ✅ — App.jsx decomposed → App.tsx (~88L auth-only), EmployeeProvider, widgets, feature apis
-- Этап 8 🔲
+- Этап 3 ✅ — UI-компоненты перенесены в src/shared/ui/
+- Этап 4 ✅ — utils/ объединены, API-слой вынесен в shared/api/
+- Этап 5 ❌ — не начат (src/entities/ не существует)
+- Этап 6 ✅ — Router внедрён, 8 маршрутов, NavLink, search params
+- Этап 7 ✅ — App.tsx ~123 строки, widgets extracted, EmployeeProvider
+- Этап 8 🔶 — частично (новые файлы .tsx/.ts, useNotification untyped)
+- CSS стратегия 🔶 — частично (5 параллельных систем, Tailwind работает)
+
+## Audit Findings (добавлено по результатам анализа)
+- CRITICAL: двойной QueryClientProvider — index.js + App.tsx
+- HIGH: @types/react-router-dom v5 при runtime v7
+- HIGH: поле priority в форме не существует в БД
+- MEDIUM: useNotification.ts не типизирован
+- LOW: две библиотеки сжатия изображений (compressorjs + browser-image-compression)
+- LOW: framer-motion, chart.js возможно мёртвые зависимости
 
 ---
 
-## Этап 3 — Shared UI (1–2 часа, низкий риск)
-Цель: изолировать переиспользуемые компоненты в shared/ui/
+## Bugfix Sprint (выполнить до продолжения миграции)
 
-Перемещения:
-src/components/Skeleton.jsx       → src/shared/ui/Skeleton/index.jsx
-src/components/StatusBadge.jsx    → src/shared/ui/StatusBadge/index.jsx
-src/components/Toast.jsx          → src/shared/ui/Toast/Toast.jsx
-src/components/ToastContainer.jsx → src/shared/ui/Toast/ToastContainer.jsx
-src/components/Table.jsx          → src/shared/ui/Table/index.jsx
-src/components/ui/ButtonGlow.jsx  → src/shared/ui/ButtonGlow/index.jsx
-src/components/ui/ButtonGlow.scss → src/shared/ui/ButtonGlow/ButtonGlow.scss
+### BF-1 — Двойной QueryClientProvider (15 мин, CRITICAL)
+Файлы: src/index.js, src/app/App.tsx
+Удалить QueryClient + QueryClientProvider из index.js
+Оставить только в App.tsx
+Проверка: grep -n "QueryClient" src/index.js → пусто
 
-Удалить:
-src/components/Dashboard.jsx — не используется (проверить grep перед удалением)
+### BF-2 — Удалить @types/react-router-dom (5 мин, HIGH)
+Файл: package.json
+npm uninstall @types/react-router-dom
+RRD v7 поставляет собственные типы
+Проверка: grep "types/react-router" package.json → пусто
 
-Правила:
-- Не переименовывать .jsx в .tsx
-- Не менять логику компонентов
-- Сохранить CSS-стратегию каждого компонента
-- Использовать @/ alias в новых импортах
+### BF-3 — Поле priority (20 мин, HIGH)
+Файлы: supabase/migrations/, src/features/tasks/types.ts
+Создать: supabase/migrations/add_priority_to_tasks.sql
+Добавить priority?: 'low' | 'medium' | 'high' в Task + TaskInsert
+Проверка: npm run typecheck → без ошибок
 
-Проверка: npm start → Skeleton, StatusBadge, Toast, Table, ButtonGlow отображаются.
+### BF-4 — Типизировать useNotification.ts (20 мин, MEDIUM)
+Файлы: src/shared/hooks/useNotification.ts, src/app/providers/NotificationProvider.tsx
+Добавить interface Notification, типизировать useState + addNotification
+Проверка: grep -n "any\|never\[\]" src/shared/hooks/useNotification.ts → пусто
 
----
+### BF-5 — Убрать дублирующую библиотеку сжатия (10 мин, LOW)
+Файлы: src/features/tasks/utils/imageCompression.ts, package.json
+npm uninstall browser-image-compression
+Удалить imageCompression.ts если не используется
+Проверка: grep -rn "browser-image-compression" src/ → пусто
 
-## Этап 4 — Shared API + Utils merge (1–2 часа, низкий риск)
-Цель: объединить два utils/, вынести supabaseClient, убрать пустые файлы
-
-Перемещения:
-src/supabaseClient.js            → src/shared/api/supabase.ts
-src/utils/sendToTelegram.js      → src/shared/api/telegram.ts
-src/utils/analytics.js           → src/shared/lib/analytics.ts
-src/utils/toastConfig.js         → src/shared/constants/toast.ts
-src/hooks/useNotification.js     → src/shared/hooks/useNotification.ts
-
-Удалить:
-src/components/utils/orderConstant.js — пустой
-src/components/utils/orderHelpers.js  — пустой
-
-Риск: Supabase-импорт есть в 10+ файлах — обновить все за один коммит.
-Проверка: npm run build без ошибок, все сетевые запросы работают.
+### BF-6 — Аудит мёртвых зависимостей (10 мин, LOW)
+Проверить grep по: framer-motion, chart.js, react-chartjs, LoginModal
+Удалить неиспользуемые пакеты
+Проверка: npm run build → без warnings о неиспользуемых модулях
 
 ---
 
 ## Этап 5 — Entity constants (1 час, низкий риск)
-Цель: вынести domain constants из компонентов в сущности
+Цель: создать src/entities/ и вынести domain constants
 
 Перемещения:
 src/utils/constants.js              → src/entities/employee/constants.ts
@@ -71,67 +74,52 @@ src/entities/employee/types.ts
 src/entities/permit/types.ts
 src/entities/order/types.ts
 src/entities/prescription/types.ts
-src/entities/*/index.ts  — barrel-экспорт в каждой папке
+src/entities/*/index.ts  — barrel-экспорт
 
-Риск: PRESCRIPTION_STATUSES может импортироваться снаружи — проверить grep.
-Проверка: npm start, статусы отображаются корректно во всех реестрах.
+Исправить импорты в EmployeesPage.tsx:
+@/utils/constants       → @/entities/employee/constants
+@/components/utils/helpers → @/entities/employee/helpers
 
----
-
-## Этап 6 — Router (2–3 часа, средний риск)
-Цель: заменить activeTab на URL-навигацию
-
-Установить: react-router-dom + @types/react-router-dom
-
-Новые файлы:
-src/app/router.tsx — HashRouter с 7 маршрутами
-
-Маршруты:
-/                    → EmployeesPage
-/analytics           → AnalyticsPage
-/organizations       → OrganizationsPage
-/additional-trainings → AdditionalTrainingsPage
-/permits             → PermitsPage
-/orders              → OrdersPage
-/prescriptions       → PrescriptionsPage
-
-Изменения:
-src/App.jsx        — убрать activeTab state, добавить RouterProvider
-src/widgets/app-nav/AppNav.tsx — button onClick → NavLink
-
-Риск: selectedOrg и tableStatusFilter используются между вкладками
-Решение: URL search params (?org=АО&status=expired)
-Проверка: обновить страницу на /permits → остаёшься на permits.
+Проверка: grep -rn "from.*utils/constants\|from.*components/utils/helpers" src/ → пусто
+npm start → статусы корректны во всех реестрах
 
 ---
 
-## Этап 7 — App.jsx decomposition (2–3 часа, средний риск)
-Цель: превратить App.jsx из 740 строк в ~50-строчный orchestrator
+## Этап 8 — TypeScript полная волна (итеративно)
+Цель: устранить оставшиеся untyped boundaries
 
-Новые файлы:
-src/widgets/app-header/AppHeader.tsx  ← header JSX из App.jsx
-src/widgets/stats-bar/StatsBar.tsx    ← info JSX из App.jsx
-src/features/employee-crud/api.ts     ← addEmployee, updateEmployee, handleDelete
-src/features/employee-retrain/api.ts  ← handleRetrain
-src/features/employee-export/exportToCSV.ts ← exportCSV
-src/pages/employees/EmployeesPage.tsx ← блок activeTab === "table"
-src/app/App.tsx                       ← только auth-check + providers + router
+Первая волна (после BF-4):
+- src/features/employee-crud/api.ts — убрать Record<string, any>
+- src/shared/hooks/useNotification.ts — типизирован в BF-4
+- src/components/PermitsRegistry/*.jsx — добавить prop types на границах
 
-Риск: expiredCount и prevExpiredRef нужны в двух местах
-Решение: вынести в отдельный hook useExpiredCount
-Проверка: CRUD сотрудников, CSV-экспорт, счётчик просроченных, toast — всё работает.
+CSS стратегия — вторая волна:
+src/style/toast.css     → src/shared/ui/Toast/Toast.module.css
+src/style/Skeleton.css  → src/shared/ui/Skeleton/Skeleton.module.css
+Цель: убрать plain CSS из src/style/ полностью
+
+Проверка: tsc --noEmit без новых ошибок
 
 ---
 
-## Этап 8 — TypeScript + CSS стратегия (итеративно)
-Цель: зафиксировать правила, начать миграцию без полной перезаписи
+## Текущий Scorecard (из аудита)
+| Dimension        | Score /10 | Top issue                        |
+|------------------|-----------|----------------------------------|
+| Architecture     | 7/10      | двойной QueryClientProvider      |
+| Folder structure | 6/10      | src/entities/ отсутствует        |
+| TypeScript       | 5/10      | useNotification untyped, any в api|
+| Performance      | 8/10      | два чарт-пакета в бандле         |
+| Security         | 7/10      | RLS не покрывает multi-tenant    |
+| Data layer       | 7/10      | client-side фильтрация в useTasks|
+| Styling          | 5/10      | 5 параллельных систем            |
+| Dead code        | 6/10      | framer-motion, chart.js, LoginModal|
+| OVERALL          | 6/10      |                                  |
 
-TypeScript — принцип: новые файлы только .tsx/.ts
-Старые .jsx переименовываются по мере касания
+---
 
-CSS — принцип: CSS Modules для новых файлов
-Первая волна:
-src/style/toast.css   → src/shared/ui/Toast/Toast.module.css
-src/style/Skeleton.css → src/shared/ui/Skeleton/Skeleton.module.css
-
-Проверка: tsc --noEmit без новых ошибок, стили визуально не изменились.
+## Следующие шаги (в порядке приоритета)
+1. BF-1 → BF-6 (bugfix sprint, ~1 час суммарно)
+2. Этап 5 — Entity constants
+3. Этап 8 — TypeScript полная волна
+4. CSS консолидация
+5. useTasks — перенести фильтрацию на сторону Supabase

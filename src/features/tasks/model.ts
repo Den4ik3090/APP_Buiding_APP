@@ -1,4 +1,5 @@
 export type TaskStatus = 'pending' | 'in_progress' | 'resolved' | 'overdue';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 
 export interface Task {
   id: string;
@@ -6,6 +7,7 @@ export interface Task {
   description: string | null;
   assigned_to: string | null;
   status: TaskStatus;
+  priority: TaskPriority;
   site_id: string | null;
   created_at: string;
   due_date: string | null;

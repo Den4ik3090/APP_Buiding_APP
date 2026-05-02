@@ -12,7 +12,7 @@ import { AppRouter } from "./router";
 import ToastContainer from "@/shared/ui/Toast/ToastContainer";
 import SkeletonLoader from "@/shared/ui/Skeleton";
 import { TOAST_TYPES } from "@/shared/constants/toast";
-import logo from "@/assets/img/logo_PUTEVI.png";
+import logo from "@/assets/img/logo_PUTEVI.jpg";
 
 // Импорт стилей Vanilla Extract
 import * as styles from "./theme.css";

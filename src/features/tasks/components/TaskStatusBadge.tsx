@@ -1,74 +1,62 @@
-// filepath: src/features/tasks/components/TaskStatusBadge.tsx
 import React from 'react';
 import { CheckCircle, Clock, AlertTriangle, HelpCircle } from 'lucide-react';
 import type { TaskStatus } from '../types';
 
-// Расширяем конфигурацию, чтобы она включала 'pending' и имела запасной вариант
-const CONFIG: Record<string, { label: string; icon: React.ReactNode; style: React.CSSProperties }> = {
+type KnownStatus = TaskStatus | 'open';
+
+interface ConfigEntry {
+  label: string;
+  icon: React.ReactNode;
+  classes: string;
+}
+
+const CONFIG: Record<KnownStatus, ConfigEntry> = {
   pending: {
-    label: 'В работе',
+    label: 'Ожидает',
     icon: <Clock size={12} />,
-    style: { background: '#fef9c3', color: '#92400e' },
+    classes: 'bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-950/60 dark:text-yellow-300 dark:border-yellow-800',
   },
   open: {
     label: 'Открыта',
     icon: <Clock size={12} />,
-    style: { background: '#dbeafe', color: '#1e40af' },
+    classes: 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800',
   },
   in_progress: {
     label: 'В процессе',
     icon: <Clock size={12} />,
-    style: { background: '#e0f2fe', color: '#075985' },
+    classes: 'bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800',
   },
   resolved: {
     label: 'Решена',
     icon: <CheckCircle size={12} />,
-    style: { background: '#dcfce7', color: '#166534' },
+    classes: 'bg-green-50 text-green-800 border-green-200 dark:bg-green-950/60 dark:text-green-300 dark:border-green-800',
   },
   overdue: {
     label: 'Просрочена',
     icon: <AlertTriangle size={12} />,
-    style: { background: '#fee2e2', color: '#991b1b' },
+    classes: 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800',
   },
 };
 
-// Дефолтный конфиг на случай, если статус из базы не совпал ни с одним ключом
-const FALLBACK_CONFIG = {
+const FALLBACK: ConfigEntry = {
   label: 'Неизвестно',
   icon: <HelpCircle size={12} />,
-  style: { background: '#f3f4f6', color: '#374151' },
+  classes: 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700',
 };
 
 interface TaskStatusBadgeProps {
-  status: TaskStatus | string; // Позволяем строку, чтобы избежать падения при деструктуризации
+  status: TaskStatus | string;
 }
 
 export function TaskStatusBadge({ status }: TaskStatusBadgeProps) {
-  // Безопасное получение данных: если статуса нет в CONFIG, берем FALLBACK_CONFIG
-  const { label, icon, style } = CONFIG[status as string] || {
-    ...FALLBACK_CONFIG,
-    label: status || FALLBACK_CONFIG.label // Если статус пришел, но его нет в списке — покажем сам текст статуса
-  };
+  const entry = CONFIG[status as KnownStatus] ?? { ...FALLBACK, label: status || FALLBACK.label };
 
   return (
     <span
-      style={{
-        ...style,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '2px 8px',
-        borderRadius: 12,
-        fontSize: 11,
-        fontWeight: 600,
-        whiteSpace: 'nowrap',
-        transition: 'all 0.2s ease',
-        border: `1px solid transparent`,
-      }}
-      className="task-status-badge"
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold transition-colors ${entry.classes}`}
     >
-      {icon}
-      {label}
+      {entry.icon}
+      {entry.label}
     </span>
   );
 }

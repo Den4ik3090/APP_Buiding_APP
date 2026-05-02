@@ -1,5 +1,5 @@
 import React from "react";
-import logo from "@/assets/img/logo_PUTEVI.png";
+import logo from "@/assets/img/logo_PUTEVI.jpg";
 
 interface AppHeaderProps {
   onLogout: () => void;

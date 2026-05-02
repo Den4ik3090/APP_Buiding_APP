@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { compressImage } from '../utils/imageCompression';
 import { uploadResolutionPhoto } from '../services/storageService';
 import { createResolution, updateTask } from '../services/tasksService';
 import type { TaskResolution } from '../types';
@@ -11,8 +10,7 @@ export interface ResolveTaskPayload {
 }
 
 async function resolveTask({ taskId, photo, comments }: ResolveTaskPayload): Promise<TaskResolution> {
-  const compressed = await compressImage(photo);
-  const photoUrl = await uploadResolutionPhoto(taskId, compressed);
+  const photoUrl = await uploadResolutionPhoto(taskId, photo);
   const resolution = await createResolution({
     task_id: taskId,
     photo_url: photoUrl,

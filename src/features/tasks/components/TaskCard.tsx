@@ -1,18 +1,11 @@
-import React, { memo, useState } from 'react';
-import {
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Pencil,
-  Image as ImageIcon,
-} from 'lucide-react';
+import { memo, useState } from 'react';
+import { AlertTriangle, CheckCircle, Clock, Pencil, Image as ImageIcon } from 'lucide-react';
 import { TaskStatusBadge } from './TaskStatusBadge';
 import { TaskResolveModal } from './TaskResolveModal';
 import { TaskEditModal } from './TaskEditModal';
 import { TaskResolutionViewerModal } from './TaskResolutionViewerModal';
 import { useUpdateTask, useDeleteTask } from '../hooks/useTasks';
 import type { Task } from '../model';
-import './tasks.css';
 
 function getTimeLabel(dueDateIso: string | null): { label: string; cls: string } | null {
   if (!dueDateIso) return null;
@@ -24,28 +17,24 @@ function getTimeLabel(dueDateIso: string | null): { label: string; cls: string }
   if (diff < 0) {
     return {
       label: days > 0 ? `Просрочено ${days} д` : `Просрочено ${hrs} ч`,
-      cls: 'task-time-badge--overdue',
+      cls: 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400',
     };
   }
   if (hrs < 24) {
-    return { label: `Через ${hrs} ч`, cls: 'task-time-badge--soon' };
+    return {
+      label: `Через ${hrs} ч`,
+      cls: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400',
+    };
   }
-  return { label: `Через ${days} д`, cls: 'task-time-badge--ok' };
+  return {
+    label: `Через ${days} д`,
+    cls: 'bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-400',
+  };
 }
 
 interface TaskCardProps {
   task: Task;
 }
-
-const btn: React.CSSProperties = {
-  padding: '5px 14px',
-  borderRadius: 7,
-  border: '1.5px solid #e4e4e7',
-  background: 'rgba(255,255,255,0.8)',
-  cursor: 'pointer',
-  fontSize: 12,
-  fontWeight: 600,
-};
 
 export const TaskCard = memo(function TaskCard({ task }: TaskCardProps) {
   const [resolveOpen, setResolveOpen] = useState(false);
@@ -61,96 +50,52 @@ export const TaskCard = memo(function TaskCard({ task }: TaskCardProps) {
 
   return (
     <>
-      <div className={`task-card${isOverdue ? ' task-card--overdue' : ''}`}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 12,
-            alignItems: 'flex-start',
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p
-              style={{
-                fontWeight: 700,
-                margin: 0,
-                fontSize: 14,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: '#111',
-              }}
-            >
+      <div
+        className={`rounded-xl border bg-white/70 p-4 shadow-sm backdrop-blur-sm transition-all dark:bg-zinc-900/70 ${
+          isOverdue
+            ? 'border-red-300 shadow-red-100 dark:border-red-800 dark:shadow-red-950/30'
+            : 'border-zinc-200 dark:border-zinc-700'
+        }`}
+      >
+        {/* Title row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">
               {task.title}
             </p>
-
             {task.description && (
-              <p
-                style={{
-                  margin: '4px 0 0',
-                  fontSize: 12,
-                  color: '#6b7280',
-                  lineHeight: 1.4,
-                }}
-              >
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {task.description}
               </p>
             )}
           </div>
-
           <TaskStatusBadge status={task.status} />
         </div>
 
-        <div
-          style={{
-            marginTop: 10,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            alignItems: 'center',
-          }}
-        >
-          <span
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontSize: 11,
-              color: '#9ca3af',
-            }}
-          >
+        {/* Meta row */}
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             <Clock size={11} />
             {new Date(task.created_at).toLocaleDateString('ru-RU')}
           </span>
 
           {timeInfo && (
-            <span className={`task-time-badge ${timeInfo.cls}`}>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${timeInfo.cls}`}
+            >
               {isOverdue ? <AlertTriangle size={10} /> : <Clock size={10} />}
               {timeInfo.label}
             </span>
           )}
         </div>
 
-        <div
-          style={{
-            marginTop: 12,
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
+        {/* Actions row */}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {!isResolved && task.status !== 'in_progress' && (
             <button
-              style={btn}
-              onClick={() =>
-                updateTask.mutate({
-                  id: task.id,
-                  payload: { status: 'in_progress' },
-                })
-              }
+              onClick={() => updateTask.mutate({ id: task.id, payload: { status: 'in_progress' } })}
               disabled={updateTask.isPending}
+              className="rounded-md border border-zinc-200 bg-white/80 px-3 py-1 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700"
             >
               В работу
             </button>
@@ -158,16 +103,8 @@ export const TaskCard = memo(function TaskCard({ task }: TaskCardProps) {
 
           {!isResolved && (
             <button
-              style={{
-                ...btn,
-                background: '#16a34a',
-                color: '#fff',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-              }}
               onClick={() => setResolveOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
             >
               <CheckCircle size={13} />
               Закрыть
@@ -175,65 +112,34 @@ export const TaskCard = memo(function TaskCard({ task }: TaskCardProps) {
           )}
 
           <button
-            style={{
-              ...btn,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            }}
             onClick={() => setEditOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white/80 px-3 py-1 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
             <Pencil size={13} />
             Редактировать
           </button>
 
           <button
-            style={{
-              ...btn,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-            }}
             onClick={() => setPhotoOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white/80 px-3 py-1 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300 dark:hover:bg-zinc-700"
           >
             <ImageIcon size={13} />
             Фото
           </button>
 
           <button
-            style={{
-              ...btn,
-              marginLeft: 'auto',
-              color: '#dc2626',
-              border: 'none',
-              background: 'transparent',
-              padding: '5px 8px',
-            }}
             onClick={() => deleteTask.mutate(task.id)}
             disabled={deleteTask.isPending}
+            className="ml-auto rounded-md px-2 py-1 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/30"
           >
             Удалить
           </button>
         </div>
       </div>
 
-      <TaskResolveModal
-        task={task}
-        open={resolveOpen}
-        onClose={() => setResolveOpen(false)}
-      />
-
-      <TaskEditModal
-        task={task}
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-      />
-
-      <TaskResolutionViewerModal
-        task={task}
-        open={photoOpen}
-        onClose={() => setPhotoOpen(false)}
-      />
+      <TaskResolveModal task={task} open={resolveOpen} onClose={() => setResolveOpen(false)} />
+      <TaskEditModal task={task} open={editOpen} onClose={() => setEditOpen(false)} />
+      <TaskResolutionViewerModal task={task} open={photoOpen} onClose={() => setPhotoOpen(false)} />
     </>
   );
 });

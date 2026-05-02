@@ -22,7 +22,7 @@ import {
 import { DAYS_THRESHOLD, getStatusKey } from "./utils/constants";
 import { hasExpiredAdditional } from "./components/utils/helpers";
 
-import logo from "./assets/img/logo_PUTEVI.png";
+import logo from "./assets/img/logo_PUTEVI";
 
 function App() {
   const [employees, setEmployees] = useState([]);

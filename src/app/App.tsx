@@ -64,7 +64,7 @@ export default function App() {
   }, [navigate]);
 
   const handleLogout = useCallback(async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'global' });
   }, []);
 
   const toggleTheme = useCallback(() => {

@@ -8,7 +8,7 @@ export interface PrimaryButtonProps
 }
 
 /**
- * Primary CTA: gradient, hover/active states, optional loading spinner.
+ * Primary CTA: gold gradient, shimmer hover, optional loading spinner.
  */
 export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   loading = false,
@@ -19,7 +19,11 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 }) => (
   <button
     type="submit"
-    className={`auth-btn flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 px-4 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:from-indigo-500 hover:to-indigo-600 hover:shadow-xl hover:shadow-indigo-500/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 ${className}`}
+    className={`auth-btn flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold tracking-wide uppercase active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 ${className}`}
+    style={{
+      background: 'linear-gradient(135deg, #D4983A 0%, #E8B04B 100%)',
+      boxShadow: '0 4px 16px rgba(212, 152, 58, 0.3)',
+    }}
     disabled={disabled || loading}
     aria-busy={loading}
     {...props}
@@ -27,7 +31,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     {loading ? (
       <>
         <svg
-          className="h-5 w-5 animate-spin text-white"
+          className="h-5 w-5 animate-spin text-[#0A0F1E]"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"

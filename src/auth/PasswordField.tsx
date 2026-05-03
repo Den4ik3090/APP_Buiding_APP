@@ -1,102 +1,111 @@
 import React, { useState } from "react";
+import { EyeIcon, EyeOffIcon } from "./icons";
 
-export interface PasswordFieldProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "className" | "type"> {
+export interface PasswordFieldProps {
   id: string;
-  label: string;
+  label?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  autoComplete?: string;
   error?: string;
   leftIcon?: React.ReactNode;
-  inputClassName?: string;
-  wrapperClassName?: string;
+  required?: boolean;
+  disabled?: boolean;
+  className?: string;
 }
 
-/** Eye icon for show/hide password */
-const EyeIcon = ({ show }: { show: boolean }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
-    {show ? (
-      <>
-        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-        <circle cx="12" cy="12" r="3" />
-      </>
-    ) : (
-      <>
-        <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-        <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-        <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-        <path d="m2 2 20 20" />
-      </>
-    )}
-  </svg>
-);
-
-/**
- * Password input with show/hide toggle and full a11y.
- * Use autoComplete="current-password" for login.
- */
 export const PasswordField: React.FC<PasswordFieldProps> = ({
   id,
   label,
+  placeholder,
+  value,
+  onChange,
+  autoComplete,
   error,
   leftIcon,
-  inputClassName = "",
-  wrapperClassName = "",
-  ...inputProps
+  required = false,
+  disabled = false,
+  className = "",
 }) => {
-  const [show, setShow] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className={`w-full ${wrapperClassName}`}>
-      <label
-        htmlFor={id}
-        className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
-      >
-        {label}
-      </label>
+    <div className={`group ${className}`}>
+      {label && (
+        <label
+          htmlFor={id}
+          className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
+        >
+          {label}
+        </label>
+      )}
+
       <div className="relative">
         {leftIcon && (
-          <div
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-            aria-hidden
+          <span
+            className="
+              pointer-events-none absolute inset-y-0 left-0 z-10
+              flex w-11 items-center justify-center
+              text-slate-400 transition-colors
+              group-focus-within:text-[#D4983A]
+              dark:text-slate-500 dark:group-focus-within:text-[#E8B04B]
+            "
+            aria-hidden="true"
           >
             {leftIcon}
-          </div>
+          </span>
         )}
+
         <input
           id={id}
-          type={show ? "text" : "password"}
-          className={`auth-input w-full rounded-xl border border-slate-300 bg-white/90 py-3 pr-12 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-400 ${
-            leftIcon ? "pl-11" : "pl-4"
-          } ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""} ${inputClassName}`}
-          aria-invalid={!!error}
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required={required}
+          disabled={disabled}
+          aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
-          {...inputProps}
+          className={`
+            block w-full rounded-xl border bg-white/80 px-4 py-3 text-sm text-slate-900
+            placeholder:text-slate-400 shadow-sm outline-none transition
+            ${leftIcon ? "pl-11" : ""}
+            pr-11
+            ${error
+              ? "border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10 dark:border-red-800/60"
+              : "border-slate-300/70 focus:border-[#D4983A]/60 focus:ring-4 focus:ring-[#D4983A]/10 dark:border-white/10"
+            }
+            disabled:cursor-not-allowed disabled:opacity-60
+            dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-500
+          `}
         />
+
         <button
           type="button"
-          onClick={() => setShow((s) => !s)}
-          className="auth-btn absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-300"
-          aria-label={show ? "Скрыть пароль" : "Показать пароль"}
-          tabIndex={-1}
+          onClick={() => setShowPassword((prev) => !prev)}
+          disabled={disabled}
+          aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+          aria-pressed={showPassword}
+          className="
+            absolute inset-y-0 right-0 z-10 flex w-11 items-center justify-center
+            text-slate-400 transition hover:text-slate-600
+            focus-visible:outline-none
+            disabled:cursor-not-allowed disabled:opacity-50
+            dark:text-slate-500 dark:hover:text-slate-300
+          "
         >
-          <EyeIcon show={show} />
+          {showPassword ? <EyeOffIcon /> : <EyeIcon />}
         </button>
+
+        <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10 dark:ring-white/5" />
       </div>
+
       {error && (
         <p
           id={`${id}-error`}
-          className="mt-1.5 text-sm text-red-600 dark:text-red-400"
-          role="alert"
+          className="mt-2 text-xs text-red-600 dark:text-red-400"
         >
           {error}
         </p>

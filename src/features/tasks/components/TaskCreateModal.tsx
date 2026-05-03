@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Plus, User, AlertCircle, Calendar, AlignLeft } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -55,8 +55,80 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
   const statusId = useId();
   const descriptionId = useId();
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
   const siteIdParam = params.get("siteId");
   const siteId = isUuid(siteIdParam) ? siteIdParam : null;
+
+  // ── Callbacks (before early return — hooks must be unconditional) ──────────
+
+  const setField = useCallback((field: keyof typeof EMPTY, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      return { ...prev, [field]: undefined };
+    });
+  }, []);
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setField(name as keyof typeof EMPTY, value);
+    },
+    [setField]
+  );
+
+  const validate = useCallback(() => {
+    const nextErrors: Partial<typeof EMPTY> = {};
+    if (!form.title.trim()) nextErrors.title = "Введите название задачи.";
+    if (!form.due_date) nextErrors.due_date = "Укажите срок выполнения.";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }, [form]);
+
+  const handleOverlayClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (event.target === event.currentTarget && !create.isPending) {
+        onClose();
+      }
+    },
+    [onClose, create.isPending]
+  );
+
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      if (!validate()) return;
+
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      const { signal } = abortRef.current;
+
+      await create.mutateAsync({
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        due_date: new Date(form.due_date).toISOString(),
+        status: form.status,
+        priority: form.priority as (typeof PRIORITIES)[number]["value"],
+        assigned_to: form.assigned_to || null,
+        site_id: siteId,
+      });
+
+      if (signal.aborted) return;
+
+      setForm(EMPTY);
+      onClose();
+    },
+    [create, form, onClose, siteId, validate]
+  );
+
+  const selectedPriority = useMemo(
+    () => PRIORITIES.find((item) => item.value === form.priority),
+    [form.priority]
+  );
+
+  // ── Effects ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +167,7 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
     };
   }, [open]);
 
+  // Escape key to close
   useEffect(() => {
     if (!open) return;
 
@@ -105,16 +178,10 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
     };
 
     document.addEventListener("keydown", handleEscape);
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = previousOverflow;
-    };
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onClose, create.isPending]);
 
+  // Reset form when closed
   useEffect(() => {
     if (!open) {
       setForm(EMPTY);
@@ -122,56 +189,65 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
     }
   }, [open]);
 
+  // Body scroll lock while modal is open — position: fixed preserves scrollbar width
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow-y: scroll;`;
+    return () => {
+      document.body.style.cssText = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
+  // Auto-focus first focusable element; trap Tab inside modal
+  useEffect(() => {
+    if (!open) return;
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const getFocusable = () =>
+      Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+    getFocusable()[0]?.focus();
+
+    const handleTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const els = getFocusable();
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (event.shiftKey) {
+        if (document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, [open]);
+
+  // Abort any in-flight mutation on unmount
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
+
+  // ── Early return ──────────────────────────────────────────────────────────
+
   if (!open) return null;
 
-  function setField(field: keyof typeof EMPTY, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      if (!prev[field]) return prev;
-      return { ...prev, [field]: undefined };
-    });
-  }
-
-  function validate() {
-    const nextErrors: Partial<typeof EMPTY> = {};
-
-    if (!form.title.trim()) nextErrors.title = "Введите название задачи.";
-    if (!form.due_date) nextErrors.due_date = "Укажите срок выполнения.";
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  }
-
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!validate()) return;
-
-    await create.mutateAsync({
-      title: form.title.trim(),
-      description: form.description.trim() || null,
-      due_date: new Date(form.due_date).toISOString(),
-      status: form.status,
-      priority: form.priority,
-      assigned_to: form.assigned_to || null,
-      site_id: siteId,
-    });
-
-    setForm(EMPTY);
-    onClose();
-  }
-
-  const selectedPriority = PRIORITIES.find((item) => item.value === form.priority);
-
   return createPortal(
-    <div
-      className="tasks-modal-overlay"
-      onClick={(event) => {
-        if (event.target === event.currentTarget && !create.isPending) {
-          onClose();
-        }
-      }}
-    >
+    <div className="tasks-modal-overlay" onClick={handleOverlayClick}>
       <div
+        ref={modalRef}
         className="tasks-modal"
         role="dialog"
         aria-modal="true"
@@ -229,9 +305,10 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                 </label>
                 <input
                   id={titleId}
+                  name="title"
                   type="text"
                   value={form.title}
-                  onChange={(e) => setField("title", e.target.value)}
+                  onChange={handleChange}
                   placeholder="Например: Проверить наличие СИЗ на 2 этаже"
                   className={errors.title ? "input-error" : ""}
                   aria-invalid={Boolean(errors.title)}
@@ -247,9 +324,10 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                   </label>
                   <input
                     id={dueDateId}
+                    name="due_date"
                     type="date"
                     value={form.due_date}
-                    onChange={(e) => setField("due_date", e.target.value)}
+                    onChange={handleChange}
                     className={errors.due_date ? "input-error" : ""}
                     aria-invalid={Boolean(errors.due_date)}
                   />
@@ -262,8 +340,9 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                   <label htmlFor={statusId}>Начальный статус</label>
                   <select
                     id={statusId}
+                    name="status"
                     value={form.status}
-                    onChange={(e) => setField("status", e.target.value)}
+                    onChange={handleChange}
                   >
                     <option value="pending">Ожидает</option>
                     <option value="in_progress">В работе</option>
@@ -286,8 +365,9 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                   </label>
                   <select
                     id={assigneeId}
+                    name="assigned_to"
                     value={form.assigned_to}
-                    onChange={(e) => setField("assigned_to", e.target.value)}
+                    onChange={handleChange}
                     disabled={employeesLoading}
                   >
                     <option value="">
@@ -308,8 +388,9 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                   </label>
                   <select
                     id={priorityId}
+                    name="priority"
                     value={form.priority}
-                    onChange={(e) => setField("priority", e.target.value)}
+                    onChange={handleChange}
                   >
                     {PRIORITIES.map((priority) => (
                       <option key={priority.value} value={priority.value}>
@@ -337,8 +418,9 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                 </label>
                 <textarea
                   id={descriptionId}
+                  name="description"
                   value={form.description}
-                  onChange={(e) => setField("description", e.target.value)}
+                  onChange={handleChange}
                   placeholder="Опишите детали нарушения или требования..."
                   rows={4}
                 />

@@ -1,108 +1,77 @@
-# 📊 Система учёта инструктажей и обучений сотрудников
+# Safety Briefing Tracker
 
-> Комплексное веб-приложение для контроля сроков проведения обязательных инструктажей, профессиональных обучений и действия удостоверений с интеграцией Telegram-уведомлений.
+A compliance dashboard for tracking mandatory safety briefings, certifications, and work permits across a construction workforce. Built for site managers and safety engineers at АО ПУТЕВИ.
 
-[![React](https://img.shields.io/badge/React-18.3-61dafb?logo=react)](https://react.dev/)
-[![Webpack](https://img.shields.io/badge/Webpack-5-8DD6F9?logo=webpack)](https://webpack.js.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?logo=supabase)](https://supabase.com/)
-[![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram)](https://telegram.org/)
+## What it does
 
----
+- **Employee registry** — view all staff with color-coded expiry status (valid / warning / expired) for briefings and certifications
+- **Permits and orders** — track active work permits and orders by site
+- **Prescriptions** — log safety violations and follow their resolution through to closure
+- **Tasks** — create, assign, and close work tasks with photo evidence attached at resolution
+- **Telegram alerts** — automated notifications when certifications approach expiry (30 / 15 / 7 days)
 
-## 🎯 Описание проекта
+## Who uses it
 
-Система автоматизирует полный цикл учёта обязательных мероприятий по охране труда в строительных и производственных организациях в соответствии с требованиями законодательства РФ. Приложение контролирует:
+Safety engineers and site managers responsible for workforce compliance at a construction company. Used daily to monitor expiration dates and respond to open violations or tasks.
 
-- **Инструктажи по охране труда** (вводный, первичный, повторный)
-- **Профессиональные обучения** (рабочие профессии, специальности)
-- **Удостоверения и сертификаты** (допуски, разрешения, квалификационные документы)
-- **Автоматические уведомления** о приближающихся сроках истечения
+## Local setup
 
-### Основные возможности
-
-- **Регистрация сотрудников** - профили с фото, должностями и историей инструктажей.
-- **Дополнительные обучения** - фиксация курсов повышения квалификации и аттестаций.
-- **Учёт удостоверений** - строгий контроль сроков действия лицензий и допусков.
-- **Умная индикация** - цветовое кодирование статусов (актуально / истекает / просрочено).
-- **Telegram-интеграция** - мгновенная отправка отчётов и уведомлений через Edge Functions.
-- **Проактивные напоминания** - автоматические алерты за 30, 15 и 7 дней до дедлайна.
-- **Адаптивность** - полноценная работа на десктопах, планшетах и смартфонах.
-
----
-
-## 🛠 Технологический стек
-
-- **Frontend:** React 18.3, Webpack 5, Sass (SCSS), Babel.
-- **Backend:** Supabase (PostgreSQL), Edge Functions (Deno runtime).
-- **Storage:** Supabase Storage для хранения скан-копий и фото.
-- **API:** Telegram Bot API для предиктивных уведомлений.
-
----
-
-## 🚀 Быстрый старт
-
-### Предварительные требования
-- Node.js >= 18.x
-- npm >= 9.x
-- Аккаунт в Supabase
-
-### 1. Клонирование и установка
 ```bash
-git clone [https://github.com/YourUsername/YourRepo.git](https://github.com/YourUsername/YourRepo.git)
-cd YourRepo
+# Prerequisites: Node.js >= 18, npm >= 9
+
+cp .env.example .env
+# Fill in the two Supabase variables (see table below)
+
 npm install
+npm start
+```
 
+## Environment variables
 
+| Variable | Required | Description |
+|---|---|---|
+| `REACT_APP_SUPABASE_URL` | Yes | Supabase project URL (e.g. `https://xxxx.supabase.co`) |
+| `REACT_APP_SUPABASE_ANON_KEY` | Yes | Supabase anon public key |
 
+Both values are available in your Supabase project → Settings → API.
 
-2. Настройка базы данных (SQL)
-Выполните следующие запросы в SQL Editor вашего Supabase проекта:
+## Key architectural decisions
 
-SQL
--- Таблица сотрудников
-CREATE TABLE employees (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  profession TEXT NOT NULL,
-  training_date DATE NOT NULL,
-  photo_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- **Hash-based routing** — `/#/employees`, `/#/tasks` etc. — no server rewrite rules needed for static deploy
+- **Supabase as full backend** — auth, database (PostgreSQL), file storage, and edge functions all in one service
+- **Hybrid JSX + TSX codebase** — incremental TypeScript migration; new code is `.tsx/.ts`, legacy registries stay `.jsx`
+- **FSD (Feature-Sliced Design)** — the `tasks` feature is the reference implementation; other features are legacy and migrating gradually
+- **Telegram notifications via Edge Functions** — runs server-side in Supabase Deno runtime, not in the browser bundle
 
--- Таблица обучений
-CREATE TABLE additional_trainings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
-  training_name TEXT NOT NULL,
-  training_type TEXT NOT NULL,
-  issue_date DATE NOT NULL,
-  expiry_date DATE NOT NULL,
-  document_url TEXT
-);
+## What to know before changing things
 
--- Индексы для оптимизации
-CREATE INDEX idx_training_date ON employees(training_date);
-CREATE INDEX idx_expiry_date ON additional_trainings(expiry_date);
-3. Переменные окружения
-Создайте файл .env (не забудьте добавить его в .gitignore!) или настройте src/supabaseClient.js:
+- **`.env` is required** — `supabaseClient.js` reads from `process.env`; the app will not connect without it
+- **Supabase RLS is active** — all queries run under the authenticated user's policies; test with a real auth session, not anon
+- **Telegram edge functions are protected** — `supabase/functions/telegram-notify/` and `telegram-webhook/` are operational code; ask before changing anything there
+- **One QueryClientProvider** — lives in `App.tsx` only; adding another at the root (`index.js`) causes stale query state
+- **`StatusBadge` tone API** — the `expired/warning/valid` prop drives row color across all three registries; a change here has wide effect
+- **`compressorjs` is the active image library** — `browser-image-compression` was removed; don't add it back
 
-JavaScript
-const supabaseUrl = '[https://your-project-ref.supabase.co](https://your-project-ref.supabase.co)';
-const supabaseKey = 'your-anon-public-key';
-4. Настройка Telegram уведомлений
-Получите токен у @BotFather.
+## Deployment
 
-Установите секреты в Supabase CLI:
+```bash
+npm run build
+# Output: /dist — deploy as static files to any CDN or static host
+```
 
-Bash
-npx supabase secrets set TELEGRAM_BOT_TOKEN=your_token
-npx supabase secrets set TELEGRAM_CHAT_ID=your_chat_id
-Деплой функции:
-
-Bash
+Edge functions deploy separately via Supabase CLI:
+```bash
 npx supabase functions deploy telegram-notify
-5. Запуск
-Bash
-npm start # Режим разработки
-npm run build # Сборка для продакшна
+```
 
+## Feature status
+
+| Feature | Status | Notes |
+|---|---|---|
+| Employee registry | ✅ Stable | legacy JSX |
+| Permits | ✅ Stable | legacy JSX |
+| Orders | ✅ Stable | legacy JSX |
+| Prescriptions | ✅ Stable | legacy JSX |
+| Tasks | 🔶 Active development | modern FSD, TypeScript |
+| Analytics | 🔶 Partial | chart.js + recharts present |
+| Telegram notifications | ✅ Operational | protected — do not modify |

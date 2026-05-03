@@ -1,7 +1,7 @@
 import React from "react";
 
 /**
- * Full-page animated gradient + floating blur orbs.
+ * Full-page animated gradient + floating blur orbs + construction grid overlay.
  * Uses CSS-only animation; intensity can be reduced via .auth-motion-reduced on parent.
  */
 export const AnimatedBackground: React.FC = () => (
@@ -12,5 +12,6 @@ export const AnimatedBackground: React.FC = () => (
     <div className="auth-blob auth-blob--1" />
     <div className="auth-blob auth-blob--2" />
     <div className="auth-blob auth-blob--3" />
+    <div className="auth-grid" aria-hidden />
   </div>
 );

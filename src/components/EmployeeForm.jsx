@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -279,6 +280,9 @@ function EmployeeForm({
   );
   const [errors, setErrors] = useState({});
 
+  const modalRef = useRef(null);
+  const abortRef = useRef(null);
+
   const organizations = useMemo(() => {
     const uniqueOrganizations = new Set(
       existingOrganizations.filter(Boolean).map((item) => item.trim())
@@ -324,6 +328,7 @@ function EmployeeForm({
     setActiveTab("general");
   }, [editingEmployee]);
 
+  // Escape key to close
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape" && !saving && !uploading) {
@@ -334,6 +339,55 @@ function EmployeeForm({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onCancelEdit, saving, uploading]);
+
+  // Body scroll lock while modal is mounted
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow-y: scroll;`;
+    return () => {
+      document.body.style.cssText = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
+  // Auto-focus first focusable element; trap Tab inside modal
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const getFocusable = () =>
+      Array.from(
+        modal.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+    getFocusable()[0]?.focus();
+
+    const handleTab = (event) => {
+      if (event.key !== "Tab") return;
+      const els = getFocusable();
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (event.shiftKey) {
+        if (document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, []);
+
+  // Abort any in-flight save request on unmount
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   const setFieldValue = useCallback((field, value) => {
     setFormData((prev) => {
@@ -438,6 +492,14 @@ function EmployeeForm({
     [onCancelEdit, saving, uploading]
   );
 
+  // Memoized tab switchers — avoid new function references on every render
+  const handleTabGeneral = useCallback(() => setActiveTab("general"), []);
+  const handleTabTrainings = useCallback(() => setActiveTab("trainings"), []);
+  const handleClearPhoto = useCallback(
+    () => setFieldValue("photo_url", ""),
+    [setFieldValue]
+  );
+
   const handlePhotoUpload = useCallback(
     async (event) => {
       try {
@@ -506,6 +568,10 @@ function EmployeeForm({
         return;
       }
 
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      const { signal } = abortRef.current;
+
       setSaving(true);
 
       try {
@@ -524,7 +590,7 @@ function EmployeeForm({
           await onAddEmployee(payload);
         }
       } finally {
-        setSaving(false);
+        if (!signal.aborted) setSaving(false);
       }
     },
     [editingEmployee, formData, onAddEmployee, onUpdateEmployee, validateForm]
@@ -533,6 +599,7 @@ function EmployeeForm({
   return (
     <div className="employees-modal-overlay" onClick={handleOverlayClick}>
       <div
+        ref={modalRef}
         className="employees-modal"
         role="dialog"
         aria-modal="true"
@@ -588,7 +655,7 @@ function EmployeeForm({
               <button
                 type="button"
                 className={`employees-tab ${activeTab === "general" ? "is-active" : ""}`}
-                onClick={() => setActiveTab("general")}
+                onClick={handleTabGeneral}
               >
                 Основные данные
               </button>
@@ -596,7 +663,7 @@ function EmployeeForm({
               <button
                 type="button"
                 className={`employees-tab ${activeTab === "trainings" ? "is-active" : ""}`}
-                onClick={() => setActiveTab("trainings")}
+                onClick={handleTabTrainings}
               >
                 Дополнительное обучение
                 {trainingStats.expired > 0 && (
@@ -654,7 +721,7 @@ function EmployeeForm({
                           <button
                             type="button"
                             className="btn-cancel"
-                            onClick={() => setFieldValue("photo_url", "")}
+                            onClick={handleClearPhoto}
                             disabled={uploading}
                           >
                             Удалить фото

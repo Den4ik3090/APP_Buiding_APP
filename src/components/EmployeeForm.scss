@@ -7,7 +7,7 @@
     justify-content: center;
     padding: 24px;
     background: rgba(15, 23, 42, 0.48);
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px); /* OK — position: fixed */
 }
 
 .employees-modal {
@@ -59,11 +59,7 @@
     border: 1px solid #cbd5e1;
     border-radius: 12px;
     cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease;
+    transition: transform 150ms ease, opacity 150ms ease;
 }
 
 .employees-modal-close:hover:not(:disabled) {
@@ -78,9 +74,11 @@
     cursor: not-allowed;
 }
 
+/* Scrollable body — prevent scroll chaining to page behind modal */
 .employees-modal-body {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 28px;
 }
 
@@ -148,10 +146,8 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        box-shadow 0.2s ease;
+    /* box-shadow removed from transition — shadow appears via static rule only */
+    transition: transform 150ms ease, opacity 150ms ease;
 }
 
 .employees-tab.is-active {
@@ -262,16 +258,12 @@
     gap: 12px;
 }
 
+/* Shared transition — transform/opacity only; shadow via ::after pseudo-element */
 .employees-upload-button,
 .btn-primary,
 .btn-cancel,
 .employees-icon-button {
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: transform 150ms ease, opacity 150ms ease;
 }
 
 .employees-upload-button {
@@ -339,10 +331,7 @@
     border-radius: 12px;
     outline: none;
     font-size: 14px;
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        background-color 0.2s ease;
+    transition: border-color 150ms ease;
 }
 
 .employees-form-group textarea {
@@ -351,12 +340,14 @@
     resize: vertical;
 }
 
+/* Focus ring via outline — composited, no repaint */
 .employees-form-group input:focus,
 .employees-form-group select:focus,
 .employees-form-group textarea:focus,
 .employees-table-control:focus {
-    border-color: #0f766e;
-    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+    border-color: transparent;
+    outline: 2px solid rgba(15, 118, 110, 0.45);
+    outline-offset: 0;
 }
 
 .employees-form-group input::placeholder,
@@ -364,9 +355,11 @@
     color: #94a3b8;
 }
 
+/* Error ring via outline — composited */
 .input-error {
     border-color: #dc2626 !important;
-    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08) !important;
+    outline: 2px solid rgba(220, 38, 38, 0.25) !important;
+    outline-offset: 0 !important;
 }
 
 .employees-error {
@@ -557,17 +550,33 @@
     cursor: pointer;
 }
 
+/* Shadow via ::after — never transition box-shadow directly */
 .btn-primary {
+    position: relative;
     color: #ffffff;
     background: #0f766e;
     border: 1px solid #0f766e;
+}
+
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.28);
+    opacity: 0;
+    transition: opacity 150ms ease;
+    pointer-events: none;
 }
 
 .btn-primary:hover:not(:disabled) {
     background: #115e59;
     border-color: #115e59;
     transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18);
+}
+
+.btn-primary:hover:not(:disabled)::after {
+    opacity: 1;
 }
 
 .btn-cancel {
@@ -587,7 +596,6 @@
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
 }
 
 @media (max-width: 900px) {
@@ -663,5 +671,18 @@
 
     .employees-icon-button {
         width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .employees-modal-close,
+    .employees-upload-button,
+    .btn-primary,
+    .btn-primary::after,
+    .btn-cancel,
+    .employees-icon-button,
+    .employees-tab {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
     }
 }

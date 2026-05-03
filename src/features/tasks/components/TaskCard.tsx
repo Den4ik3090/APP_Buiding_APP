@@ -1,3 +1,4 @@
+import React from "react";
 import { memo, useState } from 'react';
 import { AlertTriangle, CheckCircle, Clock, Pencil, Image as ImageIcon } from 'lucide-react';
 import { TaskStatusBadge } from './TaskStatusBadge';
@@ -51,11 +52,10 @@ export const TaskCard = memo(function TaskCard({ task }: TaskCardProps) {
   return (
     <>
       <div
-        className={`rounded-xl border bg-white/70 p-4 shadow-sm backdrop-blur-sm transition-all dark:bg-zinc-900/70 ${
-          isOverdue
+        className={`rounded-xl border bg-white/70 p-4 shadow-sm backdrop-blur-sm transition-all dark:bg-zinc-900/70 ${isOverdue
             ? 'border-red-300 shadow-red-100 dark:border-red-800 dark:shadow-red-950/30'
             : 'border-zinc-200 dark:border-zinc-700'
-        }`}
+          }`}
       >
         {/* Title row */}
         <div className="flex items-start justify-between gap-3">

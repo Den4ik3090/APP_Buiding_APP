@@ -1,10 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
+const BOT_TOKEN      = Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") ?? "";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_URL   = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_ROLE   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+if (!BOT_TOKEN)      throw new Error("[telegram-webhook] TELEGRAM_BOT_TOKEN must be set");
+if (!WEBHOOK_SECRET) throw new Error("[telegram-webhook] TELEGRAM_WEBHOOK_SECRET must be set");
+if (!SUPABASE_URL)   throw new Error("[telegram-webhook] SUPABASE_URL must be set");
+if (!SERVICE_ROLE)   throw new Error("[telegram-webhook] SUPABASE_SERVICE_ROLE_KEY must be set");
 
 const ALLOWED_CHAT_IDS_RAW = Deno.env.get("TELEGRAM_ALLOWED_CHAT_IDS") ?? "";
 const ALLOWED_CHAT_IDS = new Set(
@@ -14,6 +19,10 @@ const ALLOWED_CHAT_IDS = new Set(
     .filter(Boolean)
     .map((s) => Number(s)),
 );
+
+if (ALLOWED_CHAT_IDS.size === 0) {
+  throw new Error("[telegram-webhook] TELEGRAM_ALLOWED_CHAT_IDS must be set (comma-separated chat IDs)");
+}
 
 const DAYS_THRESHOLD = 90;
 const WARNING_THRESHOLD = 75;
@@ -74,7 +83,7 @@ function getCommand(msg: any) {
 
 Deno.serve(async (req) => {
   const secret = req.headers.get("x-telegram-bot-api-secret-token");
-  if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) return new Response("Unauthorized", { status: 401 });
+  if (secret !== WEBHOOK_SECRET) return new Response("Unauthorized", { status: 401 });
 
   const update = await req.json().catch(() => null);
   const msg = update?.message ?? update?.edited_message;
@@ -84,7 +93,7 @@ Deno.serve(async (req) => {
   const { cmd, arg, text } = getCommand(msg);
   if (!text) return new Response("ok", { status: 200 });
 
-  if (ALLOWED_CHAT_IDS.size > 0 && !ALLOWED_CHAT_IDS.has(Number(chatId))) {
+  if (!ALLOWED_CHAT_IDS.has(Number(chatId))) {
     await telegramSendMessage(Number(chatId), "⛔ Доступ запрещён.");
     return new Response("ok", { status: 200 });
   }

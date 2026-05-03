@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -76,6 +77,9 @@ export default function PrescriptionForm({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
 
+  const modalRef = useRef(null);
+  const abortRef = useRef(null);
+
   const employeesById = useMemo(
     () => new Map(employees.map((employee) => [employee.id, employee])),
     [employees]
@@ -122,6 +126,53 @@ export default function PrescriptionForm({
     setErrors({});
   }, [prescription]);
 
+  // Body scroll lock while modal is mounted
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow-y: scroll;`;
+    return () => {
+      document.body.style.cssText = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
+  // Auto-focus first focusable element; trap Tab inside modal
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const getFocusable = () =>
+      Array.from(
+        modal.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+
+    getFocusable()[0]?.focus();
+
+    const handleTab = (event) => {
+      if (event.key !== "Tab") return;
+      const els = getFocusable();
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (event.shiftKey) {
+        if (document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, []);
+
+  // Escape key to close
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape" && !saving) {
@@ -132,6 +183,9 @@ export default function PrescriptionForm({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onClose, saving]);
+
+  // Abort any in-flight save request on unmount
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   const setFieldValue = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -199,6 +253,11 @@ export default function PrescriptionForm({
     [onClose, saving]
   );
 
+  // Memoized — avoids a new function reference on every render
+  const handleModalClick = useCallback((event) => {
+    event.stopPropagation();
+  }, []);
+
   const handleSubmit = useCallback(
     async (event) => {
       event.preventDefault();
@@ -211,6 +270,10 @@ export default function PrescriptionForm({
         );
         return;
       }
+
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      const { signal } = abortRef.current;
 
       setSaving(true);
 
@@ -235,6 +298,8 @@ export default function PrescriptionForm({
               .eq("id", prescription.id)
           : await supabase.from("prescriptions").insert(payload);
 
+        if (signal.aborted) return;
+
         if (error) {
           throw error;
         }
@@ -244,6 +309,7 @@ export default function PrescriptionForm({
           prescription: isEdit ? { ...prescription, ...payload } : payload,
         });
       } catch (error) {
+        if (signal.aborted) return;
         console.error("Ошибка сохранения предписания:", error);
         addNotification(
           "Не удалось сохранить предписание. Проверьте данные и попробуйте ещё раз.",
@@ -251,7 +317,7 @@ export default function PrescriptionForm({
           TOAST_DURATION.NORMAL
         );
       } finally {
-        setSaving(false);
+        if (!signal.aborted) setSaving(false);
       }
     },
     [
@@ -266,7 +332,14 @@ export default function PrescriptionForm({
 
   return (
     <div className="prescriptions-modal-overlay" onClick={handleOverlayClick}>
-      <div className="prescriptions-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className="prescriptions-modal"
+        onClick={handleModalClick}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prescription-form-title"
+      >
         <div className="prescriptions-modal-content">
           <div className="prescriptions-modal-header">
             <div className="prescriptions-modal-title-section">
@@ -274,7 +347,10 @@ export default function PrescriptionForm({
                 <AlertTriangle size={24} />
               </div>
               <div>
-                <h2 className="prescriptions-modal-title">
+                <h2
+                  id="prescription-form-title"
+                  className="prescriptions-modal-title"
+                >
                   {isEdit ? "Редактирование предписания" : "Новое предписание"}
                 </h2>
                 <p className="prescriptions-modal-subtitle">

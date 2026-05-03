@@ -7,25 +7,45 @@
 .auth-page {
   --auth-duration: 12s;
   --auth-blob-duration: 20s;
-  --auth-blob-opacity: 0.4;
+  --auth-blob-opacity: 0.55;
 }
 
 .auth-page.auth-motion-reduced {
   --auth-duration: 30s;
-  --auth-blob-opacity: 0.2;
+  --auth-blob-opacity: 0.25;
 }
 
-/* Animated gradient background (CSS-only, smooth loop) */
+/* Deep navy static base + subtle animated gold/cyan overlay */
 .auth-bg-gradient {
+  background: #0A0F1E;
+  position: fixed;
+  inset: 0;
+}
+
+.auth-bg-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(
-    -45deg,
-    #3b82f6,
-    #8b5cf6,
-    #06b6d4,
-    #3b82f6
+    135deg,
+    rgba(212, 152, 58, 0.08) 0%,
+    rgba(10, 15, 30, 0) 50%,
+    rgba(6, 182, 212, 0.06) 100%
   );
   background-size: 200% 200%;
   animation: authGradientShift var(--auth-duration) ease infinite;
+}
+
+/* Construction grid overlay */
+.auth-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(212, 152, 58, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 152, 58, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 1;
 }
 
 @keyframes authGradientShift {
@@ -37,7 +57,7 @@
   }
 }
 
-/* Floating blur orbs (pseudo-elements or dedicated divs) */
+/* Floating blur orbs — warm industrial tones */
 .auth-blob {
   position: absolute;
   border-radius: 50%;
@@ -50,7 +70,7 @@
 .auth-blob--1 {
   width: 320px;
   height: 320px;
-  background: rgba(139, 92, 246, 0.5);
+  background: rgba(212, 152, 58, 0.5);
   top: 10%;
   left: 10%;
   animation: authBlobFloat 20s ease-in-out infinite;
@@ -59,7 +79,7 @@
 .auth-blob--2 {
   width: 280px;
   height: 280px;
-  background: rgba(6, 182, 212, 0.5);
+  background: rgba(6, 182, 212, 0.45);
   bottom: 15%;
   right: 10%;
   animation: authBlobFloat 18s ease-in-out infinite 2s;
@@ -68,7 +88,7 @@
 .auth-blob--3 {
   width: 240px;
   height: 240px;
-  background: rgba(59, 130, 246, 0.5);
+  background: rgba(99, 102, 241, 0.45);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -91,17 +111,86 @@
   animation-duration: 40s;
 }
 
-/* Focus ring for inputs/buttons (accessibility: do not remove, only style) */
-.auth-input:focus-visible,
+.auth-page.auth-motion-reduced .auth-bg-gradient::before {
+  animation-duration: 60s;
+}
+
+/* Auth card — light mode */
+.auth-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(212, 152, 58, 0.15);
+  border-top: 2px solid rgba(212, 152, 58, 0.4);
+  backdrop-filter: blur(20px);
+}
+
+/* Card hover shadow via pseudo-element — no box-shadow transition */
+.auth-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+.auth-card:hover::after {
+  opacity: 1;
+}
+
+/* Primary button — shimmer sweep on hover */
+.auth-btn {
+  position: relative;
+  overflow: hidden;
+  color: #0A0F1E;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+}
+
+.auth-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, transparent, rgba(255, 255, 255, 0.2), transparent
+  );
+  transition: left 400ms ease;
+  pointer-events: none;
+}
+
+.auth-btn:hover::before {
+  left: 100%;
+}
+
+/* Focus ring for inputs (accessibility: do not remove, only style) */
+.auth-input:focus-visible {
+  outline: none;
+  border-color: rgba(212, 152, 58, 0.6);
+  box-shadow: 0 0 0 3px rgba(212, 152, 58, 0.12);
+}
+
+/* Focus ring for buttons */
 .auth-btn:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid rgba(212, 152, 58, 0.6);
   outline-offset: 2px;
 }
 
 /* Dark mode overrides for auth card */
 .dark .auth-card {
-  background: rgba(30, 41, 59, 0.75);
-  border-color: rgba(71, 85, 105, 0.5);
+  background: rgba(12, 20, 38, 0.88);
+  border: 1px solid rgba(212, 152, 58, 0.2);
+  border-top: 2px solid rgba(212, 152, 58, 0.5);
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px) saturate(160%);
 }
 
 .dark .auth-card .auth-input {
@@ -110,4 +199,10 @@
 
 .dark .auth-card .auth-input::placeholder {
   @apply text-slate-400;
+}
+
+/* Reduced motion — disable shimmer and card shadow transition */
+.auth-page.auth-motion-reduced .auth-btn::before,
+.auth-page.auth-motion-reduced .auth-card::after {
+  transition-duration: 0.01ms !important;
 }

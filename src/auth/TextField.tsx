@@ -1,63 +1,96 @@
 import React from "react";
 
-export interface TextFieldProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "className"> {
+export interface TextFieldProps {
   id: string;
-  label: string;
+  label?: string;
+  type?: React.HTMLInputTypeAttribute;
+  placeholder?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  autoComplete?: string;
   error?: string;
-  /** Left icon (e.g. email icon) */
   leftIcon?: React.ReactNode;
-  inputClassName?: string;
-  wrapperClassName?: string;
+  required?: boolean;
+  disabled?: boolean;
+  className?: string;
 }
 
-/**
- * Accessible text input with label, optional icon, error state.
- * Use autoComplete="email" for login email field.
- */
 export const TextField: React.FC<TextFieldProps> = ({
   id,
   label,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  autoComplete,
   error,
   leftIcon,
-  inputClassName = "",
-  wrapperClassName = "",
-  ...inputProps
-}) => (
-  <div className={`w-full ${wrapperClassName}`}>
-    <label
-      htmlFor={id}
-      className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
-    >
-      {label}
-    </label>
-    <div className="relative">
-      {leftIcon && (
-        <div
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
-          aria-hidden
+  required = false,
+  disabled = false,
+  className = "",
+}) => {
+  return (
+    <div className={`group ${className}`}>
+      {label && (
+        <label
+          htmlFor={id}
+          className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
         >
-          {leftIcon}
-        </div>
+          {label}
+        </label>
       )}
-      <input
-        id={id}
-        className={`auth-input w-full rounded-xl border border-slate-300 bg-white/90 py-3 pr-4 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-100 dark:placeholder:text-slate-400 ${
-          leftIcon ? "pl-11" : "pl-4"
-        } ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""} ${inputClassName}`}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : undefined}
-        {...inputProps}
-      />
+
+      <div className="relative">
+        {leftIcon && (
+          <span
+            className="
+              pointer-events-none absolute inset-y-0 left-0 z-10
+              flex w-11 items-center justify-center
+              text-slate-400 transition-colors
+              group-focus-within:text-[#D4983A]
+              dark:text-slate-500 dark:group-focus-within:text-[#E8B04B]
+            "
+            aria-hidden="true"
+          >
+            {leftIcon}
+          </span>
+        )}
+
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required={required}
+          disabled={disabled}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`
+            block w-full rounded-xl border bg-white/80 px-4 py-3 text-sm text-slate-900
+            placeholder:text-slate-400 shadow-sm outline-none transition
+            ${leftIcon ? "pl-11" : ""}
+            ${error
+              ? "border-red-300 focus:border-red-400 focus:ring-4 focus:ring-red-500/10 dark:border-red-800/60"
+              : "border-slate-300/70 focus:border-[#D4983A]/60 focus:ring-4 focus:ring-[#D4983A]/10 dark:border-white/10"
+            }
+            disabled:cursor-not-allowed disabled:opacity-60
+            dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-500
+          `}
+        />
+
+        <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/10 dark:ring-white/5" />
+      </div>
+
+      {error && (
+        <p
+          id={`${id}-error`}
+          className="mt-2 text-xs text-red-600 dark:text-red-400"
+        >
+          {error}
+        </p>
+      )}
     </div>
-    {error && (
-      <p
-        id={`${id}-error`}
-        className="mt-1.5 text-sm text-red-600 dark:text-red-400"
-        role="alert"
-      >
-        {error}
-      </p>
-    )}
-  </div>
-);
+  );
+};

@@ -122,15 +122,25 @@ export async function updateTask(id: string, payload: TaskUpdate): Promise<Task>
     .update(payload)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
+  // maybeSingle returns null when RLS blocks the row or the id doesn't exist
+  if (!data) throw new Error('Задача не найдена или недостаточно прав для изменения');
   return data as Task;
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const { error } = await supabase.from('tasks').delete().eq('id', id);
+  // .select('id') makes PostgREST return the deleted rows;
+  // empty array means RLS blocked the delete or the task didn't exist
+  const { data, error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('id', id)
+    .select('id');
+
   if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('Задача не найдена или недостаточно прав для удаления');
 }
 
 export async function fetchResolutionsByTask(taskId: string): Promise<TaskResolution[]> {

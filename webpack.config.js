@@ -168,6 +168,6 @@ module.exports = (env, argv) => {
       maxAssetSize: 512000,
     },
 
-    devtool: isProduction ? "source-map" : "eval-cheap-module-source-map",
+    devtool: isProduction ? false : "eval-cheap-module-source-map",
   };
 };

@@ -1,5 +1,6 @@
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_MESSAGES, TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
+export { getDaysDifference } from "@/entities/employee";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyEmployee = Record<string, any>;
@@ -9,9 +10,6 @@ type SetEmployees = (fn: (prev: AnyEmployee[]) => AnyEmployee[]) => void;
 
 const FIELDS =
   "id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at";
-
-export const getDaysDifference = (date: string): number =>
-  Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
 
 export const mapFormToDb = (form: AnyEmployee) => ({
   name: form.name,

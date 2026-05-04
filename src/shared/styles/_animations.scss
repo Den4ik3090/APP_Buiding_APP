@@ -1,0 +1,35 @@
+// All keyframes use only transform and opacity — GPU-composited, zero repaint.
+// Never animate box-shadow, background, left, top, width, height in @keyframes.
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modal-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+// opacity-only pulse — composited, safe for N simultaneous animated cards
+@keyframes overdue-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.72; }
+}
+
+@keyframes blob-float {
+  0%, 100% { transform: translate(0, 0)      scale(1); }
+  33%       { transform: translate(30px, -50px) scale(1.1); }
+  66%       { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+@keyframes gold-shift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}

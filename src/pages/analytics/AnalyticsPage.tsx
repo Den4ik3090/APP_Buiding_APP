@@ -2,8 +2,7 @@ import React, { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
-import { getStatusKey } from "@/utils/constants";
-import { hasExpiredAdditional } from "@/components/utils/helpers";
+import { getStatusKey, hasExpiredAdditional } from "@/entities/employee";
 
 export default function AnalyticsPage() {
   const { employees, getDaysDifference } = useEmployeeContext();

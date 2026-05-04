@@ -19,7 +19,7 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
-import { DAYS_THRESHOLD } from "../utils/constants";
+import { DAYS_THRESHOLD } from "@/entities/employee";
 
 const MANAGER_COLORS = [
   "#60a5fa",

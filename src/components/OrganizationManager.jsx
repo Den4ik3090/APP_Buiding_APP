@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/shared/api/supabase";
-import "../style/OrganizationManager.css";
+import "./OrganizationManager.css";
 
 export default function OrganizationManager({ employees = [] }) {
   const [docsData, setDocsData] = useState([]);

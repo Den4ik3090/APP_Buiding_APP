@@ -4,8 +4,7 @@ import { X, Plus, User, AlertCircle, Calendar, AlignLeft } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useCreateTask } from "../hooks/useTasks";
 import { supabase } from "@/shared/api/supabase";
-import "./tasks.css";
-import "./tasksModal.scss";
+import styles from "./tasksModal.module.scss";
 
 interface TaskCreateModalProps {
   open: boolean;
@@ -245,27 +244,27 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
   if (!open) return null;
 
   return createPortal(
-    <div className="tasks-modal-overlay" onClick={handleOverlayClick}>
+    <div className={styles['tasks-modal-overlay']} onClick={handleOverlayClick}>
       <div
         ref={modalRef}
-        className="tasks-modal"
+        className={styles['tasks-modal']}
         role="dialog"
         aria-modal="true"
         aria-labelledby="tasks-modal-title"
       >
-        <div className="tasks-modal-header">
+        <div className={styles['tasks-modal-header']}>
           <div>
-            <h2 id="tasks-modal-title" className="tasks-modal-title">
+            <h2 id="tasks-modal-title" className={styles['tasks-modal-title']}>
               Новая задача
             </h2>
-            <p className="tasks-modal-subtitle">
+            <p className={styles['tasks-modal-subtitle']}>
               Заполните основные параметры задачи и назначьте исполнителя.
             </p>
           </div>
 
           <button
             type="button"
-            className="tasks-modal-close"
+            className={styles['tasks-modal-close']}
             onClick={onClose}
             disabled={create.isPending}
             aria-label="Закрыть окно"
@@ -274,34 +273,34 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
           </button>
         </div>
 
-        <div className="tasks-modal-body">
-          <form className="tasks-form" onSubmit={handleSubmit}>
-            <div className="tasks-form-overview">
-              <span className="tasks-overview-badge">
+        <div className={styles['tasks-modal-body']}>
+          <form className={styles['tasks-form']} onSubmit={handleSubmit}>
+            <div className={styles['tasks-form-overview']}>
+              <span className={styles['tasks-overview-badge']}>
                 <Plus size={14} />
                 Создание
               </span>
 
-              <span className="tasks-overview-badge">
+              <span className={styles['tasks-overview-badge']}>
                 <AlertCircle size={14} />
                 {selectedPriority?.label || "Средний"}
               </span>
 
-              <span className="tasks-overview-badge">
+              <span className={styles['tasks-overview-badge']}>
                 <Calendar size={14} />
                 {form.due_date || "Срок не указан"}
               </span>
             </div>
 
-            <section className="tasks-form-section">
-              <div className="tasks-section-heading">
+            <section className={styles['tasks-form-section']}>
+              <div className={styles['tasks-section-heading']}>
                 <h3>Основные данные</h3>
                 <p>Название задачи, срок выполнения и начальный статус.</p>
               </div>
 
-              <div className="tasks-form-group">
+              <div className={styles['tasks-form-group']}>
                 <label htmlFor={titleId}>
-                  Название задачи <span className="required">*</span>
+                  Название задачи <span className={styles['required']}>*</span>
                 </label>
                 <input
                   id={titleId}
@@ -310,17 +309,17 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                   value={form.title}
                   onChange={handleChange}
                   placeholder="Например: Проверить наличие СИЗ на 2 этаже"
-                  className={errors.title ? "input-error" : ""}
+                  className={errors.title ? styles['input-error'] : ""}
                   aria-invalid={Boolean(errors.title)}
                   autoFocus
                 />
-                {errors.title && <p className="tasks-error">{errors.title}</p>}
+                {errors.title && <p className={styles['tasks-error']}>{errors.title}</p>}
               </div>
 
-              <div className="tasks-form-grid">
-                <div className="tasks-form-group">
+              <div className={styles['tasks-form-grid']}>
+                <div className={styles['tasks-form-group']}>
                   <label htmlFor={dueDateId}>
-                    Срок устранения <span className="required">*</span>
+                    Срок устранения <span className={styles['required']}>*</span>
                   </label>
                   <input
                     id={dueDateId}
@@ -328,15 +327,15 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                     type="date"
                     value={form.due_date}
                     onChange={handleChange}
-                    className={errors.due_date ? "input-error" : ""}
+                    className={errors.due_date ? styles['input-error'] : ""}
                     aria-invalid={Boolean(errors.due_date)}
                   />
                   {errors.due_date && (
-                    <p className="tasks-error">{errors.due_date}</p>
+                    <p className={styles['tasks-error']}>{errors.due_date}</p>
                   )}
                 </div>
 
-                <div className="tasks-form-group">
+                <div className={styles['tasks-form-group']}>
                   <label htmlFor={statusId}>Начальный статус</label>
                   <select
                     id={statusId}
@@ -351,14 +350,14 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
               </div>
             </section>
 
-            <section className="tasks-form-section">
-              <div className="tasks-section-heading">
+            <section className={styles['tasks-form-section']}>
+              <div className={styles['tasks-section-heading']}>
                 <h3>Исполнитель и приоритет</h3>
                 <p>Назначьте ответственного и выберите уровень срочности.</p>
               </div>
 
-              <div className="tasks-form-grid">
-                <div className="tasks-form-group">
+              <div className={styles['tasks-form-grid']}>
+                <div className={styles['tasks-form-group']}>
                   <label htmlFor={assigneeId}>
                     <User size={16} />
                     <span>Ответственный</span>
@@ -381,7 +380,7 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                   </select>
                 </div>
 
-                <div className="tasks-form-group">
+                <div className={styles['tasks-form-group']}>
                   <label htmlFor={priorityId}>
                     <AlertCircle size={16} />
                     <span>Приоритет</span>
@@ -398,20 +397,20 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
                       </option>
                     ))}
                   </select>
-                  <p className="tasks-form-hint">
+                  <p className={styles['tasks-form-hint']}>
                     Текущий приоритет: {selectedPriority?.label}
                   </p>
                 </div>
               </div>
             </section>
 
-            <section className="tasks-form-section">
-              <div className="tasks-section-heading">
+            <section className={styles['tasks-form-section']}>
+              <div className={styles['tasks-section-heading']}>
                 <h3>Описание</h3>
                 <p>Укажите детали задачи, требования или контекст.</p>
               </div>
 
-              <div className="tasks-form-group">
+              <div className={styles['tasks-form-group']}>
                 <label htmlFor={descriptionId}>
                   <AlignLeft size={16} />
                   <span>Подробное описание</span>
@@ -427,7 +426,7 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
               </div>
             </section>
 
-            <div className="tasks-form-actions">
+            <div className={styles['tasks-form-actions']}>
               <button
                 type="button"
                 className="btn-cancel"

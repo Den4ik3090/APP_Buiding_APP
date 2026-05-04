@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
+import { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS } from "@/entities/prescription";
 import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import PrescriptionForm from "./PrescriptionForm.jsx";
 import PrescriptionsTable from "./PrescriptionsTable.jsx";
@@ -30,19 +31,7 @@ const collator = new Intl.Collator("ru", {
 
 const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
-export const PRESCRIPTION_STATUSES = {
-  OPEN: "open",
-  IN_PROGRESS: "in_progress",
-  COMPLETED: "completed",
-  OVERDUE: "overdue",
-};
-
-export const PRESCRIPTION_STATUS_LABELS = {
-  [PRESCRIPTION_STATUSES.OPEN]: "Открыто",
-  [PRESCRIPTION_STATUSES.IN_PROGRESS]: "В работе",
-  [PRESCRIPTION_STATUSES.COMPLETED]: "Устранено",
-  [PRESCRIPTION_STATUSES.OVERDUE]: "Просрочено",
-};
+export { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS };
 
 export default function PrescriptionsRegistry() {
   const { addNotification } = useNotificationContext();

@@ -5,13 +5,12 @@ import VirtualEmployeeTable from "@/components/VirtualEmployeeTable";
 import SkeletonLoader from "@/shared/ui/Skeleton";
 import { ButtonGlow } from "@/shared/ui/ButtonGlow";
 import { TOAST_MESSAGES, TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
-import { getStatusKey } from "@/utils/constants";
-import { hasExpiredAdditional } from "@/components/utils/helpers";
+import { getStatusKey, hasExpiredAdditional } from "@/entities/employee";
 import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
 import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import { exportToCSV } from "@/features/employee-export/exportToCSV";
 
-const EmployeeTable = lazy(() => import("@/shared/ui/Table"));
+const EmployeeTable = lazy(() => import("@/features/employee-crud/components/EmployeeTable"));
 
 export default function EmployeesPage() {
   const {

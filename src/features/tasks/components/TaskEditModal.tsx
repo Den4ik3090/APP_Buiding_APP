@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useUpdateTask } from "../hooks/useTasks";
 import type { Task } from "../model";
-import "./tasksModal.scss";
+import styles from "./tasksModal.module.scss";
 
 interface TaskEditModalProps {
   task: Task;
@@ -19,8 +19,12 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
   const [dueDate, setDueDate] = useState(
     task.due_date ? new Date(task.due_date).toISOString().slice(0, 10) : ""
   );
-  const [priority, setPriority] = useState(task.priority ?? "medium");
-  const [status, setStatus] = useState(task.status ?? "pending");
+  const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">(
+    (task.priority as "low" | "medium" | "high" | "critical") ?? "medium"
+  );
+  const [status, setStatus] = useState<"pending" | "in_progress" | "resolved" | "overdue">(
+    (task.status as "pending" | "in_progress" | "resolved" | "overdue") ?? "pending"
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -30,8 +34,8 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
     setDueDate(
       task.due_date ? new Date(task.due_date).toISOString().slice(0, 10) : ""
     );
-    setPriority(task.priority ?? "medium");
-    setStatus(task.status ?? "pending");
+    setPriority((task.priority as "low" | "medium" | "high" | "critical") ?? "medium");
+    setStatus((task.status as "pending" | "in_progress" | "resolved" | "overdue") ?? "pending");
   }, [task, open]);
 
   useEffect(() => {
@@ -74,7 +78,7 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
 
   return createPortal(
     <div
-      className="tasks-modal-overlay"
+      className={styles['tasks-modal-overlay']}
       onClick={(event) => {
         if (event.target === event.currentTarget && !updateTask.isPending) {
           onClose();
@@ -82,24 +86,24 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
       }}
     >
       <div
-        className="tasks-modal"
+        className={styles['tasks-modal']}
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-edit-title"
       >
-        <div className="tasks-modal-header">
+        <div className={styles['tasks-modal-header']}>
           <div>
-            <h2 id="task-edit-title" className="tasks-modal-title">
+            <h2 id="task-edit-title" className={styles['tasks-modal-title']}>
               Редактировать задачу
             </h2>
-            <p className="tasks-modal-subtitle">
+            <p className={styles['tasks-modal-subtitle']}>
               Измените основные параметры задачи.
             </p>
           </div>
 
           <button
             type="button"
-            className="tasks-modal-close"
+            className={styles['tasks-modal-close']}
             onClick={onClose}
             disabled={updateTask.isPending}
             aria-label="Закрыть окно"
@@ -108,9 +112,9 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
           </button>
         </div>
 
-        <div className="tasks-modal-body">
-          <form className="tasks-form" onSubmit={handleSubmit}>
-            <div className="tasks-form-group">
+        <div className={styles['tasks-modal-body']}>
+          <form className={styles['tasks-form']} onSubmit={handleSubmit}>
+            <div className={styles['tasks-form-group']}>
               <label>Название задачи</label>
               <input
                 type="text"
@@ -120,7 +124,7 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
               />
             </div>
 
-            <div className="tasks-form-group">
+            <div className={styles['tasks-form-group']}>
               <label>Описание</label>
               <textarea
                 value={description}
@@ -129,8 +133,8 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
               />
             </div>
 
-            <div className="tasks-form-grid">
-              <div className="tasks-form-group">
+            <div className={styles['tasks-form-grid']}>
+              <div className={styles['tasks-form-group']}>
                 <label>Срок</label>
                 <input
                   type="date"
@@ -139,11 +143,11 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
                 />
               </div>
 
-              <div className="tasks-form-group">
+              <div className={styles['tasks-form-group']}>
                 <label>Приоритет</label>
                 <select
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
+                  onChange={(e) => setPriority(e.target.value as "low" | "medium" | "high" | "critical")}
                 >
                   <option value="low">Низкий</option>
                   <option value="medium">Средний</option>
@@ -153,11 +157,11 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
               </div>
             </div>
 
-            <div className="tasks-form-group">
+            <div className={styles['tasks-form-group']}>
               <label>Статус</label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => setStatus(e.target.value as "pending" | "in_progress" | "resolved" | "overdue")}
               >
                 <option value="pending">Ожидает</option>
                 <option value="in_progress">В работе</option>
@@ -166,7 +170,7 @@ export function TaskEditModal({ task, open, onClose }: TaskEditModalProps) {
               </select>
             </div>
 
-            <div className="tasks-form-actions">
+            <div className={styles['tasks-form-actions']}>
               <button
                 type="button"
                 className="btn-cancel"

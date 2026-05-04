@@ -1,8 +1,9 @@
 import React, { lazy, Suspense, useState } from 'react';
 import { Plus } from 'lucide-react';
+import clsx from 'clsx';
 import { TaskFilters } from '@/features/tasks/components/TaskFilters';
 import { TaskCreateModal } from '@/features/tasks/components/TaskCreateModal';
-import '@/features/tasks/components/tasks.css';
+import styles from '@/features/tasks/components/tasks.module.scss';
 
 const TaskList = lazy(() =>
   import('@/features/tasks/components/TaskList').then((m) => ({ default: m.TaskList }))
@@ -38,21 +39,20 @@ export default function TasksPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Sticky tab bar with backdrop blur */}
-      <div className="task-tabs-bar">
+      <div className={styles['task-tabs-bar']}>
         <div style={{ display: 'flex' }}>
           {TABS.map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`task-tab-btn${tab === id ? ' task-tab-btn--active' : ''}`}
+              className={clsx(styles['task-tab-btn'], tab === id && styles['task-tab-btn--active'])}
             >
               {label}
             </button>
           ))}
         </div>
 
-        <button className="task-new-btn" onClick={() => setCreateOpen(true)}>
+        <button className={styles['task-new-btn']} onClick={() => setCreateOpen(true)}>
           <Plus size={14} /> Новая задача
         </button>
       </div>

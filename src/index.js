@@ -6,8 +6,7 @@ import { NotificationProvider } from "./app/providers/NotificationProvider";
 import '@coreui/coreui/dist/css/coreui.min.css'
 import "./auth/auth.css";
 import "./index.css";
-import "./style/modal.css";
-import "./style/toast.css";
+import "./shared/styles/modal.css";
 
 if (typeof module !== "undefined" && module.hot) {
   module.hot.addStatusHandler((status) => {

@@ -4,8 +4,10 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { BarChart2, CheckCircle, AlertTriangle, Clock, Plus } from 'lucide-react';
+import clsx from 'clsx';
 import { useTasks } from '../hooks/useTasks';
 import { useTaskStats } from '../hooks/useTaskStats';
+import styles from './tasks.module.scss';
 
 const getDefaultDateRange = () => {
   const now = new Date();
@@ -24,16 +26,13 @@ export function TaskDashboard() {
   const siteId = params.get('siteId') || undefined;
   const dateRange = useMemo(() => getDefaultDateRange(), []);
 
-  // Получаем данные
   const { data: stats } = useTaskStats(siteId, dateRange);
   const { data: tasks, isLoading } = useTasks({ siteId });
 
-  // --- ЛОГИКА ПОДСЧЕТА СТАТУСОВ ---
   const totals = useMemo(() => {
     if (!tasks || tasks.length === 0) return { total: 0, resolved: 0, percent: 0 };
 
     const total = tasks.length;
-    // Считаем все варианты успешных статусов (проверьте регистр в БД)
     const resolved = tasks.filter(t =>
       t.status === 'resolved' ||
       t.status === 'completed' ||
@@ -48,7 +47,6 @@ export function TaskDashboard() {
     };
   }, [tasks]);
 
-  // Данные для графика
   const chartData = useMemo(() => {
     if (!tasks || tasks.length === 0) return [];
     const groups: Record<string, number> = {};
@@ -69,25 +67,23 @@ export function TaskDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Шапка */}
-      <div className="task-tabs-bar rounded-lg p-2">
+      <div className={`${styles['task-tabs-bar']} rounded-lg p-2`}>
         <div className="flex items-center gap-2 px-2">
           <BarChart2 size={18} className="text-blue-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">Аналитика</h2>
         </div>
-        <button className="task-new-btn"><Plus size={16} /> Новая задача</button>
+        <button className={styles['task-new-btn']}><Plus size={16} /> Новая задача</button>
       </div>
 
-      {/* KPI Карточки */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="task-card flex flex-col gap-2">
+        <div className={`${styles['task-card']} flex flex-col gap-2`}>
           <div className="flex items-center gap-2 text-gray-400">
             <Clock size={14} /> <span className="text-[10px] font-bold uppercase">Всего</span>
           </div>
           <div className="text-2xl font-bold">{totals.total}</div>
         </div>
 
-        <div className="task-card flex flex-col gap-2">
+        <div className={`${styles['task-card']} flex flex-col gap-2`}>
           <div className="flex items-center gap-2 text-emerald-600">
             <CheckCircle size={14} /> <span className="text-[10px] font-bold uppercase">Решено</span>
           </div>
@@ -97,15 +93,15 @@ export function TaskDashboard() {
           </div>
         </div>
 
-        <div className="task-card task-card--overdue flex flex-col gap-2">
+        <div className={clsx(styles['task-card'], styles['task-card--overdue'], 'flex flex-col gap-2')}>
           <div className="flex items-center gap-2 text-red-600">
             <AlertTriangle size={14} /> <span className="text-[10px] font-bold uppercase">Индекс риска</span>
           </div>
           <div className="text-2xl font-bold">{stats ? 100 - stats.safetyScore : 0}%</div>
-          <div className="task-time-badge task-time-badge--overdue w-fit">Требует внимания</div>
+          <div className={clsx(styles['task-time-badge'], styles['task-time-badge--overdue'], 'w-fit')}>Требует внимания</div>
         </div>
 
-        <div className="task-card flex flex-col gap-2">
+        <div className={`${styles['task-card']} flex flex-col gap-2`}>
           <div className="flex items-center gap-2 text-blue-600">
             <BarChart2 size={14} /> <span className="text-[10px] font-bold uppercase">Safety Score</span>
           </div>
@@ -113,8 +109,7 @@ export function TaskDashboard() {
         </div>
       </div>
 
-      {/* График */}
-      <div className="task-dashboard-container" style={{
+      <div className={styles['task-dashboard-container']} style={{
         background: 'rgba(255, 255, 255, 0.72)',
         backdropFilter: 'blur(10px)',
         borderRadius: '12px',

@@ -2,8 +2,8 @@ import React, { useMemo, useState } from "react";
 import { Search, Filter, ArrowUpDown, AlertTriangle } from "lucide-react";
 import PermitStatusBadge from "./PermitStatusBadge";
 import PermitActions from "./PermitActions";
-import { PERMIT_TYPES, PERMIT_STATUSES } from "../../utils/permitConstants";
-import { formatDate, getPermitStatus } from "../../utils/permitHelpers";
+import { PERMIT_TYPES, PERMIT_STATUSES } from "@/entities/permit";
+import { formatDate, getPermitStatus } from "@/entities/permit";
 
 /**
  * Таблица нарядов‑допусков

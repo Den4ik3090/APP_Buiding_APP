@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/shared/api/supabase";
-import { ADDITIONAL_TRAINING_TYPES } from "../utils/constants";
+import { ADDITIONAL_TRAINING_TYPES } from "@/entities/employee";
 import "./EmployeeForm.scss";
 
 const getTodayDateValue = () => {

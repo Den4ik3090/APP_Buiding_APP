@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { PERMIT_TYPES } from "../../utils/permitConstants";
+import { PERMIT_TYPES } from "@/entities/permit";
 import {
   generatePermitNumber,
   calculateExpiryDate,
   formatDateInput,
   validatePermitData,
-} from "../../utils/permitHelpers";
+} from "@/entities/permit";
 import { supabase } from "@/shared/api/supabase";
 
 

@@ -7,8 +7,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { PERMIT_STATUSES } from "../../utils/permitConstants";
-import { getPermitStatus } from "../../utils/permitHelpers";
+import { PERMIT_STATUSES } from "@/entities/permit";
+import { getPermitStatus } from "@/entities/permit";
 import styles from "./PermitsDashboard.module.scss";
 
 const COLORS = ["#10b981", "#f59e0b", "#ef4444", "#6b7280", "#3b82f6"];

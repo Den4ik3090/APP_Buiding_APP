@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { Task, TaskResolution } from "../model";
 import { fetchResolutionsByTask } from "../services/tasksService";
-import "./tasksModal.scss";
+import styles from "./tasksModal.module.scss";
 
 interface TaskResolutionViewerModalProps {
   task: Task;
@@ -69,7 +69,7 @@ export function TaskResolutionViewerModal({
 
   return createPortal(
     <div
-      className="tasks-modal-overlay"
+      className={styles['tasks-modal-overlay']}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -77,22 +77,22 @@ export function TaskResolutionViewerModal({
       }}
     >
       <div
-        className="tasks-modal"
+        className={styles['tasks-modal']}
         role="dialog"
         aria-modal="true"
         aria-labelledby="task-resolution-title"
       >
-        <div className="tasks-modal-header">
+        <div className={styles['tasks-modal-header']}>
           <div>
-            <h2 id="task-resolution-title" className="tasks-modal-title">
+            <h2 id="task-resolution-title" className={styles['tasks-modal-title']}>
               Фото устранения
             </h2>
-            <p className="tasks-modal-subtitle">{task.title}</p>
+            <p className={styles['tasks-modal-subtitle']}>{task.title}</p>
           </div>
 
           <button
             type="button"
-            className="tasks-modal-close"
+            className={styles['tasks-modal-close']}
             onClick={onClose}
             aria-label="Закрыть окно"
           >
@@ -100,7 +100,7 @@ export function TaskResolutionViewerModal({
           </button>
         </div>
 
-        <div className="tasks-modal-body">
+        <div className={styles['tasks-modal-body']}>
           {loading ? (
             <p>Загрузка...</p>
           ) : !resolution ? (

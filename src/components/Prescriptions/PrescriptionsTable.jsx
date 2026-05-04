@@ -15,7 +15,7 @@ import {
 import {
   PRESCRIPTION_STATUSES,
   PRESCRIPTION_STATUS_LABELS,
-} from "./PrescriptionsRegistry";
+} from "@/entities/prescription";
 
 const collator = new Intl.Collator("ru", {
   numeric: true,

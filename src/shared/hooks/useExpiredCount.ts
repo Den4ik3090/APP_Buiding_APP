@@ -1,8 +1,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
-import { DAYS_THRESHOLD } from "@/utils/constants";
-import { hasExpiredAdditional } from "@/components/utils/helpers";
+import { DAYS_THRESHOLD, hasExpiredAdditional } from "@/entities/employee";
 import type { AnyEmployee } from "@/features/employee-crud/api";
 
 export function useExpiredCount(

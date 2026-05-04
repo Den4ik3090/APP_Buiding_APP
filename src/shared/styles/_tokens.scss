@@ -1,0 +1,39 @@
+// ─── Brand Colors ────────────────────────────────────────────
+$gold:          #D4983A;
+$gold-light:    #E8B04B;
+$gold-dark:     #C2852A;
+$gold-muted:    rgba(212, 152, 58, 0.12);
+
+$navy:          #0A0F1E;
+$navy-mid:      #111827;
+$navy-surface:  #1a2235;
+
+// ─── Semantic / Status ───────────────────────────────────────
+$status-valid:   #22c55e;
+$status-warning: #f59e0b;
+$status-expired: #dc2626;
+$status-info:    #2563eb;
+
+// ─── Neutral Surface Scale ───────────────────────────────────
+$surface-0:  #ffffff;
+$surface-1:  #f9fafb;
+$surface-2:  #f3f4f6;
+$border-std: #e5e7eb;
+$border-mid: #e4e4e7;
+
+// ─── Spacing & Radii ─────────────────────────────────────────
+$radius-sm:   8px;
+$radius-md:  10px;
+$radius-lg:  14px;
+$radius-xl:  16px;
+$radius-2xl: 24px;
+
+// ─── Shadows ─────────────────────────────────────────────────
+$shadow-card:  0 1px 4px rgba(0, 0, 0, 0.06);
+$shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.18);
+$shadow-gold:  0 8px 24px rgba(212, 152, 58, 0.35);
+
+// ─── Z-index Ladder ──────────────────────────────────────────
+$z-sticky:  20;
+$z-modal: 1000;
+$z-toast:  9999;

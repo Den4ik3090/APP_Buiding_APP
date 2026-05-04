@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import StatusBadge from '@/shared/ui/StatusBadge';
-import { DAYS_THRESHOLD, WARNING_THRESHOLD } from '@/utils/constants';
+import { DAYS_THRESHOLD, WARNING_THRESHOLD, hasExpiredAdditional } from '@/entities/employee';
 import { sendToTelegram } from '@/shared/api/telegram';
 import WorkerTrainingDownloadButton from '@/components/WorkerTrainingDownloadButton';
-import { hasExpiredAdditional } from '@/components/utils/helpers';
 import OrganizationTelegramReport from '@/components/OrganizationTelegramReport';
 
 interface Employee {

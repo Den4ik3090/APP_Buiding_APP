@@ -19,7 +19,7 @@ import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
 import {
   PRESCRIPTION_STATUSES,
   PRESCRIPTION_STATUS_LABELS,
-} from "./PrescriptionsRegistry.jsx";
+} from "@/entities/prescription";
 import ResponsiblePersonSelect from "./ResponsiblePersonSelect.jsx";
 
 const getTodayDateValue = () => {

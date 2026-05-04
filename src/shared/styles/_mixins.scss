@@ -1,0 +1,164 @@
+@use 'tokens' as t;
+
+// ─── Layout ──────────────────────────────────────────────────
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ─── Industrial Card (solid surface, no glass) ───────────────
+
+@mixin industrial-card($radius: t.$radius-lg) {
+  background: t.$surface-0;
+  border: 1px solid t.$border-std;
+  border-radius: $radius;
+  box-shadow: t.$shadow-card;
+}
+
+// ─── Glassmorphism ───────────────────────────────────────────
+// WARNING: Do NOT apply to scroll children.
+// backdrop-filter forces GPU recomposite on every scroll frame.
+// Safe ONLY on position:fixed overlays (auth card, fixed modals).
+
+@mixin glass($blur: 20px, $bg-opacity: 0.08, $border-opacity: 0.15) {
+  background: rgba(255, 255, 255, $bg-opacity);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  border: 1px solid rgba(255, 255, 255, $border-opacity);
+}
+
+// ─── Gold Accent ─────────────────────────────────────────────
+
+@mixin gold-border($width: 4px, $side: left) {
+  border-#{$side}: $width solid t.$gold;
+}
+
+@mixin gold-gradient-bg {
+  background: linear-gradient(135deg, t.$gold 0%, t.$gold-light 100%);
+}
+
+// Glow via ::after pseudo-element — composited, no repaint on hover
+@mixin gold-glow-hover($intensity: 0.35) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    box-shadow: 0 0 20px rgba(t.$gold, $intensity), 0 0 60px rgba(t.$gold, $intensity * 0.4);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  &:hover::after { opacity: 1; }
+}
+
+// ─── Focus Ring (composited via outline, not box-shadow) ──────
+
+@mixin focus-ring($color: t.$status-info, $opacity: 0.45, $offset: 0) {
+  border-color: transparent;
+  outline: 2px solid rgba($color, $opacity);
+  outline-offset: $offset;
+}
+
+// ─── Hover Lift (shadow via opacity on ::after — composited) ──
+
+@mixin hover-lift($shadow: 0 6px 20px rgba(0, 0, 0, 0.1)) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: $shadow;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+  }
+
+  &:hover::after { opacity: 1; }
+}
+
+// ─── Status Badges ───────────────────────────────────────────
+
+@mixin status-badge-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+@mixin status-valid {
+  @include status-badge-base;
+  background: #dcfce7;
+  color: #166534;
+}
+
+@mixin status-warning {
+  @include status-badge-base;
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+@mixin status-expired {
+  @include status-badge-base;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+// ─── Text Utilities ───────────────────────────────────────────
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin label-uppercase {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+// ─── Animation Shorthands ────────────────────────────────────
+
+@mixin animation-fade-in($duration: 0.22s, $delay: 0s) {
+  animation: fade-in $duration ease-out $delay both;
+}
+
+@mixin animation-modal-enter($duration: 0.18s) {
+  animation: modal-enter $duration ease-out both;
+}
+
+// Shimmer for loading/pending buttons
+@mixin shimmer-bg($from: #2563eb, $mid: #60a5fa) {
+  background: linear-gradient(90deg, $from 25%, $mid 50%, $from 75%);
+  background-size: 200% auto;
+  animation: shimmer 1.2s linear infinite;
+}
+
+// ─── Reduced Motion ───────────────────────────────────────────
+
+@mixin reduce-motion-reset {
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

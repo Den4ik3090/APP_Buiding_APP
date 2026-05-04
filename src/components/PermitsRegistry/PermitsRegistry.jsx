@@ -5,8 +5,8 @@ import PermitsDashboard from "./PermitsDashboard";
 import PermitForm from "./PermitForm";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
-import { PERMIT_STATUSES } from "../../utils/permitConstants";
-import { isClosedStatus, getPermitStatus } from "../../utils/permitHelpers";
+import { PERMIT_STATUSES } from "@/entities/permit";
+import { isClosedStatus, getPermitStatus } from "@/entities/permit";
 import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import "./PermitsRegistry.css";
 

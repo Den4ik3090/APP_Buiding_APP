@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { downloadWorkerTrainings } from "../utils/downloadWorkerTrainings";
+import { downloadWorkerTrainings } from "@/features/employee-crud/services/downloadTrainingsService";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
-import '../style/WorkerTrainingDownloadButton.scss';
+import './WorkerTrainingDownloadButton.scss';
 
 function WorkerTrainingDownloadButton({ workerId, workerName, addNotification }) {
   const [loading, setLoading] = useState(false);

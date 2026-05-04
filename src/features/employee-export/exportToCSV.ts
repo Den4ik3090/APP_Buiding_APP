@@ -1,5 +1,5 @@
-import { DAYS_THRESHOLD } from "@/utils/constants";
-import { getDaysDifference, type AnyEmployee } from "@/features/employee-crud/api";
+import { DAYS_THRESHOLD, getDaysDifference } from "@/entities/employee";
+import type { AnyEmployee } from "@/features/employee-crud/api";
 
 export const exportToCSV = (employees: AnyEmployee[]): void => {
   const SEP = ";";

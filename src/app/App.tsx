@@ -14,8 +14,6 @@ import SkeletonLoader from "@/shared/ui/Skeleton";
 import { TOAST_TYPES } from "@/shared/constants/toast";
 import logo from "@/assets/img/logo_PUTEVI.jpg";
 
-// Импорт стилей Vanilla Extract
-import * as styles from "./theme.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,15 +65,17 @@ export default function App() {
     await supabase.auth.signOut({ scope: 'global' });
   }, []);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
+
   const toggleTheme = useCallback(() => {
     setIsDark((prev) => !prev);
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Применяем сгенерированный класс темы */}
-      <div className={isDark ? styles.darkThemeClass : styles.lightThemeClass}>
-        <div className="app">
+      <div className="app">
           <ToastContainer
             notifications={notifications}
             onRemove={removeNotification}
@@ -117,7 +117,6 @@ export default function App() {
             )}
           </div>
         </div>
-      </div>
     </QueryClientProvider>
   );
 }

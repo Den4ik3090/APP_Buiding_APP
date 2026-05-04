@@ -1,11 +1,11 @@
 import React from "react";
-import { STATUS_COLORS, STATUS_EMOJI } from "../../utils/permitConstants";
+import { STATUS_COLORS, STATUS_EMOJI } from "@/entities/permit";
 import {
   needsWarning,
   getDaysUntilExpiry,
   isClosedStatus,
   getPermitStatus,
-} from "../../utils/permitHelpers";
+} from "@/entities/permit";
 
 /**
  * Компонент бейджа статуса наряда

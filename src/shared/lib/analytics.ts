@@ -1,4 +1,4 @@
-import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "@/utils/constants";
+import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "@/entities/employee";
 
 export function getStatusByDays(days: number) {
   if (days >= DAYS_THRESHOLD) return "expired";

@@ -46,8 +46,8 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { ADDITIONAL_TRAINING_TYPES } from "../utils/constants";
-import { isTrainingExpired } from "./utils/helpers";
+import { ADDITIONAL_TRAINING_TYPES } from "@/entities/employee";
+import { isTrainingExpired } from "@/entities/employee";
 import "./AdditionalTrainingsManager.css";
 
 ChartJS.register(

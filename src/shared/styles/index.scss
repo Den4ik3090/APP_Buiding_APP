@@ -1,0 +1,12 @@
+// Barrel — forwards all shared style partials.
+// Usage in SCSS Modules:
+//   @use '@/shared/styles' as s;
+//   color: s.$gold;
+//   @include s.industrial-card;
+//   animation: s.fade-in 0.22s ease-out;
+
+@forward 'tokens';
+@forward 'typography';
+@forward 'animations';
+@forward 'mixins';
+@forward 'breakpoints';

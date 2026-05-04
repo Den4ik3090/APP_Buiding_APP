@@ -3,8 +3,8 @@ import WorkerTrainingDownloadButton from "./WorkerTrainingDownloadButton";
 import { AutoSizer } from "react-virtualized-auto-sizer";
 import { List } from "react-window";
 
-import { DAYS_THRESHOLD } from "../utils/constants";
-import { hasExpiredAdditional } from "./utils/helpers";
+import { DAYS_THRESHOLD } from "@/entities/employee";
+// import { hasExpiredAdditional } from "./utils/helpers";
 
 const ROW_HEIGHT = 64;
 
@@ -30,9 +30,8 @@ function VirtualEmployeeTable({
       return (
         <div style={style}>
           <div
-            className={`virtual-row ${isExpired ? "expired" : "valid"}${
-              additionalExpired ? " additional-expired" : ""
-            }`}
+            className={`virtual-row ${isExpired ? "expired" : "valid"}${additionalExpired ? " additional-expired" : ""
+              }`}
           >
             <div className="virtual-cell name">{emp?.name || "—"}</div>
             <div className="virtual-cell org">{emp?.organization || "—"}</div>

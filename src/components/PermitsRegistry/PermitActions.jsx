@@ -5,11 +5,11 @@ import {
   calculateExtendedDate,
   canExtend,
   isClosedStatus,
-} from "../../utils/permitHelpers";
+} from "@/entities/permit";
 import {
   NOTIFICATION_MESSAGES,
   PERMIT_STATUSES,
-} from '../../utils/permitConstants';
+} from '@/entities/permit';
 import { TOAST_TYPES, TOAST_DURATION } from '@/shared/constants/toast';
 
 /**

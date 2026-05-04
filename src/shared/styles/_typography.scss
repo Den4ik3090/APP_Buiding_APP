@@ -1,0 +1,23 @@
+// Font scale — mirrors Tailwind's text-* utilities for use in SCSS Modules
+
+$font-xs:   11px;
+$font-sm:   12px;
+$font-base: 13px;
+$font-md:   14px;
+$font-lg:   16px;
+$font-xl:   18px;
+$font-2xl:  20px;
+$font-3xl:  24px;
+
+$weight-normal:    400;
+$weight-medium:    500;
+$weight-semibold:  600;
+$weight-bold:      700;
+
+$tracking-tight: -0.01em;
+$tracking-wide:   0.04em;
+$tracking-wider:  0.08em;
+
+$leading-tight:  1.25;
+$leading-normal: 1.45;
+$leading-loose:  1.6;

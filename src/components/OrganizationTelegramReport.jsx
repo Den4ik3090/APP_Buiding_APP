@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { sendToTelegram } from "@/shared/api/telegram";
-import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "../utils/constants";
+import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "@/entities/employee";
 
 /**
  * Компонент для отправки списка сотрудников выбранной организации в Telegram

@@ -12,15 +12,14 @@ module.exports = (env, argv) => {
   return {
     entry: "./src/index.js",
     
-    output: {
-      path: path.resolve(__dirname, "dist"),
-      publicPath: isProduction ? undefined : "/",
-      filename: isProduction ? "js/[name].[contenthash:8].js" : "js/bundle.js",
-      chunkFilename: isProduction ? "js/[name].[contenthash:8].chunk.js" : "js/[name].chunk.js",
-      assetModuleFilename: "assets/[name].[contenthash:8][ext]",
-      clean: true,
-    },
-
+ output: {
+  path: path.resolve(__dirname, "dist"),
+  publicPath: "/",
+  filename: isProduction ? "js/[name].[contenthash:8].js" : "js/bundle.js",
+  chunkFilename: isProduction ? "js/[name].[contenthash:8].chunk.js" : "js/[name].chunk.js",
+  assetModuleFilename: "assets/[name].[contenthash:8][ext]",
+  clean: true,
+},
     module: {
       rules: [
         // --- JS/TS Processing ---

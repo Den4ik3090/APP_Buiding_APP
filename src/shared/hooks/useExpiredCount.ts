@@ -1,14 +1,15 @@
 import { useMemo, useEffect, useRef } from "react";
-import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
 import { DAYS_THRESHOLD, hasExpiredAdditional } from "@/entities/employee";
-import type { AnyEmployee } from "@/features/employee-crud/api";
+import type { Employee } from "@/entities/employee";
+
+type AddNotification = (message: string, type: string, duration?: number) => void;
 
 export function useExpiredCount(
-  filteredEmployees: AnyEmployee[],
-  getDaysDiff: (date: string) => number
+  filteredEmployees: Employee[],
+  getDaysDiff: (date: string) => number,
+  addNotification: AddNotification
 ): number {
-  const { addNotification } = useNotificationContext();
   const prevRef = useRef<number | null>(null);
 
   const expiredCount = useMemo(

@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
+import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
+import {
+  fetchPrescriptions,
+  fetchRegistryEmployees,
+  deletePrescription,
+} from "@/features/prescriptions/services/prescriptionsService";
 import { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS } from "@/entities/prescription";
 import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import PrescriptionForm from "./PrescriptionForm.jsx";
@@ -51,31 +57,13 @@ export default function PrescriptionsRegistry() {
   const [dateTo, setDateTo] = useState("");
 
   const loadPrescriptions = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("prescriptions")
-      .select("*")
-      .order("issue_date", { ascending: false });
-
-    if (error) {
-      console.error("Ошибка загрузки предписаний:", error);
-      throw error;
-    }
-
-    setPrescriptions(data || []);
+    const data = await fetchPrescriptions();
+    setPrescriptions(data);
   }, []);
 
   const loadEmployees = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("employees")
-      .select("id, name, profession, organization")
-      .order("name");
-
-    if (error) {
-      console.error("Ошибка загрузки сотрудников:", error);
-      throw error;
-    }
-
-    setEmployees(data || []);
+    const data = await fetchRegistryEmployees();
+    setEmployees(data);
   }, []);
 
   const loadData = useCallback(async () => {
@@ -101,7 +89,7 @@ export default function PrescriptionsRegistry() {
 
   useEffect(() => {
     const prescriptionsSubscription = supabase
-      .channel("prescriptions_registry_changes")
+      .channel(REALTIME_CHANNELS.PRESCRIPTIONS)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "prescriptions" },
@@ -291,15 +279,7 @@ export default function PrescriptionsRegistry() {
       }
 
       try {
-        const { error } = await supabase
-          .from("prescriptions")
-          .delete()
-          .eq("id", prescriptionId);
-
-        if (error) {
-          throw error;
-        }
-
+        await deletePrescription(prescriptionId);
         await loadPrescriptions();
         addNotification(
           "Предписание удалено.",

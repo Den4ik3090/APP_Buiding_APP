@@ -5,7 +5,7 @@ import type { TaskStatus } from '../types';
 
 const STATUS_OPTIONS: { value: TaskStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Все статусы' },
-  { value: 'open', label: 'Открытые' },
+  { value: 'pending', label: 'Открытые' },
   { value: 'in_progress', label: 'В работе' },
   { value: 'resolved', label: 'Решённые' },
   { value: 'overdue', label: 'Просроченные' },

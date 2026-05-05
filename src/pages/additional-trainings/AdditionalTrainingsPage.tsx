@@ -4,5 +4,5 @@ import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
 
 export default function AdditionalTrainingsPage() {
   const { employees } = useEmployeeContext();
-  return <AdditionalTrainingsManager employees={employees} />;
+  return <AdditionalTrainingsManager employees={employees as any} />;
 }

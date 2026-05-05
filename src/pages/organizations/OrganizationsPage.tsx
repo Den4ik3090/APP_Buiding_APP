@@ -4,5 +4,5 @@ import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
 
 export default function OrganizationsPage() {
   const { employees } = useEmployeeContext();
-  return <OrganizationsDocs employees={employees} />;
+  return <OrganizationsDocs employees={employees as any} />;
 }

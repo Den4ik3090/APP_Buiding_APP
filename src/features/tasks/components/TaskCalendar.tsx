@@ -39,7 +39,7 @@ export function TaskCalendar() {
       const key = task.created_at.slice(0, 10);
       if (!map[key]) map[key] = { resolved: 0, problem: 0 };
       if (task.status === 'resolved') map[key].resolved++;
-      else if (task.status === 'open' || task.status === 'overdue') map[key].problem++;
+      else if (task.status === 'pending' || task.status === 'overdue') map[key].problem++;
     });
     return map;
   }, [tasks]);

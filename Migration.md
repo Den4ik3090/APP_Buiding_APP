@@ -1,125 +1,275 @@
-# Migration Plan
+# Migration Plan — PUTEVI Safety
 
-## Status
-- Этап 1 ✅ — .env подключён, supabaseClient читает из process.env
-- Этап 2 ✅ — NotificationContext создан, prop drilling убран из 3 registry
-- Этап 3 ✅ — UI-компоненты перенесены в src/shared/ui/
-- Этап 4 ✅ — utils/ объединены, API-слой вынесен в shared/api/
-- Этап 5 ❌ — не начат (src/entities/ не существует)
-- Этап 6 ✅ — Router внедрён, 8 маршрутов, NavLink, search params
-- Этап 7 ✅ — App.tsx ~123 строки, widgets extracted, EmployeeProvider
-- Этап 8 🔶 — частично (новые файлы .tsx/.ts, useNotification untyped)
-- CSS стратегия 🔶 — частично (5 параллельных систем, Tailwind работает)
-
-## Audit Findings (добавлено по результатам анализа)
-- CRITICAL: двойной QueryClientProvider — index.js + App.tsx
-- HIGH: @types/react-router-dom v5 при runtime v7
-- HIGH: поле priority в форме не существует в БД
-- MEDIUM: useNotification.ts не типизирован
-- LOW: две библиотеки сжатия изображений (compressorjs + browser-image-compression)
-- LOW: framer-motion, chart.js возможно мёртвые зависимости
+**Последнее обновление:** 2026-05-05  
+**Основание:** Архитектурный аудит (Principal Frontend Architect, read-only)
 
 ---
 
-## Bugfix Sprint (выполнить до продолжения миграции)
+## Текущий статус (что уже сделано)
 
-### BF-1 — Двойной QueryClientProvider (15 мин, CRITICAL)
-Файлы: src/index.js, src/app/App.tsx
-Удалить QueryClient + QueryClientProvider из index.js
-Оставить только в App.tsx
-Проверка: grep -n "QueryClient" src/index.js → пусто
-
-### BF-2 — Удалить @types/react-router-dom (5 мин, HIGH)
-Файл: package.json
-npm uninstall @types/react-router-dom
-RRD v7 поставляет собственные типы
-Проверка: grep "types/react-router" package.json → пусто
-
-### BF-3 — Поле priority (20 мин, HIGH)
-Файлы: supabase/migrations/, src/features/tasks/types.ts
-Создать: supabase/migrations/add_priority_to_tasks.sql
-Добавить priority?: 'low' | 'medium' | 'high' в Task + TaskInsert
-Проверка: npm run typecheck → без ошибок
-
-### BF-4 — Типизировать useNotification.ts (20 мин, MEDIUM)
-Файлы: src/shared/hooks/useNotification.ts, src/app/providers/NotificationProvider.tsx
-Добавить interface Notification, типизировать useState + addNotification
-Проверка: grep -n "any\|never\[\]" src/shared/hooks/useNotification.ts → пусто
-
-### BF-5 — Убрать дублирующую библиотеку сжатия (10 мин, LOW)
-Файлы: src/features/tasks/utils/imageCompression.ts, package.json
-npm uninstall browser-image-compression
-Удалить imageCompression.ts если не используется
-Проверка: grep -rn "browser-image-compression" src/ → пусто
-
-### BF-6 — Аудит мёртвых зависимостей (10 мин, LOW)
-Проверить grep по: framer-motion, chart.js, react-chartjs, LoginModal
-Удалить неиспользуемые пакеты
-Проверка: npm run build → без warnings о неиспользуемых модулях
+| Шаг | Описание | Статус |
+|-----|----------|--------|
+| FSD shell | app/, pages/, widgets/, shared/, entities/ | ✅ |
+| Router | HashRouter, 8 маршрутов, React.lazy | ✅ |
+| NotificationContext | prop drilling убран из registry | ✅ |
+| shared/ui/ | Toast, Skeleton, StatusBadge, ButtonGlow, Wrapper | ✅ |
+| shared/api/ | supabase.ts (single client), telegram.ts | ✅ |
+| entities/ | employee, permit, order, prescription (model+constants+lib+index) | ✅ |
+| features/tasks/ | полный FSD-slice: service → hook (TanStack Query) → components | ✅ |
+| features/employee-crud/ | EmployeeProvider, api.ts, EmployeeTable.tsx | ✅ (частично) |
+| CSS refactor | src/style/ удалён, modal.css → shared/styles/, SCSS modules для tasks | ✅ |
+| Dark mode | document.documentElement.classList.toggle("dark", isDark) | ✅ |
+| Vanilla Extract | удалён из кода и webpack | ✅ |
 
 ---
 
-## Этап 5 — Entity constants (1 час, низкий риск)
-Цель: создать src/entities/ и вынести domain constants
+## Известные проблемы, требующие исправления
 
-Перемещения:
-src/utils/constants.js              → src/entities/employee/constants.ts
-src/components/utils/helpers.js     → src/entities/employee/helpers.ts
-src/utils/permitConstants.js        → src/entities/permit/constants.ts
-src/utils/permitHelpers.js          → src/entities/permit/helpers.ts
-PRESCRIPTION_STATUSES (внутри PrescriptionsRegistry.jsx) → src/entities/prescription/constants.ts
+### P1 — Критические (блокируют TypeScript-здоровье)
 
-Новые файлы:
-src/entities/employee/types.ts
-src/entities/permit/types.ts
-src/entities/order/types.ts
-src/entities/prescription/types.ts
-src/entities/*/index.ts  — barrel-экспорт
+**P1-1 — Stale TaskStatus literals (30 мин)**  
+Файлы: `src/features/tasks/components/TaskDashboard.tsx`, `TaskCalendar.tsx`, `TaskFilters.tsx`  
+Проблема: сравнения с `'completed'`, `'done'`, `'Выполнено'`, `'open'` — этих значений нет в  
+`TaskStatus = 'pending' | 'in_progress' | 'resolved' | 'overdue'`  
+Исправление:
+- `TaskDashboard:38-40` — заменить `'completed' || 'done' || 'Выполнено'` на `'resolved'`
+- `TaskCalendar:42` — заменить `'open'` на `'pending'`
+- `TaskFilters:8` — заменить `value: 'open'` на `value: 'pending'`, label обновить по смыслу  
+Проверка: `npx tsc --noEmit` — ошибки в features/tasks/ исчезают (было 5)
 
-Исправить импорты в EmployeesPage.tsx:
-@/utils/constants       → @/entities/employee/constants
-@/components/utils/helpers → @/entities/employee/helpers
-
-Проверка: grep -rn "from.*utils/constants\|from.*components/utils/helpers" src/ → пусто
-npm start → статусы корректны во всех реестрах
+**P1-2 — AnyEmployee / Employee prop mismatch в pages (20 мин)**  
+Файлы: `src/pages/employees/EmployeesPage.tsx`, `src/pages/organizations/OrganizationsPage.tsx`,  
+`src/pages/additional-trainings/AdditionalTrainingsPage.tsx`  
+Проблема: `AnyEmployee[]` не совместим с `Employee[]` и `never[]` в пропсах  
+Исправление: добавить `emptyText` prop в вызов `VirtualEmployeeTable` (или сделать его опциональным  
+с дефолтом в `VirtualEmployeeTable.jsx`). Для `never[]` — явно типизировать useState в страницах.  
+Проверка: `npx tsc --noEmit` — 0 ошибок (текущий baseline: 10)
 
 ---
 
-## Этап 8 — TypeScript полная волна (итеративно)
-Цель: устранить оставшиеся untyped boundaries
+### P2 — Архитектурные нарушения FSD
 
-Первая волна (после BF-4):
-- src/features/employee-crud/api.ts — убрать Record<string, any>
-- src/shared/hooks/useNotification.ts — типизирован в BF-4
-- src/components/PermitsRegistry/*.jsx — добавить prop types на границах
+**P2-1 — shared/ импортирует из features/ (20 мин)**  
+Файл: `src/shared/hooks/useExpiredCount.ts:5`
 
-CSS стратегия — вторая волна:
-src/style/toast.css     → src/shared/ui/Toast/Toast.module.css
-src/style/Skeleton.css  → src/shared/ui/Skeleton/Skeleton.module.css
-Цель: убрать plain CSS из src/style/ полностью
+```ts
+import type { AnyEmployee } from "@/features/employee-crud/api"; // НАРУШЕНИЕ
+import { useNotificationContext } from "@/app/providers/NotificationProvider"; // НАРУШЕНИЕ
+```
 
-Проверка: tsc --noEmit без новых ошибок
+Исправление: заменить `AnyEmployee` на `Employee` из `@/entities/employee/model` —  
+хук использует только `trainingDate` и `additionalTrainings`, оба поля есть в `Employee`.  
+Для `useNotificationContext` — передавать `addNotification` как параметр хука, а не импортировать context.  
+Проверка: `grep -n "from.*features\|from.*app/providers" src/shared/` — пусто
+
+**P2-2 — Захардкоженные имена Realtime-каналов (15 мин)**  
+Файлы: `src/components/PermitsRegistry/PermitsRegistry.jsx:102`,  
+`src/components/Prescriptions/PrescriptionsRegistry.jsx:104`  
+Проблема: строки `"permits_changes"` и `"prescriptions_registry_changes"` — опечатка или  
+переименование без grep тихо ломает live-обновления.  
+Исправление: создать `src/shared/constants/realtimeChannels.ts`:
+
+```ts
+export const REALTIME_CHANNELS = {
+  PERMITS: 'permits_changes',
+  PRESCRIPTIONS: 'prescriptions_registry_changes',
+} as const;
+```
+
+Заменить строки в обоих registry.  
+Проверка: `grep -rn "\.channel(\"" src/components/` — пусто
+
+**P2-3 — AppLayout.module.scss мёртвый файл (5 мин)**  
+Файл: `src/AppLayout.module.scss`  
+Проверка перед удалением: `grep -rn "AppLayout" src/` — пусто  
+Действие: удалить файл.
 
 ---
 
-## Текущий Scorecard (из аудита)
-| Dimension        | Score /10 | Top issue                        |
-|------------------|-----------|----------------------------------|
-| Architecture     | 7/10      | двойной QueryClientProvider      |
-| Folder structure | 6/10      | src/entities/ отсутствует        |
-| TypeScript       | 5/10      | useNotification untyped, any в api|
-| Performance      | 8/10      | два чарт-пакета в бандле         |
-| Security         | 7/10      | RLS не покрывает multi-tenant    |
-| Data layer       | 7/10      | client-side фильтрация в useTasks|
-| Styling          | 5/10      | 5 параллельных систем            |
-| Dead code        | 6/10      | framer-motion, chart.js, LoginModal|
-| OVERALL          | 6/10      |                                  |
+## Stage 1 — Структурная миграция Registry (приоритет: высокий)
+
+Цель: вынести Supabase-вызовы из трёх legacy-компонентов в service-слой.  
+Образец для копирования: `src/features/tasks/services/tasksService.ts`
+
+### 1.1 — Permits service + hook (4–6ч)
+
+Создать `src/features/permits/services/permitsService.ts`:
+
+```ts
+// fetchPermits(): Promise<Permit[]>
+// createPermit(payload): Promise<Permit>
+// updatePermit(id, payload): Promise<Permit>
+// deletePermit(id): Promise<void>
+```
+
+Все типы — из `@/entities/permit/model.ts`. Supabase вызовы — только здесь, без setState-параметров.
+
+Создать `src/features/permits/hooks/usePermits.ts`:
+
+```ts
+export function usePermits(filters?) { return useQuery(['permits', filters], ...) }
+export function useCreatePermit() { return useMutation(...) }
+export function useUpdatePermit() { ... }
+export function useDeletePermit() { ... }
+```
+
+Обновить `src/components/PermitsRegistry/PermitsRegistry.jsx`:
+- удалить `useState(permits)` + `useEffect(loadPermits)`
+- заменить на `const { data: permits, isLoading } = usePermits()`
+- удалить inline `supabase.from()` вызовы для permits
+- оставить пока: `useState(showForm)`, `useState(editingPermit)`, фильтры, Realtime
+
+Проверка: поведение не меняется, `npx tsc --noEmit` без новых ошибок.
+
+### 1.2 — Prescriptions service + hook (4–6ч)
+
+Аналогично 1.1, для `prescriptions`.  
+Создать `src/features/prescriptions/services/prescriptionsService.ts`  
+и `src/features/prescriptions/hooks/usePrescriptions.ts`.  
+Обновить `src/components/Prescriptions/PrescriptionsRegistry.jsx`.
+
+### 1.3 — Orders service + hook (4–6ч)
+
+Аналогично 1.1, для `orders`.  
+Создать `src/features/orders/services/ordersService.ts`  
+и `src/features/orders/hooks/useOrders.ts`.  
+Обновить `src/components/OrderRegistry/OrdersRegistry.jsx`.
 
 ---
 
-## Следующие шаги (в порядке приоритета)
-1. BF-1 → BF-6 (bugfix sprint, ~1 час суммарно)
-2. Этап 5 — Entity constants
-3. Этап 8 — TypeScript полная волна
-4. CSS консолидация
-5. useTasks — перенести фильтрацию на сторону Supabase
+## Stage 2 — EmployeeProvider → TanStack Query (приоритет: средний)
+
+Цель: устранить anti-pattern "API-функция получает setState как параметр".  
+Файлы: `src/features/employee-crud/api.ts`, `src/features/employee-crud/EmployeeProvider.tsx`
+
+Текущая проблема в `api.ts:58`:
+
+```ts
+// setState передаётся в сервисный слой — инверсия зависимостей
+export const addEmployee = async (
+  formData, notify, setEmployees, setShowForm, setEditingEmployee
+) => { ... setEmployees(prev => ...); setShowForm(false); }
+```
+
+Цель:
+
+```ts
+// api.ts — только данные
+export const addEmployee = async (formData: EmployeeInsert): Promise<Employee>
+
+// EmployeeProvider — хук управляет состоянием
+const { mutate: add } = useMutation({
+  mutationFn: addEmployee,
+  onSuccess: () => qc.invalidateQueries(['employees'])
+})
+```
+
+Шаги:
+1. Переписать `fetchFromSupabase` — использовать `useQuery(['employees'], fetchEmployees)`
+2. Переписать `addEmployee`, `updateEmployee`, `deleteEmployee`, `retrainEmployee` в api.ts — убрать все параметры setState, оставить только данные, возвращать `Promise<Employee|void>`
+3. В `EmployeeProvider` создать мутации через `useMutation`
+4. Убрать `useState(employees)` + `useEffect(reload)` — данные идут из useQuery
+5. Обновить тип контекста
+
+Проверка: `npx tsc --noEmit`, визуальный тест CRUD в браузере.
+
+---
+
+## Stage 3 — TypeScript Hardening (после Stage 2)
+
+### 3.1 — Устранить AnyEmployee
+
+После того как `EmployeeProvider` перейдёт на TanStack Query и `fetchEmployees` будет возвращать  
+`Employee[]`, заменить `AnyEmployee = Record<string, any>` на `Employee` в api.ts и всех consumers.  
+Файлы: `src/features/employee-crud/api.ts`, `EmployeesPage.tsx`, `VirtualEmployeeTable.jsx`, `EmployeeForm.jsx`.  
+Это разблокирует настоящую типобезопасность — schema change в БД станет TS-ошибкой, а не runtime-багом.
+
+### 3.2 — Типизировать Notification.type как union
+
+Файл: `src/shared/hooks/useNotification.ts`  
+Проблема: `type: string` вместо `'success' | 'error' | 'warning' | 'info'`  
+Исправление: привести к union, совместимому с `TOAST_TYPES as const` из `shared/constants/toast.ts`
+
+### 3.3 — Добавить Error Boundaries
+
+Создать `src/shared/ui/ErrorBoundary/index.tsx` (class component).  
+Обернуть в `App.tsx`:
+- `<ErrorBoundary>` вокруг `<AppRouter />`
+- `<ErrorBoundary>` вокруг `<EmployeeProvider>`
+
+Текущее поведение при ошибке: белый экран без сообщения.
+
+---
+
+## Stage 4 — Перформанс и bundle (низкий приоритет)
+
+### 4.1 — Убрать дублирующую charting-библиотеку
+
+Проверить: `grep -rn "from 'chart.js'\|from 'react-chartjs'" src/` vs `from 'recharts'`  
+Если используется только одна — удалить другую + entry в package.json.  
+Экономия: ~300–450 KB bundle.
+
+### 4.2 — Dynamic import для xlsx
+
+Файл: `src/features/employee-export/exportToCSV.ts`  
+Заменить статический `import * as XLSX from 'xlsx'` на динамический импорт внутри функции:
+
+```ts
+const XLSX = await import('xlsx');
+```
+
+Экономия: ~800 KB из initial bundle.
+
+### 4.3 — Server-side фильтрация в useTasks
+
+Файл: `src/features/tasks/hooks/useTasks.ts`  
+Текущая проблема: `fetchTasks()` делает `SELECT *` без LIMIT, фильтрация в браузере.  
+Исправление в `tasksService.ts`:
+
+```ts
+export const fetchTasks = async (filters: TaskFilters) => {
+  let q = supabase.from('tasks').select('*').order('created_at', { ascending: false });
+  if (filters.status)     q = q.eq('status', filters.status);
+  if (filters.siteId)     q = q.eq('site_id', filters.siteId);
+  if (filters.assignedTo) q = q.eq('assigned_to', filters.assignedTo);
+  return q.limit(200);
+};
+```
+
+Убрать `applyFilters` из хука — фильтрация переносится на сторону Supabase.
+
+---
+
+## Неприкасаемые файлы
+
+| Файл / область | Причина |
+|----------------|---------|
+| `src/components/EmployeeForm.jsx` | Самый большой компонент, главная форма ввода данных. Риск регрессии выше пользы. Трогать только после стабилизации всех Registry. |
+| Строки Realtime-каналов (`"permits_changes"`, `"prescriptions_registry_changes"`) | Observable infrastructure. Константа защищает от опечаток, но сами строки не менять без миграции на стороне Supabase. |
+| `src/shared/api/supabase.ts` — `storage: sessionStorage` | Намеренное security-решение. Изменение требует security review, не code PR. |
+| `supabase/functions/` | Защищённые Edge Functions. Любые изменения — только с явного согласия. |
+
+---
+
+## Порядок выполнения
+
+```
+P1-1 → P1-2            fix TS baseline: 10 → 0 ошибок
+P2-1 → P2-2 → P2-3    fix FSD нарушения, защитить Realtime-имена
+Stage 1.1 → 1.2 → 1.3  Registry service layers (поочерёдно, изолированно)
+Stage 2                 EmployeeProvider → TanStack Query
+Stage 3.1 → 3.2 → 3.3  TypeScript hardening (после Stage 2)
+Stage 4                 Performance (в последнюю очередь)
+```
+
+---
+
+## Эталонные файлы (образцы для нового кода)
+
+| Зачем смотреть | Файл |
+|----------------|------|
+| Service layer | `src/features/tasks/services/tasksService.ts` |
+| TanStack Query hook | `src/features/tasks/hooks/useTasks.ts` |
+| Entity model | `src/entities/employee/model.ts` |
+| Typed component (Tailwind + dark mode) | `src/features/employee-crud/components/EmployeeTable.tsx` |
+| SCSS Module usage | `src/features/tasks/components/tasks.module.scss` |

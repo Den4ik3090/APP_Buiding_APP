@@ -33,12 +33,7 @@ export function TaskDashboard() {
     if (!tasks || tasks.length === 0) return { total: 0, resolved: 0, percent: 0 };
 
     const total = tasks.length;
-    const resolved = tasks.filter(t =>
-      t.status === 'resolved' ||
-      t.status === 'completed' ||
-      t.status === 'done' ||
-      t.status === 'Выполнено'
-    ).length;
+    const resolved = tasks.filter(t => t.status === 'resolved').length;
 
     return {
       total,

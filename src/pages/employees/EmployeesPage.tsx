@@ -101,7 +101,7 @@ export default function EmployeesPage() {
           editingEmployee={editingEmployee}
           onUpdateEmployee={updateEmployee}
           onCancelEdit={cancelEdit}
-          existingOrganizations={organizations}
+          existingOrganizations={organizations as any}
           onPhotoUpload={() =>
             addNotification(
               TOAST_MESSAGES.PHOTO_UPLOADED,
@@ -122,8 +122,9 @@ export default function EmployeesPage() {
       <Suspense fallback={<SkeletonLoader rows={8} />}>
         {filteredEmployees.length > 1000 ? (
           <VirtualEmployeeTable
-            employees={tableEmployees}
+            employees={tableEmployees as any[]}
             getDaysDifference={getDaysDifference}
+            emptyText="Сотрудников не найдено"
             onRetrain={retrainEmployee}
             onDelete={deleteEmployee}
             onEdit={handleEdit}
@@ -131,7 +132,7 @@ export default function EmployeesPage() {
           />
         ) : (
           <EmployeeTable
-            employees={tableEmployees}
+            employees={tableEmployees as any}
             getDaysDifference={getDaysDifference}
             onRetrain={retrainEmployee}
             onDelete={deleteEmployee}

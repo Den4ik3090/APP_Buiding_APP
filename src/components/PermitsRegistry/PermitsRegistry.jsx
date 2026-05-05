@@ -5,8 +5,14 @@ import PermitsDashboard from "./PermitsDashboard";
 import PermitForm from "./PermitForm";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
+import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
 import { PERMIT_STATUSES } from "@/entities/permit";
 import { isClosedStatus, getPermitStatus } from "@/entities/permit";
+import {
+  fetchPermits,
+  fetchRegistryEmployees,
+  deletePermit,
+} from "@/features/permits/services/permitsService";
 import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import "./PermitsRegistry.css";
 
@@ -52,54 +58,12 @@ export default function PermitsRegistry() {
     previousExpiredCountRef.current = expiredCount;
   }, [expiredCount, addNotification]);
 
-  const shouldAutoClosePermit = (permit) => {
-    if (!permit || isClosedStatus(permit.status)) return false;
-    if (permit.is_extended) return false;
-    if (!permit.expiry_date) return false;
-
-    const expiryDate = new Date(permit.expiry_date);
-    if (Number.isNaN(expiryDate.getTime())) return false;
-
-    const autoCloseDeadline = new Date(expiryDate);
-    autoCloseDeadline.setDate(autoCloseDeadline.getDate() + 15);
-    return new Date() > autoCloseDeadline;
-  };
-
-  const autoCloseExpiredPermits = async (rawPermits) => {
-    const toClose = (Array.isArray(rawPermits) ? rawPermits : []).filter(
-      (permit) => shouldAutoClosePermit(permit)
-    );
-
-    if (toClose.length === 0) return false;
-
-    const today = new Date().toISOString().split("T")[0];
-    const nowIso = new Date().toISOString();
-    const updates = toClose.map((permit) =>
-      supabase
-        .from("permits")
-        .update({
-          status: PERMIT_STATUSES.CLOSED,
-          closed_date: permit.closed_date || today,
-          updated_at: nowIso,
-        })
-        .eq("id", permit.id)
-    );
-
-    const results = await Promise.all(updates);
-    const failed = results.find((res) => res.error);
-    if (failed?.error) {
-      console.error("Ошибка авто-закрытия нарядов:", failed.error);
-      return false;
-    }
-
-    return true;
-  };
 
   useEffect(() => {
     loadData();
 
     const permitsSubscription = supabase
-      .channel("permits_changes")
+      .channel(REALTIME_CHANNELS.PERMITS)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "permits" },
@@ -130,48 +94,14 @@ export default function PermitsRegistry() {
     }
   };
 
-  const loadPermits = async (skipAutoClose = false) => {
-    const { data, error } = await supabase
-      .from("permits")
-      .select(`
-        *,
-        responsible_person:employees!responsible_person_id (
-          id,
-          name,
-          profession,
-          organization
-        )
-      `)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Ошибка загрузки нарядов:", error);
-      throw error;
-    }
-
-    if (!skipAutoClose) {
-      const hasAutoClosed = await autoCloseExpiredPermits(data || []);
-      if (hasAutoClosed) {
-        await loadPermits(true);
-        return;
-      }
-    }
-
-    setPermits(data || []);
+  const loadPermits = async () => {
+    const data = await fetchPermits();
+    setPermits(data);
   };
 
   const loadEmployees = async () => {
-    const { data, error } = await supabase
-      .from("employees")
-      .select("id, name, profession, organization")
-      .order("name");
-
-    if (error) {
-      console.error("Ошибка загрузки сотрудников:", error);
-      throw error;
-    }
-
-    setEmployees(data || []);
+    const data = await fetchRegistryEmployees();
+    setEmployees(data);
   };
 
   const handleCreatePermit = () => {
@@ -200,49 +130,12 @@ export default function PermitsRegistry() {
   };
 
   const handleDeletePermit = async (permitId) => {
-    if (!window.confirm("Вы уверены, что хотите удалить этот наряд?")) {
-      return;
-    }
+    if (!window.confirm("Вы уверены, что хотите удалить этот наряд?")) return;
 
     try {
-      const deletePermit = () =>
-        supabase
-          .from("permits")
-          .delete()
-          .eq("id", permitId)
-          .select("id");
-
-      let { data, error } = await deletePermit();
-
-      if (
-        error &&
-        (error.code === "23503" || /foreign key/i.test(error.message || ""))
-      ) {
-        const { error: auditDeleteError } = await supabase
-          .from("permit_audit_log")
-          .delete()
-          .eq("permit_id", permitId);
-
-        if (auditDeleteError && auditDeleteError.code !== "42P01") {
-          throw auditDeleteError;
-        }
-
-        ({ data, error } = await deletePermit());
-      }
-
-      if (error) throw error;
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error(
-          "Наряд не удален. Возможны ограничения доступа (RLS) или отсутствует право DELETE."
-        );
-      }
-
+      await deletePermit(permitId);
       await loadPermits();
-      addNotification(
-        "Наряд удален",
-        TOAST_TYPES.SUCCESS,
-        TOAST_DURATION.NORMAL
-      );
+      addNotification("Наряд удален", TOAST_TYPES.SUCCESS, TOAST_DURATION.NORMAL);
     } catch (error) {
       console.error("Ошибка удаления наряда:", error);
       addNotification(

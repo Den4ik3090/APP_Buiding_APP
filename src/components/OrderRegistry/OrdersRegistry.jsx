@@ -15,6 +15,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
+import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
+import {
+  fetchOrders,
+  fetchRegistryEmployees,
+  deleteOrder,
+} from "@/features/orders/services/ordersService";
 import { useNotificationContext } from "../../app/providers/NotificationProvider";
 import OrderForm from "./OrderForm";
 import OrdersTable from "./OrdersTable";
@@ -44,31 +50,13 @@ export default function OrdersRegistry() {
   const [dateTo, setDateTo] = useState("");
 
   const loadOrders = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .order("creation_date", { ascending: false });
-
-    if (error) {
-      console.error("Ошибка загрузки приказов:", error);
-      throw error;
-    }
-
-    setOrders(data || []);
+    const data = await fetchOrders();
+    setOrders(data);
   }, []);
 
   const loadEmployees = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("employees")
-      .select("id, name, profession, organization")
-      .order("name");
-
-    if (error) {
-      console.error("Ошибка загрузки сотрудников:", error);
-      throw error;
-    }
-
-    setEmployees(data || []);
+    const data = await fetchRegistryEmployees();
+    setEmployees(data);
   }, []);
 
   const loadData = useCallback(async () => {
@@ -94,7 +82,7 @@ export default function OrdersRegistry() {
 
   useEffect(() => {
     const ordersSubscription = supabase
-      .channel("orders_registry_changes")
+      .channel(REALTIME_CHANNELS.ORDERS)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
@@ -228,12 +216,7 @@ export default function OrdersRegistry() {
       }
 
       try {
-        const { error } = await supabase.from("orders").delete().eq("id", orderId);
-
-        if (error) {
-          throw error;
-        }
-
+        await deleteOrder(orderId);
         await loadOrders();
         addNotification(
           "Приказ удалён.",

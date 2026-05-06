@@ -4,13 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase";
 import { useNotificationContext } from "./providers/NotificationProvider";
 import { LoginPage } from "@/auth";
-import { EmployeeProvider } from "@/features/employee-crud/EmployeeProvider";
 import { AppHeader } from "@/widgets/app-header/AppHeader";
 import { StatsBar } from "@/widgets/stats-bar/StatsBar";
 import { AppNav } from "@/widgets/app-nav/AppNav";
 import { AppRouter } from "./router";
 import ToastContainer from "@/shared/ui/Toast/ToastContainer";
 import SkeletonLoader from "@/shared/ui/Skeleton";
+import { ErrorBoundary } from "@/shared/ui/ErrorBoundary";
 import { TOAST_TYPES } from "@/shared/constants/toast";
 import logo from "@/assets/img/logo_PUTEVI.jpg";
 
@@ -102,7 +102,7 @@ export default function App() {
                 }}
               />
             ) : (
-              <EmployeeProvider>
+              <>
                 <AppHeader
                   onLogout={handleLogout}
                   onToggleTheme={toggleTheme}
@@ -110,10 +110,12 @@ export default function App() {
                 />
                 <StatsBar />
                 <AppNav />
-                <div key="app-router-shell">
-                  <AppRouter />
-                </div>
-              </EmployeeProvider>
+                <ErrorBoundary>
+                  <div key="app-router-shell">
+                    <AppRouter />
+                  </div>
+                </ErrorBoundary>
+              </>
             )}
           </div>
         </div>

@@ -1,8 +1,8 @@
 import React from "react";
-import AdditionalTrainingsManager from "@/components/AdditionalTrainingsManager";
-import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
+import AdditionalTrainingsManager from "@/features/additional-trainings/components/AdditionalTrainingsManager";
+import { useEmployeesQuery } from "@/features/employee-crud/hooks/useEmployees";
 
 export default function AdditionalTrainingsPage() {
-  const { employees } = useEmployeeContext();
-  return <AdditionalTrainingsManager employees={employees as any} />;
+  const { data: employees = [] } = useEmployeesQuery();
+  return <AdditionalTrainingsManager employees={employees} />;
 }

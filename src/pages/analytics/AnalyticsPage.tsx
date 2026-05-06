@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import AnalyticsDashboard from "@/components/AnalyticsDashboard";
-import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
-import { getStatusKey, hasExpiredAdditional } from "@/entities/employee";
+import AnalyticsDashboard from "@/widgets/analytics-dashboard";
+import { getDaysDifference, getStatusKey, hasExpiredAdditional } from "@/entities/employee";
+import { useEmployeesQuery } from "@/features/employee-crud/hooks/useEmployees";
 
 export default function AnalyticsPage() {
-  const { employees, getDaysDifference } = useEmployeeContext();
+  const { data: employees = [] } = useEmployeesQuery();
   const [searchParams] = useSearchParams();
 
   const selectedOrg = searchParams.get("org") ?? "Все";
@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
       if (statusFilter === "valid") return status === "valid" && !additionalExpired;
       return true;
     });
-  }, [filteredEmployees, statusFilter, getDaysDifference]);
+  }, [filteredEmployees, statusFilter]);
 
   return (
     <AnalyticsDashboard employees={tableEmployees} getDaysDifference={getDaysDifference} />

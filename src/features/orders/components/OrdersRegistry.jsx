@@ -13,15 +13,16 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
 import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
 import {
-  fetchOrders,
-  fetchRegistryEmployees,
-  deleteOrder,
-} from "@/features/orders/services/ordersService";
-import { useNotificationContext } from "../../app/providers/NotificationProvider";
+  useOrdersQuery,
+  useOrderEmployeesQuery,
+  useDeleteOrderMutation,
+} from "@/features/orders/hooks/useOrders";
+import { useNotificationContext } from "../../../app/providers/NotificationProvider";
 import OrderForm from "./OrderForm";
 import OrdersTable from "./OrdersTable";
 import "./OrdersRegistry.css";
@@ -35,10 +36,12 @@ const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
 export default function OrdersRegistry() {
   const { addNotification } = useNotificationContext();
+  const queryClient = useQueryClient();
 
-  const [orders, setOrders] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: orders = [], isLoading: ordersLoading } = useOrdersQuery();
+  const { data: employees = [] } = useOrderEmployeesQuery();
+  const deleteOrderMutation = useDeleteOrderMutation();
+
   const [showForm, setShowForm] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
 
@@ -49,37 +52,6 @@ export default function OrdersRegistry() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const loadOrders = useCallback(async () => {
-    const data = await fetchOrders();
-    setOrders(data);
-  }, []);
-
-  const loadEmployees = useCallback(async () => {
-    const data = await fetchRegistryEmployees();
-    setEmployees(data);
-  }, []);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      await Promise.all([loadOrders(), loadEmployees()]);
-    } catch (error) {
-      console.error("Ошибка загрузки данных реестра приказов:", error);
-      addNotification(
-        "Не удалось загрузить реестр приказов.",
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.NORMAL
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [addNotification, loadEmployees, loadOrders]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   useEffect(() => {
     const ordersSubscription = supabase
       .channel(REALTIME_CHANNELS.ORDERS)
@@ -87,9 +59,7 @@ export default function OrdersRegistry() {
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
         () => {
-          loadOrders().catch((error) => {
-            console.error("Ошибка фонового обновления приказов:", error);
-          });
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
         }
       )
       .subscribe();
@@ -97,7 +67,7 @@ export default function OrdersRegistry() {
     return () => {
       ordersSubscription.unsubscribe();
     };
-  }, [loadOrders]);
+  }, [queryClient]);
 
   const employeesById = useMemo(
     () => new Map(employees.map((employee) => [employee.id, employee])),
@@ -191,12 +161,8 @@ export default function OrdersRegistry() {
   }, []);
 
   const handleSaveOrder = useCallback(
-    async ({ isEdit, order: updatedOrder }) => {
-      if (isEdit) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
-        );
-      }
+    ({ isEdit }) => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
 
       addNotification(
         isEdit ? "Изменения сохранены." : "Приказ создан.",
@@ -206,7 +172,7 @@ export default function OrdersRegistry() {
 
       handleCloseForm();
     },
-    [addNotification, handleCloseForm]
+    [queryClient, addNotification, handleCloseForm]
   );
 
   const handleDeleteOrder = useCallback(
@@ -216,8 +182,7 @@ export default function OrdersRegistry() {
       }
 
       try {
-        await deleteOrder(orderId);
-        await loadOrders();
+        await deleteOrderMutation.mutateAsync(orderId);
         addNotification(
           "Приказ удалён.",
           TOAST_TYPES.SUCCESS,
@@ -232,7 +197,7 @@ export default function OrdersRegistry() {
         );
       }
     },
-    [addNotification, loadOrders]
+    [deleteOrderMutation, addNotification]
   );
 
   const handleResetFilters = useCallback(() => {
@@ -243,7 +208,7 @@ export default function OrdersRegistry() {
     setDateTo("");
   }, []);
 
-  if (loading) {
+  if (ordersLoading) {
     return (
       <div className="orders-loading">
         <div className="spinner" />

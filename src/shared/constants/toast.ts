@@ -3,7 +3,9 @@ export const TOAST_TYPES = {
   ERROR: "error",
   WARNING: "warning",
   INFO: "info",
-};
+} as const;
+
+export type NotificationType = typeof TOAST_TYPES[keyof typeof TOAST_TYPES];
 
 export const TOAST_DURATION = {
   SHORT: 2000,

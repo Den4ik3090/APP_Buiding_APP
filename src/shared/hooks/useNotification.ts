@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
+import type { NotificationType } from '@/shared/constants/toast';
 
 export interface Notification {
   id: number;
   message: string;
-  type: string;
+  type: NotificationType;
   duration?: number;
   timer?: ReturnType<typeof setTimeout>;
 }
@@ -12,7 +13,7 @@ export const useNotification = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const addNotification = useCallback(
-    (message: string, type: string = 'success', duration: number = 4000): number => {
+    (message: string, type: NotificationType = 'success', duration: number = 4000): number => {
       const id = Date.now();
       const notification: Notification = { id, message, type, duration };
 

@@ -20,15 +20,67 @@ import {
 } from "lucide-react";
 import { supabase } from "@/shared/api/supabase";
 import { ADDITIONAL_TRAINING_TYPES } from "@/entities/employee";
+import type { Employee } from "@/entities/employee";
 import "./EmployeeForm.scss";
 
-const getTodayDateValue = () => {
+// ---------------------------------------------------------------------------
+// Local types
+// ---------------------------------------------------------------------------
+
+interface FormAdditionalTraining {
+  id: number;
+  type: string;
+  dateReceived: string;
+  expiryMonths: number | string;
+}
+
+interface EmployeeFormData {
+  name: string;
+  profession: string;
+  birthDate: string;
+  trainingDate: string;
+  responsible: string;
+  comment: string;
+  photo_url: string;
+  organization: string;
+  additionalTrainings: FormAdditionalTraining[];
+}
+
+interface FieldConfig {
+  label: string;
+  name: keyof Omit<EmployeeFormData, "additionalTrainings">;
+  type: string;
+  placeholder: string;
+  required: boolean;
+}
+
+interface TrainingStatusResult {
+  isExpired: boolean;
+  isSoon: boolean;
+  daysLeft: number;
+}
+
+interface EmployeeFormProps {
+  onAddEmployee: (data: Employee) => Promise<void>;
+  editingEmployee: Employee | null;
+  onUpdateEmployee: (data: Employee) => Promise<void>;
+  onCancelEdit: () => void;
+  existingOrganizations?: string[];
+  onPhotoUpload?: () => void;
+  onPhotoError?: (error: Error) => void;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const getTodayDateValue = (): string => {
   const now = new Date();
   const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return localDate.toISOString().slice(0, 10);
 };
 
-const createInitialFormData = () => ({
+const createInitialFormData = (): EmployeeFormData => ({
   name: "",
   profession: "",
   birthDate: "",
@@ -40,7 +92,7 @@ const createInitialFormData = () => ({
   additionalTrainings: [],
 });
 
-const mapEmployeeToFormData = (employee) => ({
+const mapEmployeeToFormData = (employee: Employee): EmployeeFormData => ({
   name: employee?.name || "",
   profession: employee?.profession || "",
   birthDate: employee?.birthDate || "",
@@ -50,11 +102,11 @@ const mapEmployeeToFormData = (employee) => ({
   photo_url: employee?.photo_url || "",
   organization: employee?.organization || "",
   additionalTrainings: Array.isArray(employee?.additionalTrainings)
-    ? employee.additionalTrainings
+    ? (employee.additionalTrainings as unknown as FormAdditionalTraining[])
     : [],
 });
 
-const GENERAL_FIELDS = [
+const GENERAL_FIELDS: FieldConfig[] = [
   {
     label: "ФИО",
     name: "name",
@@ -92,14 +144,17 @@ const GENERAL_FIELDS = [
   },
 ];
 
-const checkTrainingStatus = (dateReceived, months) => {
+const checkTrainingStatus = (
+  dateReceived: string | undefined,
+  months: number | string | undefined
+): TrainingStatusResult => {
   if (!dateReceived || !months) {
     return { isExpired: false, isSoon: false, daysLeft: 0 };
   }
 
   const start = new Date(dateReceived);
   const expiryDate = new Date(start);
-  expiryDate.setMonth(expiryDate.getMonth() + parseInt(months, 10));
+  expiryDate.setMonth(expiryDate.getMonth() + parseInt(String(months), 10));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -115,14 +170,26 @@ const checkTrainingStatus = (dateReceived, months) => {
   };
 };
 
-const TrainingStatus = memo(function TrainingStatus({ training }) {
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+const TrainingStatus = memo(function TrainingStatus({
+  training,
+}: {
+  training: FormAdditionalTraining;
+}) {
   const { isExpired, isSoon, daysLeft } = useMemo(
     () => checkTrainingStatus(training.dateReceived, training.expiryMonths),
     [training.dateReceived, training.expiryMonths]
   );
 
   if (!training.dateReceived || !training.expiryMonths) {
-    return <span className="employees-status employees-status--neutral">Не заполнено</span>;
+    return (
+      <span className="employees-status employees-status--neutral">
+        Не заполнено
+      </span>
+    );
   }
 
   if (isExpired) {
@@ -148,19 +215,34 @@ const TrainingStatus = memo(function TrainingStatus({ training }) {
   );
 });
 
-const TrainingRow = memo(function TrainingRow({ training, onUpdate, onRemove }) {
+const TrainingRow = memo(function TrainingRow({
+  training,
+  onUpdate,
+  onRemove,
+}: {
+  training: FormAdditionalTraining;
+  onUpdate: (
+    id: number,
+    field: keyof FormAdditionalTraining,
+    value: string
+  ) => void;
+  onRemove: (id: number) => void;
+}) {
   const handleTypeChange = useCallback(
-    (event) => onUpdate(training.id, "type", event.target.value),
+    (event: React.ChangeEvent<HTMLSelectElement>) =>
+      onUpdate(training.id, "type", event.target.value),
     [onUpdate, training.id]
   );
 
   const handleDateChange = useCallback(
-    (event) => onUpdate(training.id, "dateReceived", event.target.value),
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      onUpdate(training.id, "dateReceived", event.target.value),
     [onUpdate, training.id]
   );
 
   const handleExpiryChange = useCallback(
-    (event) => onUpdate(training.id, "expiryMonths", event.target.value),
+    (event: React.ChangeEvent<HTMLInputElement>) =>
+      onUpdate(training.id, "expiryMonths", event.target.value),
     [onUpdate, training.id]
   );
 
@@ -179,49 +261,39 @@ const TrainingRow = memo(function TrainingRow({ training, onUpdate, onRemove }) 
         <select
           value={training.type}
           onChange={handleTypeChange}
-          className="employees-table-control"
         >
-          {ADDITIONAL_TRAINING_TYPES.map((type, index) => (
-            <option key={`${type}-${index}`} value={type}>
-              {type}
+          {ADDITIONAL_TRAINING_TYPES.map((t: string) => (
+            <option key={t} value={t}>
+              {t}
             </option>
           ))}
         </select>
       </td>
-
       <td>
         <input
           type="date"
-          value={training.dateReceived || ""}
+          value={training.dateReceived}
           onChange={handleDateChange}
-          className="employees-table-control"
         />
       </td>
-
       <td>
-        <div className="employees-duration-wrap">
-          <input
-            type="number"
-            value={training.expiryMonths || ""}
-            onChange={handleExpiryChange}
-            min="1"
-            className="employees-table-control employees-table-control--small"
-          />
-          <span className="employees-duration-label">мес.</span>
-        </div>
+        <input
+          type="number"
+          value={training.expiryMonths}
+          onChange={handleExpiryChange}
+          min={1}
+          max={120}
+        />
       </td>
-
       <td>
         <TrainingStatus training={training} />
       </td>
-
-      <td className="employees-table-actions-cell">
+      <td>
         <button
           type="button"
-          onClick={handleRemove}
           className="employees-icon-button employees-icon-button--danger"
+          onClick={handleRemove}
           aria-label="Удалить обучение"
-          title="Удалить обучение"
         >
           <Trash2 size={16} />
         </button>
@@ -235,6 +307,11 @@ const GeneralField = memo(function GeneralField({
   value,
   error,
   onChange,
+}: {
+  field: FieldConfig;
+  value: string;
+  error?: string;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
 }) {
   return (
     <div className="employees-form-group">
@@ -259,6 +336,10 @@ const GeneralField = memo(function GeneralField({
   );
 });
 
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 function EmployeeForm({
   onAddEmployee,
   editingEmployee,
@@ -267,21 +348,25 @@ function EmployeeForm({
   existingOrganizations = [],
   onPhotoUpload,
   onPhotoError,
-}) {
+}: EmployeeFormProps) {
   const isEdit = Boolean(editingEmployee);
   const organizationFieldId = useId();
   const photoInputId = useId();
 
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTab, setActiveTab] = useState<"general" | "trainings">(
+    "general"
+  );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState(() =>
-    editingEmployee ? mapEmployeeToFormData(editingEmployee) : createInitialFormData()
+  const [formData, setFormData] = useState<EmployeeFormData>(() =>
+    editingEmployee
+      ? mapEmployeeToFormData(editingEmployee)
+      : createInitialFormData()
   );
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const modalRef = useRef(null);
-  const abortRef = useRef(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const organizations = useMemo(() => {
     const uniqueOrganizations = new Set(
@@ -292,9 +377,7 @@ function EmployeeForm({
       uniqueOrganizations.add(editingEmployee.organization);
     }
 
-    return Array.from(uniqueOrganizations).sort((left, right) =>
-      left.localeCompare(right, "ru", { sensitivity: "base" })
-    );
+    return Array.from(uniqueOrganizations).sort();
   }, [existingOrganizations, editingEmployee?.organization]);
 
   const trainingStats = useMemo(() => {
@@ -330,7 +413,7 @@ function EmployeeForm({
 
   // Escape key to close
   useEffect(() => {
-    const handleEscape = (event) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && !saving && !uploading) {
         onCancelEdit();
       }
@@ -340,7 +423,7 @@ function EmployeeForm({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onCancelEdit, saving, uploading]);
 
-  // Body scroll lock while modal is mounted
+  // Scroll lock
   useEffect(() => {
     const scrollY = window.scrollY;
     document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow-y: scroll;`;
@@ -355,16 +438,16 @@ function EmployeeForm({
     const modal = modalRef.current;
     if (!modal) return;
 
-    const getFocusable = () =>
+    const getFocusable = (): HTMLElement[] =>
       Array.from(
-        modal.querySelectorAll(
+        modal.querySelectorAll<HTMLElement>(
           'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
       );
 
     getFocusable()[0]?.focus();
 
-    const handleTab = (event) => {
+    const handleTab = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
       const els = getFocusable();
       const first = els[0];
@@ -389,34 +472,32 @@ function EmployeeForm({
   // Abort any in-flight save request on unmount
   useEffect(() => () => { abortRef.current?.abort(); }, []);
 
-  const setFieldValue = useCallback((field, value) => {
-    setFormData((prev) => {
-      if (prev[field] === value) {
-        return prev;
-      }
+  const setFieldValue = useCallback(
+    <K extends keyof EmployeeFormData>(field: K, value: EmployeeFormData[K]) => {
+      setFormData((prev) => {
+        if (prev[field] === value) return prev;
+        return { ...prev, [field]: value };
+      });
 
-      return {
-        ...prev,
-        [field]: value,
-      };
-    });
-
-    setErrors((prev) => {
-      if (!prev[field]) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [field]: "",
-      };
-    });
-  }, []);
+      setErrors((prev) => {
+        if (!prev[field as string]) return prev;
+        return { ...prev, [field as string]: "" };
+      });
+    },
+    []
+  );
 
   const handleChange = useCallback(
-    (event) => {
+    (
+      event: React.ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
+    ) => {
       const { name, value } = event.target;
-      setFieldValue(name, value);
+      setFieldValue(
+        name as keyof Omit<EmployeeFormData, "additionalTrainings">,
+        value
+      );
     },
     [setFieldValue]
   );
@@ -430,7 +511,7 @@ function EmployeeForm({
   }, [setFieldValue]);
 
   const addTrainingRow = useCallback(() => {
-    const newTraining = {
+    const newTraining: FormAdditionalTraining = {
       id: Date.now(),
       type: ADDITIONAL_TRAINING_TYPES[0] || "Прочее",
       dateReceived: getTodayDateValue(),
@@ -443,29 +524,29 @@ function EmployeeForm({
     }));
   }, []);
 
-  const removeTrainingRow = useCallback((id) => {
+  const removeTrainingRow = useCallback((id: number) => {
     setFormData((prev) => ({
       ...prev,
-      additionalTrainings: prev.additionalTrainings.filter((item) => item.id !== id),
-    }));
-  }, []);
-
-  const updateTrainingRow = useCallback((id, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      additionalTrainings: prev.additionalTrainings.map((item) =>
-        item.id === id
-          ? {
-            ...item,
-            [field]: field === "expiryMonths" ? value : value,
-          }
-          : item
+      additionalTrainings: prev.additionalTrainings.filter(
+        (item) => item.id !== id
       ),
     }));
   }, []);
 
-  const validateForm = useCallback(() => {
-    const nextErrors = {};
+  const updateTrainingRow = useCallback(
+    (id: number, field: keyof FormAdditionalTraining, value: string) => {
+      setFormData((prev) => ({
+        ...prev,
+        additionalTrainings: prev.additionalTrainings.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item
+        ),
+      }));
+    },
+    []
+  );
+
+  const validateForm = useCallback((): boolean => {
+    const nextErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
       nextErrors.name = "Введите ФИО сотрудника.";
@@ -484,7 +565,7 @@ function EmployeeForm({
   }, [formData]);
 
   const handleOverlayClick = useCallback(
-    (event) => {
+    (event: React.MouseEvent<HTMLDivElement>) => {
       if (event.target === event.currentTarget && !saving && !uploading) {
         onCancelEdit();
       }
@@ -492,7 +573,6 @@ function EmployeeForm({
     [onCancelEdit, saving, uploading]
   );
 
-  // Memoized tab switchers — avoid new function references on every render
   const handleTabGeneral = useCallback(() => setActiveTab("general"), []);
   const handleTabTrainings = useCallback(() => setActiveTab("trainings"), []);
   const handleClearPhoto = useCallback(
@@ -501,14 +581,12 @@ function EmployeeForm({
   );
 
   const handlePhotoUpload = useCallback(
-    async (event) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       try {
         setUploading(true);
 
         const files = event.target.files;
-        if (!files || files.length === 0) {
-          return;
-        }
+        if (!files || files.length === 0) return;
 
         const file = files[0];
 
@@ -532,35 +610,28 @@ function EmployeeForm({
           .from("employee-photos")
           .upload(filePath, file);
 
-        if (uploadError) {
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
 
         const { data } = supabase.storage
           .from("employee-photos")
           .getPublicUrl(filePath);
 
-        setFormData((prev) => ({
-          ...prev,
-          photo_url: data.publicUrl,
-        }));
+        setFormData((prev) => ({ ...prev, photo_url: data.publicUrl }));
 
         onPhotoUpload?.();
       } catch (error) {
         console.error("Ошибка загрузки фото:", error);
-        onPhotoError?.(error);
+        onPhotoError?.(error as Error);
       } finally {
         setUploading(false);
-        if (event.target) {
-          event.target.value = "";
-        }
+        if (event.target) event.target.value = "";
       }
     },
     [onPhotoError, onPhotoUpload]
   );
 
   const handleSubmit = useCallback(
-    async (event) => {
+    async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
 
       if (!validateForm()) {
@@ -582,7 +653,7 @@ function EmployeeForm({
           responsible: formData.responsible.trim(),
           comment: formData.comment.trim(),
           organization: formData.organization.trim(),
-        };
+        } as unknown as Employee;
 
         if (editingEmployee) {
           await onUpdateEmployee(payload);
@@ -654,7 +725,9 @@ function EmployeeForm({
             <div className="employees-tabs">
               <button
                 type="button"
-                className={`employees-tab ${activeTab === "general" ? "is-active" : ""}`}
+                className={`employees-tab ${
+                  activeTab === "general" ? "is-active" : ""
+                }`}
                 onClick={handleTabGeneral}
               >
                 Основные данные
@@ -662,7 +735,9 @@ function EmployeeForm({
 
               <button
                 type="button"
-                className={`employees-tab ${activeTab === "trainings" ? "is-active" : ""}`}
+                className={`employees-tab ${
+                  activeTab === "trainings" ? "is-active" : ""
+                }`}
                 onClick={handleTabTrainings}
               >
                 Дополнительное обучение
@@ -679,7 +754,9 @@ function EmployeeForm({
                 <section className="employees-form-section">
                   <div className="employees-section-heading">
                     <h3>Профиль сотрудника</h3>
-                    <p>Фотография используется в карточке сотрудника и списках.</p>
+                    <p>
+                      Фотография используется в карточке сотрудника и списках.
+                    </p>
                   </div>
 
                   <div className="employees-profile-card">
@@ -702,8 +779,9 @@ function EmployeeForm({
                       <div className="employees-photo-actions">
                         <label
                           htmlFor={photoInputId}
-                          className={`employees-upload-button ${uploading ? "is-disabled" : ""
-                            }`}
+                          className={`employees-upload-button ${
+                            uploading ? "is-disabled" : ""
+                          }`}
                         >
                           {uploading ? "Загрузка..." : "Загрузить фото"}
                         </label>
@@ -788,7 +866,10 @@ function EmployeeForm({
                 <section className="employees-form-section">
                   <div className="employees-section-heading">
                     <h3>Комментарий</h3>
-                    <p>Дополнительные сведения о сотруднике, роли или назначении.</p>
+                    <p>
+                      Дополнительные сведения о сотруднике, роли или
+                      назначении.
+                    </p>
                   </div>
 
                   <div className="employees-form-group">
@@ -872,8 +953,8 @@ function EmployeeForm({
                     <div className="employees-empty-state">
                       <GraduationCap size={22} />
                       <p>
-                        Дополнительные обучения пока не добавлены. Используйте кнопку
-                        выше, чтобы создать первую запись.
+                        Дополнительные обучения пока не добавлены. Используйте
+                        кнопку выше, чтобы создать первую запись.
                       </p>
                     </div>
                   )}
@@ -899,8 +980,8 @@ function EmployeeForm({
                 {saving
                   ? "Сохранение..."
                   : isEdit
-                    ? "Сохранить изменения"
-                    : "Добавить сотрудника"}
+                  ? "Сохранить изменения"
+                  : "Добавить сотрудника"}
               </button>
             </div>
           </form>

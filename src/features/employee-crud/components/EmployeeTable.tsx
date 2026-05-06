@@ -1,21 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import StatusBadge from '@/shared/ui/StatusBadge';
 import { DAYS_THRESHOLD, WARNING_THRESHOLD, hasExpiredAdditional } from '@/entities/employee';
+import type { Employee } from '@/entities/employee';
+import type { NotificationType } from '@/shared/constants/toast';
 import { sendToTelegram } from '@/shared/api/telegram';
-import WorkerTrainingDownloadButton from '@/components/WorkerTrainingDownloadButton';
-import OrganizationTelegramReport from '@/components/OrganizationTelegramReport';
-
-interface Employee {
-  id: string;
-  name: string;
-  profession: string;
-  trainingDate: string;
-  photo_url?: string;
-  organization?: string;
-  additionalTrainings?: unknown[];
-  createdAt?: string;
-  [key: string]: unknown;
-}
+import WorkerTrainingDownloadButton from './WorkerTrainingDownloadButton';
+import OrganizationTelegramReport from './OrganizationTelegramReport';
 
 interface PreparedEmployee extends Employee {
   days: number;
@@ -32,7 +22,7 @@ interface EmployeeTableProps {
   onRetrain: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (employee: Employee) => void;
-  addNotification: (message: string, type: string) => void;
+  addNotification: (message: string, type: NotificationType, duration?: number) => void;
   statusFilterValue?: string;
   onStatusFilterChange?: (value: string) => void;
 }
@@ -92,7 +82,7 @@ function EmployeeTable({
     }));
   };
 
-  const isToday = (iso?: string) => {
+  const isToday = (iso?: string | null) => {
     if (!iso) return false;
     const d = new Date(iso);
     const now = new Date();

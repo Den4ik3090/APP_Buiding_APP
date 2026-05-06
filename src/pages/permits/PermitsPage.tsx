@@ -1,5 +1,5 @@
 import React from "react";
-import PermitsRegistry from "@/components/PermitsRegistry/PermitsRegistry";
+import PermitsRegistry from "@/features/permits/components/PermitsRegistry";
 
 export default function PermitsPage() {
   return <PermitsRegistry />;

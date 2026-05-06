@@ -16,16 +16,17 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
 import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
 import {
-  fetchPrescriptions,
-  fetchRegistryEmployees,
-  deletePrescription,
-} from "@/features/prescriptions/services/prescriptionsService";
+  usePrescriptionsQuery,
+  usePrescriptionEmployeesQuery,
+  useDeletePrescriptionMutation,
+} from "@/features/prescriptions/hooks/usePrescriptions";
 import { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS } from "@/entities/prescription";
-import { useNotificationContext } from "../../app/providers/NotificationProvider";
+import { useNotificationContext } from "../../../app/providers/NotificationProvider";
 import PrescriptionForm from "./PrescriptionForm.jsx";
 import PrescriptionsTable from "./PrescriptionsTable.jsx";
 import "./PrescriptionsRegistryStyle.css";
@@ -41,10 +42,12 @@ export { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS };
 
 export default function PrescriptionsRegistry() {
   const { addNotification } = useNotificationContext();
+  const queryClient = useQueryClient();
 
-  const [prescriptions, setPrescriptions] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: prescriptions = [], isLoading: prescriptionsLoading } = usePrescriptionsQuery();
+  const { data: employees = [] } = usePrescriptionEmployeesQuery();
+  const deletePrescriptionMutation = useDeletePrescriptionMutation();
+
   const [showForm, setShowForm] = useState(false);
   const [editingPrescription, setEditingPrescription] = useState(null);
 
@@ -56,37 +59,6 @@ export default function PrescriptionsRegistry() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const loadPrescriptions = useCallback(async () => {
-    const data = await fetchPrescriptions();
-    setPrescriptions(data);
-  }, []);
-
-  const loadEmployees = useCallback(async () => {
-    const data = await fetchRegistryEmployees();
-    setEmployees(data);
-  }, []);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      await Promise.all([loadPrescriptions(), loadEmployees()]);
-    } catch (error) {
-      console.error("Ошибка загрузки данных реестра предписаний:", error);
-      addNotification(
-        "Не удалось загрузить реестр предписаний.",
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.NORMAL
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [addNotification, loadEmployees, loadPrescriptions]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   useEffect(() => {
     const prescriptionsSubscription = supabase
       .channel(REALTIME_CHANNELS.PRESCRIPTIONS)
@@ -94,9 +66,7 @@ export default function PrescriptionsRegistry() {
         "postgres_changes",
         { event: "*", schema: "public", table: "prescriptions" },
         () => {
-          loadPrescriptions().catch((error) => {
-            console.error("Ошибка фонового обновления предписаний:", error);
-          });
+          queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
         }
       )
       .subscribe();
@@ -104,7 +74,7 @@ export default function PrescriptionsRegistry() {
     return () => {
       prescriptionsSubscription.unsubscribe();
     };
-  }, [loadPrescriptions]);
+  }, [queryClient]);
 
   const employeesById = useMemo(
     () => new Map(employees.map((employee) => [employee.id, employee])),
@@ -252,14 +222,8 @@ export default function PrescriptionsRegistry() {
   }, []);
 
   const handleSavePrescription = useCallback(
-    async ({ isEdit, prescription: updatedPrescription }) => {
-      if (isEdit) {
-        setPrescriptions((prev) =>
-          prev.map((p) =>
-            p.id === updatedPrescription.id ? { ...p, ...updatedPrescription } : p
-          )
-        );
-      }
+    ({ isEdit }) => {
+      queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
 
       addNotification(
         isEdit ? "Изменения сохранены." : "Предписание создано.",
@@ -269,7 +233,7 @@ export default function PrescriptionsRegistry() {
 
       handleCloseForm();
     },
-    [addNotification, handleCloseForm]
+    [queryClient, addNotification, handleCloseForm]
   );
 
   const handleDeletePrescription = useCallback(
@@ -279,8 +243,7 @@ export default function PrescriptionsRegistry() {
       }
 
       try {
-        await deletePrescription(prescriptionId);
-        await loadPrescriptions();
+        await deletePrescriptionMutation.mutateAsync(prescriptionId);
         addNotification(
           "Предписание удалено.",
           TOAST_TYPES.SUCCESS,
@@ -295,7 +258,7 @@ export default function PrescriptionsRegistry() {
         );
       }
     },
-    [addNotification, loadPrescriptions]
+    [deletePrescriptionMutation, addNotification]
   );
 
   const handleResetFilters = useCallback(() => {
@@ -307,7 +270,7 @@ export default function PrescriptionsRegistry() {
     setDateTo("");
   }, []);
 
-  if (loading) {
+  if (prescriptionsLoading) {
     return (
       <div className="prescriptions-loading">
         <div className="spinner" />

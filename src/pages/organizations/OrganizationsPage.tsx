@@ -1,8 +1,8 @@
 import React from "react";
-import OrganizationsDocs from "@/components/OrganizationManager";
-import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
+import OrganizationsDocs from "@/features/organization-docs/components/OrganizationManager";
+import { useEmployeesQuery } from "@/features/employee-crud/hooks/useEmployees";
 
 export default function OrganizationsPage() {
-  const { employees } = useEmployeeContext();
-  return <OrganizationsDocs employees={employees as any} />;
+  const { data: employees = [] } = useEmployeesQuery();
+  return <OrganizationsDocs employees={employees} />;
 }

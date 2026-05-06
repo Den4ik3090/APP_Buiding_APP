@@ -1,12 +1,12 @@
 import React from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
-import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
+import { useOrganizationsQuery } from "@/features/employee-crud/hooks/useEmployees";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `tab-btn${isActive ? " tab-btn--active" : ""}`;
 
 export function AppNav() {
-  const { organizations } = useEmployeeContext();
+  const { data: organizations = [] } = useOrganizationsQuery();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const selectedOrg = searchParams.get("org") ?? "Все";

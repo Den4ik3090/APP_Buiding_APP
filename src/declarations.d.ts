@@ -30,3 +30,8 @@ declare module "*.svg" {
   const src: string;
   export default src;
 }
+
+// file-saver has no bundled types; declare minimal used API
+declare module "file-saver" {
+  export function saveAs(data: Blob | string, filename?: string): void;
+}

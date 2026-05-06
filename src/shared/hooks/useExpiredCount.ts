@@ -1,9 +1,10 @@
 import { useMemo, useEffect, useRef } from "react";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
+import type { NotificationType } from "@/shared/constants/toast";
 import { DAYS_THRESHOLD, hasExpiredAdditional } from "@/entities/employee";
 import type { Employee } from "@/entities/employee";
 
-type AddNotification = (message: string, type: string, duration?: number) => void;
+type AddNotification = (message: string, type: NotificationType, duration?: number) => void;
 
 export function useExpiredCount(
   filteredEmployees: Employee[],

@@ -3,25 +3,28 @@ import { FileText, Plus, TrendingUp } from "lucide-react";
 import PermitsTable from "./PermitsTable";
 import PermitsDashboard from "./PermitsDashboard";
 import PermitForm from "./PermitForm";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
 import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
 import { PERMIT_STATUSES } from "@/entities/permit";
 import { isClosedStatus, getPermitStatus } from "@/entities/permit";
 import {
-  fetchPermits,
-  fetchRegistryEmployees,
-  deletePermit,
-} from "@/features/permits/services/permitsService";
-import { useNotificationContext } from "../../app/providers/NotificationProvider";
+  usePermitsQuery,
+  usePermitEmployeesQuery,
+  useDeletePermitMutation,
+} from "@/features/permits/hooks/usePermits";
+import { useNotificationContext } from "../../../app/providers/NotificationProvider";
 import "./PermitsRegistry.css";
 
 export default function PermitsRegistry() {
   const { addNotification } = useNotificationContext();
+  const queryClient = useQueryClient();
 
-  const [permits, setPermits] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: permits = [], isLoading: permitsLoading } = usePermitsQuery();
+  const { data: employees = [] } = usePermitEmployeesQuery();
+  const deletePermitMutation = useDeletePermitMutation();
+
   const [activeTab, setActiveTab] = useState("registry"); // 'registry' | 'dashboard'
   const [showForm, setShowForm] = useState(false);
   const [editingPermit, setEditingPermit] = useState(null);
@@ -60,15 +63,13 @@ export default function PermitsRegistry() {
 
 
   useEffect(() => {
-    loadData();
-
     const permitsSubscription = supabase
       .channel(REALTIME_CHANNELS.PERMITS)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "permits" },
         () => {
-          loadPermits();
+          queryClient.invalidateQueries({ queryKey: ['permits'] });
         }
       )
       .subscribe();
@@ -76,33 +77,7 @@ export default function PermitsRegistry() {
     return () => {
       permitsSubscription.unsubscribe();
     };
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([loadPermits(), loadEmployees()]);
-    } catch (error) {
-      console.error("Ошибка загрузки данных:", error);
-      addNotification(
-        "Ошибка загрузки данных",
-        TOAST_TYPES.ERROR,
-        TOAST_DURATION.NORMAL
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadPermits = async () => {
-    const data = await fetchPermits();
-    setPermits(data);
-  };
-
-  const loadEmployees = async () => {
-    const data = await fetchRegistryEmployees();
-    setEmployees(data);
-  };
+  }, [queryClient]);
 
   const handleCreatePermit = () => {
     setEditingPermit(null);
@@ -119,8 +94,8 @@ export default function PermitsRegistry() {
     setEditingPermit(null);
   };
 
-  const handleSavePermit = async () => {
-    await loadPermits();
+  const handleSavePermit = () => {
+    queryClient.invalidateQueries({ queryKey: ['permits'] });
     handleCloseForm();
     addNotification(
       editingPermit ? "Наряд обновлен" : "Наряд создан",
@@ -133,8 +108,7 @@ export default function PermitsRegistry() {
     if (!window.confirm("Вы уверены, что хотите удалить этот наряд?")) return;
 
     try {
-      await deletePermit(permitId);
-      await loadPermits();
+      await deletePermitMutation.mutateAsync(permitId);
       addNotification("Наряд удален", TOAST_TYPES.SUCCESS, TOAST_DURATION.NORMAL);
     } catch (error) {
       console.error("Ошибка удаления наряда:", error);
@@ -146,7 +120,7 @@ export default function PermitsRegistry() {
     }
   };
 
-  if (loading) {
+  if (permitsLoading) {
     return (
       <div className="permits-loading">
         <div className="spinner" />
@@ -200,7 +174,7 @@ export default function PermitsRegistry() {
             employees={employees}
             onEdit={handleEditPermit}
             onDelete={handleDeletePermit}
-            onRefresh={loadPermits}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['permits'] })}
             addNotification={addNotification}
           />
         )}

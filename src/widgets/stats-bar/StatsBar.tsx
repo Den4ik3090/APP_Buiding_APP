@@ -1,11 +1,12 @@
 import React, { useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useEmployeeContext } from "@/features/employee-crud/EmployeeProvider";
+import { getDaysDifference } from "@/entities/employee";
+import { useEmployeesQuery } from "@/features/employee-crud/hooks/useEmployees";
 import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import { useExpiredCount } from "@/shared/hooks/useExpiredCount";
 
 export function StatsBar() {
-  const { employees, getDaysDifference, loading } = useEmployeeContext();
+  const { data: employees = [], isLoading: loading } = useEmployeesQuery();
   const { addNotification } = useNotificationContext();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export function StatsBar() {
     [employees, selectedOrg]
   );
 
-  const expiredCount = useExpiredCount(filteredEmployees as any, getDaysDifference, addNotification);
+  const expiredCount = useExpiredCount(filteredEmployees, getDaysDifference, addNotification);
 
   const handleShowExpired = useCallback(() => {
     const next = new URLSearchParams(searchParams);

@@ -14,7 +14,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { supabase } from "@/shared/api/supabase";
+import { createPrescription, updatePrescription } from "../services/prescriptionsService";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
 import {
   PRESCRIPTION_STATUSES,
@@ -291,18 +291,13 @@ export default function PrescriptionForm({
       };
 
       try {
-        const { error } = isEdit
-          ? await supabase
-              .from("prescriptions")
-              .update(payload)
-              .eq("id", prescription.id)
-          : await supabase.from("prescriptions").insert(payload);
+        if (isEdit) {
+          await updatePrescription(prescription.id, payload);
+        } else {
+          await createPrescription(payload);
+        }
 
         if (signal.aborted) return;
-
-        if (error) {
-          throw error;
-        }
 
         await onSave({
           isEdit,

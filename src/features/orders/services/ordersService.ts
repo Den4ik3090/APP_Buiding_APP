@@ -1,5 +1,5 @@
 import { supabase } from '@/shared/api/supabase';
-import type { Order } from '@/entities/order';
+import type { Order, OrderInsert, OrderUpdate } from '@/entities/order';
 
 export interface RegistryEmployee {
   id: string;
@@ -26,6 +26,27 @@ export async function fetchRegistryEmployees(): Promise<RegistryEmployee[]> {
 
   if (error) throw new Error(error.message);
   return (data ?? []) as RegistryEmployee[];
+}
+
+export async function createOrder(payload: OrderInsert): Promise<Order> {
+  const { data, error } = await supabase
+    .from('orders')
+    .insert(payload)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Order;
+}
+
+export async function updateOrder(id: string, payload: OrderUpdate): Promise<Order> {
+  const { data, error } = await supabase
+    .from('orders')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Order;
 }
 
 export async function deleteOrder(id: string): Promise<void> {

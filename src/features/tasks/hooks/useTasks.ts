@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { TaskStatus, Task, TaskInsert, TaskUpdate } from '../model';
-import { fetchTasks, createTask, updateTask, deleteTask } from '../services/tasksService';
+import { fetchTasks, createTask, updateTask, deleteTask, fetchRegistryEmployees } from '../services/tasksService';
+import type { RegistryEmployee } from '../services/tasksService';
 
 export interface TaskFilters {
   status?: TaskStatus;
@@ -32,6 +33,15 @@ export function useTasks(filters: TaskFilters = {}) {
     // Return empty array as fallback so components always get an array, never undefined
     placeholderData: [],
     // Don't propagate to nearest error boundary — let components handle it inline
+    throwOnError: false,
+  });
+}
+
+export function useTaskEmployeesQuery() {
+  return useQuery<RegistryEmployee[], Error>({
+    queryKey: ['registry-employees'],
+    queryFn: fetchRegistryEmployees,
+    placeholderData: [],
     throwOnError: false,
   });
 }

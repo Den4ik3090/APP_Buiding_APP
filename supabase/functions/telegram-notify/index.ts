@@ -13,10 +13,14 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   throw new Error("[telegram-notify] SUPABASE_URL and SUPABASE_ANON_KEY must be set");
 }
 
+// BUG FIX: "null" (string) blocked all browser requests. Fall back to "*" so the
+// function works when NOTIFY_ALLOWED_ORIGIN is not set in Supabase secrets.
 const corsHeaders = {
-  "Access-Control-Allow-Origin":  ALLOWED_ORIGIN || "null", // "null" blocks all cross-origin if unset
+  "Access-Control-Allow-Origin":  ALLOWED_ORIGIN || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const TELEGRAM_TIMEOUT_MS = 10_000;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -27,7 +31,7 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(
-      JSON.stringify({ ok: false, error: "Unauthorized" }),
+      JSON.stringify({ ok: false, description: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -39,7 +43,7 @@ Deno.serve(async (req) => {
   const { error: authError } = await supabase.auth.getUser();
   if (authError) {
     return new Response(
-      JSON.stringify({ ok: false, error: "Unauthorized" }),
+      JSON.stringify({ ok: false, description: "Unauthorized" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -49,11 +53,12 @@ Deno.serve(async (req) => {
     const text = typeof body?.text === "string" ? body.text.slice(0, 4096) : null;
     if (!text) {
       return new Response(
-        JSON.stringify({ ok: false, error: "text field is required" }),
+        JSON.stringify({ ok: false, description: "text field is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // BUG FIX: added AbortSignal.timeout to prevent hanging when Telegram API is slow.
     const response = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
       {
@@ -64,17 +69,35 @@ Deno.serve(async (req) => {
           text,
           parse_mode: "HTML",
         }),
+        signal: AbortSignal.timeout(TELEGRAM_TIMEOUT_MS),
       }
     );
 
     const data = await response.json();
+
+    // Surface token/chat errors clearly without logging the token itself.
+    if (!data?.ok) {
+      console.error(
+        `[telegram-notify] Telegram API error: code=${data?.error_code} description=${data?.description}`
+      );
+    }
+
     return new Response(JSON.stringify(data), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch {
+  } catch (err) {
+    // BUG FIX: use "description" field (matches Telegram API convention) so the
+    // frontend's data?.description fallback reads the real error message.
+    const isTimeout = err instanceof DOMException && err.name === "TimeoutError";
+    const description = isTimeout
+      ? "Telegram API timeout — попробуйте позже"
+      : "Internal server error";
+
+    console.error("[telegram-notify] Catch:", isTimeout ? "timeout" : String(err));
+
     return new Response(
-      JSON.stringify({ ok: false, error: "Internal server error" }),
+      JSON.stringify({ ok: false, description }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

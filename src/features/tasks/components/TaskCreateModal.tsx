@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { createPortal } from "react-dom";
 import { X, Plus, User, AlertCircle, Calendar, AlignLeft } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { useCreateTask } from "../hooks/useTasks";
-import { supabase } from "@/shared/api/supabase";
+import { useCreateTask, useTaskEmployeesQuery } from "../hooks/useTasks";
 import styles from "./tasksModal.module.scss";
 
 interface TaskCreateModalProps {
@@ -43,8 +42,8 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
   const [params] = useSearchParams();
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState<Partial<typeof EMPTY>>({});
-  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
-  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const { data: employeeData = [], isLoading: employeesLoading } = useTaskEmployeesQuery();
+  const employees: EmployeeOption[] = employeeData;
   const create = useCreateTask();
 
   const titleId = useId();
@@ -129,42 +128,6 @@ export function TaskCreateModal({ open, onClose }: TaskCreateModalProps) {
 
   // ── Effects ───────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadEmployees() {
-      setEmployeesLoading(true);
-
-      const { data, error } = await supabase
-        .from("employees")
-        .select("id, name")
-        .order("name", { ascending: true });
-
-      if (error) {
-        console.error("Ошибка загрузки сотрудников:", error);
-        if (!cancelled) setEmployees([]);
-      } else {
-        if (!cancelled) {
-          setEmployees(
-            (data ?? []).map((item) => ({
-              id: item.id,
-              name: item.name,
-            }))
-          );
-        }
-      }
-
-      if (!cancelled) setEmployeesLoading(false);
-    }
-
-    if (open) {
-      loadEmployees();
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
 
   // Escape key to close
   useEffect(() => {

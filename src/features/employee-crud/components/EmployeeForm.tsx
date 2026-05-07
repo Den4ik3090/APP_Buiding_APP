@@ -18,7 +18,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { supabase } from "@/shared/api/supabase";
+import { uploadEmployeePhoto } from "../services/employeesService";
 import { ADDITIONAL_TRAINING_TYPES } from "@/entities/employee";
 import type { Employee } from "@/entities/employee";
 import "./EmployeeForm.scss";
@@ -600,23 +600,9 @@ function EmployeeForm({
           return;
         }
 
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2)}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
+        const publicUrl = await uploadEmployeePhoto(file);
 
-        const { error: uploadError } = await supabase.storage
-          .from("employee-photos")
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage
-          .from("employee-photos")
-          .getPublicUrl(filePath);
-
-        setFormData((prev) => ({ ...prev, photo_url: data.publicUrl }));
+        setFormData((prev) => ({ ...prev, photo_url: publicUrl }));
 
         onPhotoUpload?.();
       } catch (error) {
@@ -656,7 +642,7 @@ function EmployeeForm({
         } as unknown as Employee;
 
         if (editingEmployee) {
-          await onUpdateEmployee(payload);
+          await onUpdateEmployee({ ...payload, id: editingEmployee.id });
         } else {
           await onAddEmployee(payload);
         }
@@ -725,9 +711,8 @@ function EmployeeForm({
             <div className="employees-tabs">
               <button
                 type="button"
-                className={`employees-tab ${
-                  activeTab === "general" ? "is-active" : ""
-                }`}
+                className={`employees-tab ${activeTab === "general" ? "is-active" : ""
+                  }`}
                 onClick={handleTabGeneral}
               >
                 Основные данные
@@ -735,9 +720,8 @@ function EmployeeForm({
 
               <button
                 type="button"
-                className={`employees-tab ${
-                  activeTab === "trainings" ? "is-active" : ""
-                }`}
+                className={`employees-tab ${activeTab === "trainings" ? "is-active" : ""
+                  }`}
                 onClick={handleTabTrainings}
               >
                 Дополнительное обучение
@@ -779,9 +763,8 @@ function EmployeeForm({
                       <div className="employees-photo-actions">
                         <label
                           htmlFor={photoInputId}
-                          className={`employees-upload-button ${
-                            uploading ? "is-disabled" : ""
-                          }`}
+                          className={`employees-upload-button ${uploading ? "is-disabled" : ""
+                            }`}
                         >
                           {uploading ? "Загрузка..." : "Загрузить фото"}
                         </label>
@@ -980,8 +963,8 @@ function EmployeeForm({
                 {saving
                   ? "Сохранение..."
                   : isEdit
-                  ? "Сохранить изменения"
-                  : "Добавить сотрудника"}
+                    ? "Сохранить изменения"
+                    : "Добавить сотрудника"}
               </button>
             </div>
           </form>

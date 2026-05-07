@@ -6,7 +6,7 @@ import {
   formatDateInput,
   validatePermitData,
 } from "@/entities/permit";
-import { supabase } from "@/shared/api/supabase";
+import { createPermit, updatePermit } from "../services/permitsService";
 
 
 //Константа по умолчанию( Первый тип из списка как значение по умолчанию)
@@ -88,24 +88,19 @@ export default function PermitForm({
       const expiryStr = expiryDate.toISOString().slice(0, 10);
       //-Редактирование таблицы
       if (isEdit) {
-        const { error } = await supabase
-          .from("permits")
-          .update({
-            permit_type: form.permit_type,
-            issue_date: form.issue_date,
-            expiry_date: expiryStr,
-            responsible_person_id: form.responsible_person_id || null,
-            organization: form.organization,
-            comments: form.comments || null,
-          })
-          .eq("id", permit.id);
-
-        if (error) throw error;
+        await updatePermit(permit.id, {
+          permit_type: form.permit_type,
+          issue_date: form.issue_date,
+          expiry_date: expiryStr,
+          responsible_person_id: form.responsible_person_id || null,
+          organization: form.organization,
+          comments: form.comments || null,
+        });
       } else {
         //Создание нового
         const number = generatePermitNumber(issueDate, permits || []);
 
-        const { error } = await supabase.from("permits").insert({
+        await createPermit({
           permit_number: number,
           permit_type: form.permit_type,
           issue_date: form.issue_date,
@@ -117,8 +112,6 @@ export default function PermitForm({
           is_extended: false,
           extension_count: 0,
         });
-
-        if (error) throw error;
       }
 
       if (onSave) await onSave();

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { Building2, FileText, Upload, Users, X } from "lucide-react";
-import { supabase } from "@/shared/api/supabase";
+import { createOrder, updateOrder } from "../services/ordersService";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
 import ResponsiblePersonsMultiSelect from "./ResponsiblePersonMultiSelect";
 
@@ -213,16 +213,11 @@ export default function OrderForm({
         description: form.description.trim() || null,
         document_url: form.document_url.trim() || null,
       };
-        console.log('=== PAYLOAD ===', payload); // <- ДОБАВЬ ЭТО
-    console.log('isEdit:', isEdit); // 
-
       try {
-        const { error } = isEdit
-          ? await supabase.from("orders").update(payload).eq("id", order.id)
-          : await supabase.from("orders").insert(payload);
-
-        if (error) {
-          throw error;
+        if (isEdit) {
+          await updateOrder(order.id, payload);
+        } else {
+          await createOrder(payload);
         }
 
         await onSave({

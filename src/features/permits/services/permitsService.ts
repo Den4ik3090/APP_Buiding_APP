@@ -1,6 +1,6 @@
 import { supabase } from '@/shared/api/supabase';
 import { PERMIT_STATUSES } from '@/entities/permit';
-import type { Permit } from '@/entities/permit';
+import type { Permit, PermitInsert, PermitUpdate } from '@/entities/permit';
 
 export interface RegistryEmployee {
   id: string;
@@ -87,6 +87,75 @@ export async function fetchRegistryEmployees(): Promise<RegistryEmployee[]> {
 
   if (error) throw new Error(error.message);
   return (data ?? []) as RegistryEmployee[];
+}
+
+export async function getCurrentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
+
+export async function updatePermitWithStatus(
+  permitId: string,
+  payload: PermitUpdate,
+  statusCandidates: string[]
+): Promise<string> {
+  let lastError: { code?: string; message?: string } | null = null;
+  for (const status of statusCandidates) {
+    const { data, error } = await supabase
+      .from('permits')
+      .update({ ...payload, status })
+      .eq('id', permitId)
+      .select('id');
+
+    if (!error) {
+      if (Array.isArray(data) && data.length > 0) return status;
+      throw new Error('Наряд не обновлен. Возможны ограничения доступа (RLS) или отсутствует право UPDATE.');
+    }
+    if (error.code === '23514') {
+      lastError = error;
+      continue;
+    }
+    throw error;
+  }
+  throw lastError || new Error('Не удалось подобрать допустимый статус');
+}
+
+export async function logPermitAudit(
+  permitId: string,
+  action: string,
+  performedBy: string | null | undefined,
+  comment: string,
+  newValues?: Record<string, unknown>
+): Promise<void> {
+  const { error } = await supabase.from('permit_audit_log').insert({
+    permit_id: permitId,
+    action,
+    ...(newValues ? { new_values: newValues } : {}),
+    performed_by: performedBy ?? null,
+    comment,
+  });
+  if (error) throw error;
+}
+
+export async function createPermit(payload: PermitInsert): Promise<Permit> {
+  const { data, error } = await supabase
+    .from('permits')
+    .insert(payload)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Permit;
+}
+
+export async function updatePermit(id: string, payload: PermitUpdate): Promise<Permit> {
+  const { data, error } = await supabase
+    .from('permits')
+    .update(payload)
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return data as Permit;
 }
 
 export async function deletePermit(permitId: string): Promise<void> {

@@ -2,10 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchPrescriptions,
   fetchRegistryEmployees,
+  createPrescription,
+  updatePrescription,
   deletePrescription,
 } from '../services/prescriptionsService';
 import type { RegistryEmployee } from '../services/prescriptionsService';
-import type { Prescription } from '@/entities/prescription';
+import type { Prescription, PrescriptionInsert, PrescriptionUpdate } from '@/entities/prescription';
 
 export function usePrescriptionsQuery() {
   return useQuery<Prescription[], Error>({
@@ -22,6 +24,27 @@ export function usePrescriptionEmployeesQuery() {
     queryFn: fetchRegistryEmployees,
     placeholderData: [],
     throwOnError: false,
+  });
+}
+
+export function useCreatePrescriptionMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: PrescriptionInsert) => createPrescription(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['prescriptions'] });
+    },
+  });
+}
+
+export function useUpdatePrescriptionMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: PrescriptionUpdate }) =>
+      updatePrescription(id, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['prescriptions'] });
+    },
   });
 }
 

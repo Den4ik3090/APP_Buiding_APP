@@ -7,6 +7,23 @@ import type {
   ResolutionInsert,
 } from '../model';
 
+export interface RegistryEmployee {
+  id: string;
+  name: string;
+}
+
+export interface DateRange {
+  from: string;
+  to: string;
+}
+
+export interface TaskStats {
+  total: number;
+  resolvedPercent: number;
+  avgResolutionHours: number;
+  safetyScore: number;
+}
+
 // Supabase returns code "42P01" when table does not exist (PGRST116 / 404 via REST)
 function isTableMissing(error: { code?: string; message?: string }): boolean {
   return (
@@ -103,9 +120,6 @@ export async function fetchTaskById(id: string): Promise<Task | null> {
 export async function createTask(payload: TaskInsert): Promise<Task> {
   const safePayload = sanitizeTaskInsert(payload);
 
-  console.log('createTask payload:', payload);
-  console.log('createTask safePayload:', safePayload);
-
   const { data, error } = await supabase
     .from('tasks')
     .insert(safePayload)
@@ -166,4 +180,69 @@ export async function createResolution(payload: ResolutionInsert): Promise<TaskR
 
   if (error) throw new Error(error.message);
   return data as TaskResolution;
+}
+
+export async function fetchRegistryEmployees(): Promise<RegistryEmployee[]> {
+  const { data, error } = await supabase
+    .from('employees')
+    .select('id, name')
+    .order('name');
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as RegistryEmployee[];
+}
+
+export async function fetchTaskStats(
+  siteId: string | undefined,
+  dateRange: DateRange
+): Promise<TaskStats> {
+  let q = supabase
+    .from('tasks')
+    .select('id, status, created_at, site_id')
+    .gte('created_at', dateRange.from)
+    .lte('created_at', dateRange.to);
+
+  if (siteId) q = q.eq('site_id', siteId);
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+
+  const tasks = (data ?? []) as Pick<Task, 'id' | 'status' | 'created_at' | 'site_id'>[];
+  const total = tasks.length;
+
+  if (total === 0) {
+    return { total: 0, resolvedPercent: 0, avgResolutionHours: 0, safetyScore: 100 };
+  }
+
+  const overdueCount = tasks.filter((t) => t.status === 'overdue').length;
+  const resolvedTasks = tasks.filter((t) => t.status === 'resolved');
+  const resolvedPercent = Math.round((resolvedTasks.length / total) * 100);
+  const safetyScore = Math.round(100 - (overdueCount / total) * 100);
+
+  let avgResolutionHours = 0;
+  if (resolvedTasks.length > 0) {
+    const resolvedIds = resolvedTasks.map((t) => t.id);
+    const { data: resolutions, error: resError } = await supabase
+      .from('task_resolutions')
+      .select('task_id, completed_at')
+      .in('task_id', resolvedIds);
+    if (resError) throw new Error(resError.message);
+
+    const createdAtById = Object.fromEntries(resolvedTasks.map((t) => [t.id, t.created_at]));
+    const hours = (resolutions as Pick<TaskResolution, 'task_id' | 'completed_at'>[])
+      .map((r) => {
+        const created = createdAtById[r.task_id];
+        if (!created) return null;
+        const diff = (new Date(r.completed_at).getTime() - new Date(created).getTime()) / 3_600_000;
+        return diff >= 0 ? diff : null;
+      })
+      .filter((h): h is number => h !== null);
+
+    if (hours.length > 0) {
+      avgResolutionHours =
+        Math.round((hours.reduce((a, b) => a + b, 0) / hours.length) * 10) / 10;
+    }
+  }
+
+  return { total, resolvedPercent, avgResolutionHours, safetyScore };
 }

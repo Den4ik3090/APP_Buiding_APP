@@ -107,3 +107,21 @@ export async function retrainEmployee(id: string): Promise<Employee> {
   if (error) throw error;
   return formatDataForApp([data])[0];
 }
+
+export async function uploadEmployeePhoto(file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+  const filePath = `avatars/${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('employee-photos')
+    .upload(filePath, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage
+    .from('employee-photos')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}

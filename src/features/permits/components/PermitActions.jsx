@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Clock, CheckCircle } from 'lucide-react';
-import { supabase } from '@/shared/api/supabase';
+import { updatePermitWithStatus, logPermitAudit, getCurrentUserId } from '../services/permitsService';
 import {
   calculateExtendedDate,
   canExtend,
@@ -51,32 +51,6 @@ export default function PermitActions({
     return Array.from(new Set([...defaults, ...byKind]));
   };
 
-  const updatePermitWithStatusCandidates = async (basePayload, candidates) => {
-    let lastError = null;
-    for (const status of candidates) {
-      const { data, error } = await supabase
-        .from("permits")
-        .update({ ...basePayload, status })
-        .eq("id", permit.id)
-        .select("id");
-
-      if (!error) {
-        if (Array.isArray(data) && data.length > 0) {
-          return status;
-        }
-        throw new Error(
-          "Наряд не обновлен. Возможны ограничения доступа (RLS) или отсутствует право UPDATE."
-        );
-      }
-      if (error.code === "23514") {
-        lastError = error;
-        continue;
-      }
-      throw error;
-    }
-
-    throw lastError || new Error("Не удалось подобрать допустимый статус");
-  };
 
   const handleExtend = async () => {
     if (!canExtend(permit)) {
@@ -96,7 +70,8 @@ export default function PermitActions({
     try {
       const extendedDate = calculateExtendedDate(permit.expiry_date);
 
-      const statusUsed = await updatePermitWithStatusCandidates(
+      const statusUsed = await updatePermitWithStatus(
+        permit.id,
         {
           extended_date: extendedDate.toISOString().split("T")[0],
           is_extended: true,
@@ -108,18 +83,14 @@ export default function PermitActions({
 
       // Audit-log не должен блокировать основное действие.
       try {
-        await supabase
-          .from('permit_audit_log')
-          .insert({
-            permit_id: permit.id,
-            action: 'extended',
-            new_values: {
-              extended_date: extendedDate.toISOString(),
-              status: statusUsed,
-            },
-            performed_by: (await supabase.auth.getUser()).data.user?.id,
-            comment: `Продлен до ${extendedDate.toLocaleDateString('ru-RU')}`
-          });
+        const performedBy = await getCurrentUserId();
+        await logPermitAudit(
+          permit.id,
+          'extended',
+          performedBy,
+          `Продлен до ${extendedDate.toLocaleDateString('ru-RU')}`,
+          { extended_date: extendedDate.toISOString(), status: statusUsed }
+        );
       } catch (auditError) {
         console.warn('Не удалось записать в permit_audit_log:', auditError);
       }
@@ -159,7 +130,8 @@ export default function PermitActions({
 
     setClosing(true);
     try {
-      const statusUsed = await updatePermitWithStatusCandidates(
+      const statusUsed = await updatePermitWithStatus(
+        permit.id,
         {
           closed_date: new Date().toISOString().split("T")[0],
           updated_at: new Date().toISOString(),
@@ -169,14 +141,13 @@ export default function PermitActions({
 
       // Audit-log не должен блокировать основное действие.
       try {
-        await supabase
-          .from('permit_audit_log')
-          .insert({
-            permit_id: permit.id,
-            action: 'closed',
-            performed_by: (await supabase.auth.getUser()).data.user?.id,
-            comment: `Наряд закрыт (${statusUsed})`
-          });
+        const performedBy = await getCurrentUserId();
+        await logPermitAudit(
+          permit.id,
+          'closed',
+          performedBy,
+          `Наряд закрыт (${statusUsed})`
+        );
       } catch (auditError) {
         console.warn('Не удалось записать в permit_audit_log:', auditError);
       }

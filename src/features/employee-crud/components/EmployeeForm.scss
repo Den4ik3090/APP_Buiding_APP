@@ -7,7 +7,9 @@
     justify-content: center;
     padding: 24px;
     background: rgba(15, 23, 42, 0.48);
-    backdrop-filter: blur(6px); /* OK — position: fixed */
+    // Убраны backdrop-filter для плавного скролла
+    will-change: opacity;
+    transform: translateZ(0);
 }
 
 .employees-modal {
@@ -20,6 +22,8 @@
     border: 1px solid #e2e8f0;
     border-radius: 24px;
     box-shadow: 0 24px 80px rgba(15, 23, 42, 0.22);
+    contain: layout style paint;
+    will-change: transform;
 }
 
 .employees-modal-header {
@@ -30,6 +34,7 @@
     padding: 24px 28px;
     border-bottom: 1px solid #e2e8f0;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    flex-shrink: 0;
 }
 
 .employees-modal-title {
@@ -59,7 +64,9 @@
     border: 1px solid #cbd5e1;
     border-radius: 12px;
     cursor: pointer;
-    transition: transform 150ms ease, opacity 150ms ease;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 .employees-modal-close:hover:not(:disabled) {
@@ -74,12 +81,33 @@
     cursor: not-allowed;
 }
 
-/* Scrollable body — prevent scroll chaining to page behind modal */
 .employees-modal-body {
     flex: 1;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 28px;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+
+    // Стили для Webkit браузеров
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 }
 
 .employees-form {
@@ -108,6 +136,7 @@
     font-size: 13px;
     font-weight: 600;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .employees-overview-badge--warning {
@@ -146,8 +175,8 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    /* box-shadow removed from transition — shadow appears via static rule only */
-    transition: transform 150ms ease, opacity 150ms ease;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: background-color;
 }
 
 .employees-tab.is-active {
@@ -168,6 +197,7 @@
     border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
+    flex-shrink: 0;
 }
 
 .employees-tab-counter--danger {
@@ -180,6 +210,9 @@
     border: 1px solid #e2e8f0;
     border-radius: 20px;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    contain: layout style paint;
+    content-visibility: auto;
+    contain-intrinsic-size: 300px;
 }
 
 .employees-section-heading {
@@ -215,12 +248,14 @@
     background: #f8fafc;
     border: 1px solid #dbe4ee;
     border-radius: 20px;
+    contain: paint;
 }
 
 .employees-photo-preview img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    will-change: transform;
 }
 
 .employees-photo-placeholder {
@@ -258,14 +293,6 @@
     gap: 12px;
 }
 
-/* Shared transition — transform/opacity only; shadow via ::after pseudo-element */
-.employees-upload-button,
-.btn-primary,
-.btn-cancel,
-.employees-icon-button {
-    transition: transform 150ms ease, opacity 150ms ease;
-}
-
 .employees-upload-button {
     display: inline-flex;
     align-items: center;
@@ -279,6 +306,9 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 .employees-upload-button:hover {
@@ -332,6 +362,7 @@
     outline: none;
     font-size: 14px;
     transition: border-color 150ms ease;
+    will-change: border-color;
 }
 
 .employees-form-group textarea {
@@ -340,7 +371,6 @@
     resize: vertical;
 }
 
-/* Focus ring via outline — composited, no repaint */
 .employees-form-group input:focus,
 .employees-form-group select:focus,
 .employees-form-group textarea:focus,
@@ -355,7 +385,6 @@
     color: #94a3b8;
 }
 
-/* Error ring via outline — composited */
 .input-error {
     border-color: #dc2626 !important;
     outline: 2px solid rgba(220, 38, 38, 0.25) !important;
@@ -393,6 +422,8 @@
     border: 1px solid #cbd5e1;
     border-radius: 12px;
     cursor: pointer;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
 }
 
 .employees-icon-button:hover:not(:disabled) {
@@ -404,7 +435,6 @@
 .employees-icon-button--danger {
     color: #b91c1c;
     border-color: #fecaca;
-    background: #ffffff;
 }
 
 .employees-icon-button--danger:hover:not(:disabled) {
@@ -416,12 +446,16 @@
     display: flex;
     justify-content: flex-start;
     margin-bottom: 16px;
+    flex-shrink: 0;
 }
 
 .employees-table-scroll {
     overflow-x: auto;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
+    contain: layout style;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .employees-trainings-table {
@@ -440,6 +474,7 @@
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .employees-trainings-table tbody td {
@@ -447,6 +482,13 @@
     border-bottom: 1px solid #eef2f7;
     vertical-align: middle;
     background: #ffffff;
+}
+
+.employees-trainings-table tbody tr {
+    contain: layout style paint;
+    content-visibility: auto;
+    contain-intrinsic-height: 60px;
+    transform: translateZ(0);
 }
 
 .employees-trainings-table tbody tr:last-child td {
@@ -488,6 +530,7 @@
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .employees-status--actual {
@@ -535,6 +578,7 @@
     justify-content: flex-end;
     gap: 12px;
     padding-top: 4px;
+    flex-shrink: 0;
 }
 
 .btn-primary,
@@ -548,9 +592,11 @@
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
-/* Shadow via ::after — never transition box-shadow directly */
 .btn-primary {
     position: relative;
     color: #ffffff;
@@ -592,12 +638,14 @@
 
 .btn-primary:disabled,
 .btn-cancel:disabled,
-.employees-icon-button:disabled {
+.employees-icon-button:disabled,
+.employees-upload-button.is-disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    transform: none;
+    transform: none !important;
 }
 
+// Медиа-запросы
 @media (max-width: 900px) {
     .employees-modal-overlay {
         padding: 16px;
@@ -627,6 +675,7 @@
 @media (max-width: 640px) {
     .employees-modal-overlay {
         padding: 0;
+        // Полностью убраны backdrop-filter
     }
 
     .employees-modal {
@@ -675,14 +724,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .employees-modal-close,
-    .employees-upload-button,
-    .btn-primary,
-    .btn-primary::after,
-    .btn-cancel,
-    .employees-icon-button,
-    .employees-tab {
-        transition-duration: 0.01ms !important;
+
+    *,
+    *::before,
+    *::after {
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .employees-modal-body {
+        scroll-behavior: auto !important;
     }
 }

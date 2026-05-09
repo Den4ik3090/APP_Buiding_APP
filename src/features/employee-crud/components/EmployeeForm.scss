@@ -672,10 +672,45 @@
     }
 }
 
+@media (max-width: 768px) {
+    .employees-modal-title {
+        font-size: 20px;
+    }
+
+    .employees-modal-subtitle {
+        font-size: 13px;
+    }
+
+    .employees-form-section {
+        padding: 20px;
+    }
+
+    .employees-section-heading h3 {
+        font-size: 16px;
+    }
+
+    .employees-trainings-toolbar {
+        justify-content: stretch;
+
+        > * {
+            width: 100%;
+        }
+    }
+
+    .employees-table-scroll {
+        border-radius: 12px;
+    }
+
+    .employees-trainings-table thead th,
+    .employees-trainings-table tbody td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
 @media (max-width: 640px) {
     .employees-modal-overlay {
         padding: 0;
-        // Полностью убраны backdrop-filter
     }
 
     .employees-modal {
@@ -692,8 +727,27 @@
     }
 
     .employees-form-section {
-        padding: 18px;
+        padding: 16px;
+        border-radius: 14px;
+    }
+
+    .employees-profile-card {
+        justify-items: center;
+    }
+
+    .employees-photo-preview {
+        width: 120px;
+        height: 120px;
         border-radius: 16px;
+        margin: 0 auto;
+    }
+
+    .employees-photo-meta {
+        width: 100%;
+    }
+
+    .employees-form-group textarea {
+        min-height: 100px;
     }
 
     .employees-tabs {
@@ -720,6 +774,21 @@
 
     .employees-icon-button {
         width: 100%;
+    }
+
+    .employees-trainings-table tbody td,
+    .employees-trainings-table thead th {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .employees-table-actions-cell {
+        width: 56px;
+    }
+
+    .employees-icon-button--danger,
+    .employees-icon-button:not(.employees-icon-button--danger) {
+        min-height: 40px;
     }
 }
 

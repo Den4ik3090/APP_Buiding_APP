@@ -214,11 +214,11 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
 
       {/* Header */}
       <div className="flex flex-col gap-3 border-b border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
             Список сотрудников
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setShowOrgReport((v) => !v)}
@@ -276,8 +276,89 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile card list — xs screens only */}
+      <div className="block divide-y divide-zinc-100 dark:divide-zinc-800 sm:hidden">
+        {sortedAndFilteredEmployees.map((employee) => {
+          const rowTone = employee.expired ? 'expired' : employee.warning ? 'warning' : 'valid';
+          return (
+            <div
+              key={employee.id}
+              className={`p-4 ${ROW_CLASSES[rowTone]} ${employee.additionalExpired ? 'ring-1 ring-inset ring-orange-300 dark:ring-orange-700' : ''}`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
+                  {employee.photo_url ? (
+                    <img
+                      src={employee.photo_url}
+                      alt={employee.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg">👤</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-zinc-800 dark:text-zinc-100">
+                        {employee.name}
+                      </p>
+                      <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                        {employee.profession}
+                      </p>
+                    </div>
+                    <StatusBadge tone={rowTone} days={employee.days} />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span>Инструктаж: {new Date(employee.trainingDate).toLocaleDateString('ru-RU')}</span>
+                    <span>Следующий: {employee.nextDate.toLocaleDateString('ru-RU')}</span>
+                    <span
+                      className={`font-semibold ${
+                        employee.expired
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-zinc-700 dark:text-zinc-300'
+                      }`}
+                    >
+                      {employee.days} дней
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <WorkerTrainingDownloadButton
+                      workerId={employee.id}
+                      workerName={employee.name}
+                      addNotification={addNotification}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onRetrain(employee.id)}
+                      className="rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+                    >
+                      Обновить
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onEdit(employee)}
+                      className="rounded-md px-2 py-1.5 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDelete(employee.id)}
+                      className="rounded-md px-2 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table — hidden on mobile */}
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>

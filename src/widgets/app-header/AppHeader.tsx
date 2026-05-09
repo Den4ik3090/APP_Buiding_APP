@@ -10,21 +10,13 @@ interface AppHeaderProps {
 
 export function AppHeader({ onLogout, onToggleTheme, isDark }: AppHeaderProps) {
   return (
-    <div
-      className="header-main"
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 20,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-        <img src={logo} alt="Logo" className="logo__img" />
+    <div className="header-main">
+      <div className="header-main__left">
+        <img src={logo} alt="PUTEVI Logo" className="logo__img" />
         <h1 className="header__title">Управление инструктажами</h1>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div className="header-main__right">
         {onToggleTheme && (
           <button
             type="button"
@@ -34,8 +26,8 @@ export function AppHeader({ onLogout, onToggleTheme, isDark }: AppHeaderProps) {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              width: 36,
-              height: 36,
+              minWidth: 44,
+              minHeight: 44,
               borderRadius: 8,
               border: "1px solid #e5e7eb",
               background: "transparent",
@@ -48,7 +40,11 @@ export function AppHeader({ onLogout, onToggleTheme, isDark }: AppHeaderProps) {
           </button>
         )}
 
-        <button className="btn-danger" onClick={onLogout}>
+        <button
+          className="btn-danger"
+          onClick={onLogout}
+          style={{ minHeight: 44, minWidth: 72, fontWeight: 600 }}
+        >
           Выйти
         </button>
       </div>

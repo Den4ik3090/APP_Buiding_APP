@@ -49,7 +49,7 @@ export function AppNav() {
     >
       <div
         className="filter-group"
-        style={{ display: "flex", alignItems: "center", gap: 10 }}
+        style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}
       >
         <label>Организация:</label>
         <select
@@ -106,6 +106,10 @@ export function AppNav() {
         <NavLink to="/tasks" className={navClass}>
           <span className="tab-btn__icon">✅</span>
           <span className="tab-btn__label">Задачи</span>
+        </NavLink>
+        <NavLink to="/about" className={navClass}>
+          <span className="tab-btn__icon">ℹ️</span>
+          <span className="tab-btn__label">О проекте</span>
         </NavLink>
       </nav>
     </div>

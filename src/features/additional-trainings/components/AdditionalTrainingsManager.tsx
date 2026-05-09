@@ -123,6 +123,7 @@ export default function AdditionalTrainingsManager({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"list" | "analytics">("list");
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const toggleRow = (employeeId: string) => {
     setExpandedRows((prev) => ({
@@ -343,9 +344,11 @@ export default function AdditionalTrainingsManager({
     }));
 
     if (!rows.length) {
-      alert("Нет данных для экспорта");
+      setExportError("Нет данных для экспорта");
       return;
     }
+
+    setExportError(null);
 
     const worksheet = XLSX.utils.json_to_sheet(rows);
     worksheet["!cols"] = [
@@ -505,6 +508,11 @@ export default function AdditionalTrainingsManager({
             <CButton color="primary" onClick={handleExportExcel}>
               Экспорт Excel
             </CButton>
+            {exportError && (
+              <span style={{ color: '#dc2626', fontSize: 13, alignSelf: 'center' }}>
+                ⚠️ {exportError}
+              </span>
+            )}
           </div>
         </CCardHeader>
       </CCard>

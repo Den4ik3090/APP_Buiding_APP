@@ -2,12 +2,15 @@ import React, { useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { getDaysDifference } from "@/entities/employee";
 import { useEmployeesQuery } from "@/features/employee-crud/hooks/useEmployees";
-import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import { useExpiredCount } from "@/shared/hooks/useExpiredCount";
+import type { NotificationType } from "@/shared/constants/toast";
 
-export function StatsBar() {
+interface StatsBarProps {
+  addNotification: (message: string, type?: NotificationType, duration?: number) => number;
+}
+
+export function StatsBar({ addNotification }: StatsBarProps) {
   const { data: employees = [], isLoading: loading } = useEmployeesQuery();
-  const { addNotification } = useNotificationContext();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 

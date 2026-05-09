@@ -133,7 +133,7 @@
 
 ---
 
-### Task S1-T03: Fix query-key collision for registry-employees
+### Task S1-T03: ✅ Fix query-key collision for registry-employees
 - **Addresses**: F-002
 - **Layer**: `src/features/*/hooks/`
 - **Files to change**:
@@ -179,7 +179,7 @@
 
 ---
 
-### Task S2-T01: Fix features→app FSD violations in 3 Registry components
+### Task S2-T01: ✅ Fix features→app FSD violations in 3 Registry components
 - **Addresses**: F-004
 - **Layer**: `src/features/*/components/`, `src/pages/`
 - **Files to change**:
@@ -287,7 +287,7 @@
 
 ---
 
-### Task S2-T04: Fix TaskResolutionViewerModal to use TanStack Query
+### Task S2-T04: ✅ Fix TaskResolutionViewerModal to use TanStack Query
 - **Addresses**: F-008
 - **Layer**: `src/features/tasks/components/`, `src/features/tasks/hooks/`
 - **Files to change**:
@@ -334,7 +334,7 @@
 
 ---
 
-### Task S3-T01: Replace alert() / window.confirm() with notification system
+### Task S3-T01: ✅ Replace alert() / window.confirm() with notification system
 - **Addresses**: F-011
 - **Layer**: `src/features/*/components/`
 - **Files to change** (in order of impact):
@@ -611,7 +611,7 @@
 
 ---
 
-### Task S4-T04: Fix barrel exports and other hygiene items
+### Task S4-T04: ✅ Fix barrel exports and other hygiene items (partial)
 - **Addresses**: F-015, F-019, F-020
 - **Effort**: 0.5 dev-days
 - **Steps**:
@@ -620,7 +620,7 @@
      export { default as VirtualEmployeeTable } from './VirtualEmployeeTable';
      export { default as OrganizationTelegramReport } from './OrganizationTelegramReport';
      ```
-  2. **F-019 — duplicate alignItems**: In `PermitActions.jsx`, remove the duplicate `alignItems: 'center'` from `btnDelete` style object.
+  2. **F-019 — duplicate alignItems**: ✅ Removed duplicate `alignItems: 'center'` from `btnDelete` in `PermitActions.jsx`.
   3. **F-020 — silent truncation**: In `OrganizationTelegramReport.jsx`, add warning when truncating:
      ```jsx
      {employeesList.length > 30 && (

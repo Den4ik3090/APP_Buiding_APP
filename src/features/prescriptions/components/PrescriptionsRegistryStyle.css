@@ -623,7 +623,48 @@
 }
 
 /* ── Row Actions ───────────────────────────────────────── */
-.prescription-actions { display: flex; gap: 6px; }
+.prescription-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+.prescription-confirm-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-confirm-delete {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--p-danger, #dc2626);
+  border: none;
+  border-radius: var(--p-r-sm, 8px);
+  cursor: pointer;
+  transition: opacity var(--p-dur, 150ms) var(--p-ease, ease);
+}
+
+.btn-confirm-delete:hover { opacity: 0.85; }
+
+.btn-confirm-cancel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid var(--p-border, #cbd5e1);
+  border-radius: var(--p-r-sm, 8px);
+  cursor: pointer;
+  transition: background var(--p-dur, 150ms) var(--p-ease, ease);
+}
+
+.btn-confirm-cancel:hover { background: #e2e8f0; }
 
 .btn-action {
   display: inline-flex;

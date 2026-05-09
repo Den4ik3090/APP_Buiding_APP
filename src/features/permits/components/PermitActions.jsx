@@ -25,6 +25,8 @@ export default function PermitActions({
 }) {
   const [extending, setExtending] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingAction, setConfirmingAction] = useState(null); // 'extend' | 'close' | null
   const canClosePermit = (currentPermit) =>
     Boolean(currentPermit && !isClosedStatus(currentPermit.status));
   const normalizeStatusText = (value) =>
@@ -62,10 +64,11 @@ export default function PermitActions({
       return;
     }
 
-    if (!window.confirm('Продлить наряд на 15 дней?')) {
-      return;
-    }
+    setConfirmingAction('extend');
+  };
 
+  const handleExtendConfirmed = async () => {
+    setConfirmingAction(null);
     setExtending(true);
     try {
       const extendedDate = calculateExtendedDate(permit.expiry_date);
@@ -124,10 +127,11 @@ export default function PermitActions({
       return;
     }
 
-    if (!window.confirm('Закрыть наряд?')) {
-      return;
-    }
+    setConfirmingAction('close');
+  };
 
+  const handleCloseConfirmed = async () => {
+    setConfirmingAction(null);
     setClosing(true);
     try {
       const statusUsed = await updatePermitWithStatus(
@@ -175,63 +179,63 @@ export default function PermitActions({
     <div className="permit-actions" style={styles.container}>
       {/* Продлить */}
       {canExtend(permit) && (
-        <button
-          type="button"
-          className="btn-action btn-extend"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleExtend();
-          }}
-          disabled={extending}
-          style={styles.btnExtend}
-          title="Продлить на 15 дней"
-        >
-          {extending ? (
-            <span>⏳</span>
-          ) : (
-            <>
-              <Clock size={16} />
-              <span>Продлить</span>
-            </>
-          )}
-        </button>
+        confirmingAction === 'extend' ? (
+          <div style={styles.confirmRow}>
+            <button type="button" style={styles.btnConfirmYes}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExtendConfirmed(); }}>
+              ✓ Продлить
+            </button>
+            <button type="button" style={styles.btnConfirmCancel}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingAction(null); }}>
+              Отмена
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn-action btn-extend"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExtend(); }}
+            disabled={extending}
+            style={styles.btnExtend}
+            title="Продлить на 15 дней"
+          >
+            {extending ? <span>⏳</span> : <><Clock size={16} /><span>Продлить</span></>}
+          </button>
+        )
       )}
 
       {/* Закрыть */}
       {canClosePermit(permit) && (
-        <button
-          type="button"
-          className="btn-action btn-close-permit"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleClose();
-          }}
-          disabled={closing}
-          style={styles.btnClose}
-          title="Закрыть наряд"
-        >
-          {closing ? (
-            <span>⏳</span>
-          ) : (
-            <>
-              <CheckCircle size={16} />
-              <span>Закрыть</span>
-            </>
-          )}
-        </button>
+        confirmingAction === 'close' ? (
+          <div style={styles.confirmRow}>
+            <button type="button" style={styles.btnConfirmYes}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCloseConfirmed(); }}>
+              ✓ Закрыть
+            </button>
+            <button type="button" style={styles.btnConfirmCancel}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingAction(null); }}>
+              Отмена
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn-action btn-close-permit"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleClose(); }}
+            disabled={closing}
+            style={styles.btnClose}
+            title="Закрыть наряд"
+          >
+            {closing ? <span>⏳</span> : <><CheckCircle size={16} /><span>Закрыть</span></>}
+          </button>
+        )
       )}
 
       {/* Редактировать */}
       <button
         type="button"
         className="btn-action btn-edit"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onEdit(permit);
-        }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(permit); }}
         style={styles.btnEdit}
         title="Редактировать"
       >
@@ -239,32 +243,88 @@ export default function PermitActions({
       </button>
 
       {/* Удалить */}
-      <button
-        type="button"
-      className="btn-action btn-close-permit"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onDelete(permit.id);
-        }}
-         style={styles.btnDelete}
-        title="Удалить"
-      >
-        <>
-        <Trash2 size={16} />
-        <span>Удалить</span>
-        </>
-      </button>
+      {confirmingDelete ? (
+        <div style={styles.confirmRow}>
+          <button type="button" style={styles.btnConfirmDeleteYes}
+            onClick={(e) => {
+              e.preventDefault(); e.stopPropagation();
+              onDelete(permit.id);
+              setConfirmingDelete(false);
+            }}>
+            ✓ Удалить
+          </button>
+          <button type="button" style={styles.btnConfirmCancel}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingDelete(false); }}>
+            Отмена
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="btn-action btn-delete"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmingDelete(true); }}
+          style={styles.btnDelete}
+          title="Удалить"
+        >
+          <Trash2 size={16} />
+          <span>Удалить</span>
+        </button>
+      )}
     </div>
   );
 }
-// Константы стилей кнопок 
+// Константы стилей кнопок
 const styles = {
   container: {
     display: 'flex',
     gap: '8px',
     alignItems: 'center',
     flexWrap: 'wrap'
+  },
+  confirmRow: {
+    display: 'flex',
+    gap: '6px',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  btnConfirmYes: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '44px',
+    padding: '0 14px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#fff',
+    background: '#0f766e',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+  },
+  btnConfirmDeleteYes: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '44px',
+    padding: '0 14px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#fff',
+    background: '#dc2626',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+  },
+  btnConfirmCancel: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '44px',
+    padding: '0 14px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: '#475569',
+    background: '#f1f5f9',
+    border: '1px solid #cbd5e1',
+    borderRadius: '8px',
+    cursor: 'pointer',
   },
   btnExtend: {
     display: 'flex',
@@ -311,10 +371,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
     gap: '4px',
-     width:'70px',
-    padding:' 0px 10px 0px 10px',
+    width: '70px',
+    padding: '0px 10px',
     fontSize: '13px',
     color: '#ef4444',
     background: '#fee2e2',

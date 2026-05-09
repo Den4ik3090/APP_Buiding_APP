@@ -39,7 +39,7 @@ export function useTasks(filters: TaskFilters = {}) {
 
 export function useTaskEmployeesQuery() {
   return useQuery<RegistryEmployee[], Error>({
-    queryKey: ['registry-employees'],
+    queryKey: ['registry-employees', 'tasks'],
     queryFn: fetchRegistryEmployees,
     placeholderData: [],
     throwOnError: false,

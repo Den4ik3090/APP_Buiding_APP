@@ -188,6 +188,7 @@ function PrescriptionsTable({
 }) {
   const [sortField, setSortField] = useState("issue_date");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [confirmingId, setConfirmingId] = useState(null);
 
   const sortedPrescriptions = useMemo(() => {
     return [...prescriptions].sort((left, right) =>
@@ -437,15 +438,34 @@ function PrescriptionsTable({
                       <Edit2 size={16} />
                     </button>
 
-                    <button
-                      type="button"
-                      className="btn-action btn-delete"
-                      onClick={() => onDelete(prescription.id)}
-                      aria-label={`Удалить предписание ${prescription.prescription_number}`}
-                      title="Удалить"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {confirmingId === prescription.id ? (
+                      <div className="prescription-confirm-row">
+                        <button
+                          type="button"
+                          className="btn-confirm-delete"
+                          onClick={() => { onDelete(prescription.id); setConfirmingId(null); }}
+                        >
+                          ✓ Удалить
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-confirm-cancel"
+                          onClick={() => setConfirmingId(null)}
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-action btn-delete"
+                        onClick={() => setConfirmingId(prescription.id)}
+                        aria-label={`Удалить предписание ${prescription.prescription_number}`}
+                        title="Удалить"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

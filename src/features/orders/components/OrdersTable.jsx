@@ -100,6 +100,7 @@ function OrdersTable({
 }) {
   const [sortField, setSortField] = useState("creation_date");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [confirmingId, setConfirmingId] = useState(null);
 
   const sortedOrders = useMemo(() => {
     return [...orders].sort((leftOrder, rightOrder) =>
@@ -307,15 +308,34 @@ function OrdersTable({
                       <Edit2 size={16} />
                     </button>
 
-                    <button
-                      type="button"
-                      className="btn-action btn-delete"
-                      onClick={() => onDelete(order.id)}
-                      aria-label={`Удалить приказ ${order.order_number}`}
-                      title="Удалить"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {confirmingId === order.id ? (
+                      <div className="order-confirm-row">
+                        <button
+                          type="button"
+                          className="btn-confirm-delete"
+                          onClick={() => { onDelete(order.id); setConfirmingId(null); }}
+                        >
+                          ✓ Удалить
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-confirm-cancel"
+                          onClick={() => setConfirmingId(null)}
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-action btn-delete"
+                        onClick={() => setConfirmingId(order.id)}
+                        aria-label={`Удалить приказ ${order.order_number}`}
+                        title="Удалить"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

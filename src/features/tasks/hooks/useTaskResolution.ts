@@ -24,10 +24,10 @@ export function useTaskResolution() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: resolveTask,
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['task-stats'] });
-      qc.invalidateQueries({ queryKey: ['task-resolutions', variables.taskId] });
+      qc.invalidateQueries({ queryKey: ['task-resolutions'] });
     },
   });
 }

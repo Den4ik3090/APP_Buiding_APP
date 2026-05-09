@@ -20,7 +20,7 @@ export function usePrescriptionsQuery() {
 
 export function usePrescriptionEmployeesQuery() {
   return useQuery<RegistryEmployee[], Error>({
-    queryKey: ['registry-employees'],
+    queryKey: ['registry-employees', 'prescriptions'],
     queryFn: fetchRegistryEmployees,
     placeholderData: [],
     throwOnError: false,

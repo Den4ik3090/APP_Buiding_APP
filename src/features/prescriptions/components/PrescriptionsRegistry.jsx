@@ -26,7 +26,6 @@ import {
   useDeletePrescriptionMutation,
 } from "@/features/prescriptions/hooks/usePrescriptions";
 import { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS } from "@/entities/prescription";
-import { useNotificationContext } from "../../../app/providers/NotificationProvider";
 import PrescriptionForm from "./PrescriptionForm.jsx";
 import PrescriptionsTable from "./PrescriptionsTable.jsx";
 import "./PrescriptionsRegistryStyle.css";
@@ -38,10 +37,7 @@ const collator = new Intl.Collator("ru", {
 
 const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
-export { PRESCRIPTION_STATUSES, PRESCRIPTION_STATUS_LABELS };
-
-export default function PrescriptionsRegistry() {
-  const { addNotification } = useNotificationContext();
+export default function PrescriptionsRegistry({ addNotification }) {
   const queryClient = useQueryClient();
 
   const { data: prescriptions = [], isLoading: prescriptionsLoading } = usePrescriptionsQuery();
@@ -238,10 +234,6 @@ export default function PrescriptionsRegistry() {
 
   const handleDeletePrescription = useCallback(
     async (prescriptionId) => {
-      if (!window.confirm("Удалить это предписание из реестра?")) {
-        return;
-      }
-
       try {
         await deletePrescriptionMutation.mutateAsync(prescriptionId);
         addNotification(

@@ -201,3 +201,21 @@ Preserve:
 - touched feature area and changed files
 - verification commands already run and their results
 - unresolved assumptions about auth, Supabase schema, or Telegram integrations
+
+### AI-Workflow Tools
+- **Autonomous Audit**: Use `.claude/skills/sbt-autonomous-audit` for deep project scans.
+- **Verification Gates**: All features must pass `npx tsc --noEmit` and RLS check before completion.
+- **Reporting**: Always update `AUDIT_REPORT.md` and `IMPROVEMENT_PLAN.md` after architectural changes.
+
+## AI Orchestration & Sub-Agents
+When handling complex tasks, use the specialized skills in `.claude/skills/`:
+
+1. **Audit & Health**: Use `sbt-autonomous-audit` for deep scans and `AUDIT_REPORT.md` updates.
+2. **Feature Building**: Use `sbt-feature-architect` to scaffold new FSD slices.
+3. **UI/UX Integrity**: Use `sbt-ui-registry-review` when modifying lists or data grids.
+4. **Performance**: Use `sbt-performance-audit` to check for rendering bottlenecks.
+
+**Workflow Enforcement**:
+- Always run `npx tsc --noEmit` before declaring a task finished.
+- Never bypass the `services/` layer for direct Supabase calls in components.
+- If a task involves security, trigger the `security-audit` skill automatically.

@@ -5,7 +5,7 @@ import { DAYS_THRESHOLD, WARNING_THRESHOLD } from "@/entities/employee";
 /**
  * Компонент для отправки списка сотрудников выбранной организации в Telegram
  */
-function OrganizationTelegramReport({ employees, getDaysDifference }) {
+function OrganizationTelegramReport({ employees, getDaysDifference, addNotification }) {
   const [selectedOrg, setSelectedOrg] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -28,7 +28,7 @@ function OrganizationTelegramReport({ employees, getDaysDifference }) {
   // Формируем отчет
   const handleSendReport = async () => {
     if (!selectedOrg || filteredEmployees.length === 0) {
-      alert("Выберите организацию");
+      addNotification("Выберите организацию", "warning");
       return;
     }
 
@@ -111,13 +111,13 @@ function OrganizationTelegramReport({ employees, getDaysDifference }) {
       const result = await sendToTelegram(report);
 
       if (result.success) {
-        alert(`✅ Отчет по организации "${selectedOrg}" отправлен в Telegram!`);
+        addNotification(`Отчет по организации "${selectedOrg}" отправлен в Telegram`, "success");
       } else {
-        alert(`❌ Ошибка отправки: ${result.error}`);
+        addNotification(`Ошибка отправки: ${result.error}`, "error");
       }
     } catch (error) {
       console.error("Ошибка отправки отчета:", error);
-      alert("❌ Ошибка при формировании отчета");
+      addNotification("Ошибка при формировании отчета", "error");
     } finally {
       setSending(false);
     }

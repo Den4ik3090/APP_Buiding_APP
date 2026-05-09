@@ -56,6 +56,7 @@ function EmployeeTable({
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showOrgReport, setShowOrgReport] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 400);
@@ -130,9 +131,9 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
       `.trim();
 
       await sendToTelegram(report);
-      alert('✅ Общий отчёт отправлен в Telegram!');
+      addNotification('Общий отчёт отправлен в Telegram', 'success');
     } catch {
-      alert('❌ Ошибка отправки');
+      addNotification('Ошибка отправки отчёта в Telegram', 'error');
     }
   };
 
@@ -209,6 +210,7 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
         <OrganizationTelegramReport
           employees={preparedEmployees}
           getDaysDifference={getDaysDifference}
+          addNotification={addNotification}
         />
       )}
 
@@ -342,13 +344,32 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
                     >
                       ✏️
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(employee.id)}
-                      className="rounded-md px-2 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
-                    >
-                      🗑
-                    </button>
+                    {confirmingId === employee.id ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { onDelete(employee.id); setConfirmingId(null); }}
+                          className="min-h-[44px] rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300"
+                        >
+                          ✓ Удалить
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(null)}
+                          className="min-h-[44px] rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(employee.id)}
+                        className="rounded-md px-2 py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+                      >
+                        🗑
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -455,13 +476,32 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
                       >
                         ✏️
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(employee.id)}
-                        className="rounded-md px-2 py-1 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
-                      >
-                        🗑
-                      </button>
+                      {confirmingId === employee.id ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => { onDelete(employee.id); setConfirmingId(null); }}
+                            className="min-h-[44px] rounded-md bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-300"
+                          >
+                            ✓ Удалить
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmingId(null)}
+                            className="min-h-[44px] rounded-md border border-zinc-300 px-3 py-1 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmingId(employee.id)}
+                          className="rounded-md px-2 py-1 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+                        >
+                          🗑
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -133,6 +133,7 @@ export function TaskResolveModal({ task, open, onClose }: TaskResolveModalProps)
   const [upload, setUpload] = useState<UploadState>(UPLOAD_EMPTY);
   const [comments, setComments] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -145,17 +146,18 @@ export function TaskResolveModal({ task, open, onClose }: TaskResolveModalProps)
   const applyFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) return;
     if (file.size > MAX_FILE_BYTES) {
-      alert('Файл слишком большой. Максимум 20 МБ.');
+      setValidationError('Файл слишком большой. Максимум 20 МБ.');
       return;
     }
 
+    setValidationError(null);
     setUpload((prev) => ({ ...prev, compressing: true }));
 
     validateMagicBytes(file)
       .then((valid) => {
         if (!valid) {
           setUpload((prev) => ({ ...prev, compressing: false }));
-          alert('Неверный формат файла. Разрешены JPEG, PNG, WEBP.');
+          setValidationError('Неверный формат файла. Разрешены JPEG, PNG, WEBP.');
           return Promise.reject(new Error('invalid_magic_bytes'));
         }
         return compressImage(file);
@@ -387,6 +389,12 @@ export function TaskResolveModal({ task, open, onClose }: TaskResolveModalProps)
             onChange={handleFileChange}
           />
         </div>
+
+        {validationError && (
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: '#dc2626', fontWeight: 500 }}>
+            ⚠️ {validationError}
+          </p>
+        )}
 
         {upload.compressed && (
           <p style={{ margin: '6px 0 0', fontSize: 11, color: '#71717a' }}>

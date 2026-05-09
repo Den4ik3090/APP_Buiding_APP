@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import type { Task, TaskResolution } from "../model";
 import { fetchResolutionsByTask } from "../services/tasksService";
@@ -16,37 +17,15 @@ export function TaskResolutionViewerModal({
   open,
   onClose,
 }: TaskResolutionViewerModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [resolution, setResolution] = useState<TaskResolution | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    let cancelled = false;
-
-    async function loadResolution() {
-      setLoading(true);
-      try {
-        const items = await fetchResolutionsByTask(task.id);
-        if (!cancelled) {
-          setResolution(items[0] ?? null);
-        }
-      } catch (error) {
-        console.error("Ошибка загрузки фото устранения:", error);
-        if (!cancelled) {
-          setResolution(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadResolution();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, task.id]);
+  const { data: resolution = null, isLoading: loading } = useQuery<TaskResolution | null, Error>({
+    queryKey: ["task-resolutions", task.id],
+    queryFn: async () => {
+      const items = await fetchResolutionsByTask(task.id);
+      return items[0] ?? null;
+    },
+    enabled: open,
+    staleTime: 30_000,
+  });
 
   useEffect(() => {
     if (!open) return;

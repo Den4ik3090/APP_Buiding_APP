@@ -108,7 +108,7 @@ export default function App() {
                   onToggleTheme={toggleTheme}
                   isDark={isDark}
                 />
-                <StatsBar />
+                <StatsBar addNotification={addNotification} />
                 <AppNav />
                 <ErrorBoundary>
                   <div key="app-router-shell">

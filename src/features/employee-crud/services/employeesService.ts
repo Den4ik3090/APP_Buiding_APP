@@ -18,6 +18,14 @@ type DbRow = {
   created_at?: string | null;
 };
 
+// Extracts the storage object path from any URL format (public URL, signed URL, or relative path).
+// Needed because photo_url in DB may contain either a relative path or an old public/signed URL.
+function extractStoragePath(url: string): string {
+  if (!url || !url.startsWith('http')) return url;
+  const match = url.match(/avatars\/[^?&]+/);
+  return match ? match[0] : url;
+}
+
 function mapFormToDb(form: Employee) {
   return {
     name: form.name,
@@ -26,7 +34,7 @@ function mapFormToDb(form: Employee) {
     training_date: form.trainingDate,
     responsible: form.responsible || null,
     comment: form.comment || null,
-    photo_url: form.photo_url || null,
+    photo_url: form.photo_url ? extractStoragePath(form.photo_url) : null,
     organization: form.organization || null,
     additional_trainings: form.additionalTrainings || [],
   };
@@ -48,6 +56,46 @@ function formatDataForApp(data: DbRow[]): Employee[] {
   }));
 }
 
+// Resolves signed URLs for all employees that have a photo, in a single batch request.
+async function resolvePhotoUrls(employees: Employee[]): Promise<Employee[]> {
+  const withPhotos = employees.filter((e) => e.photo_url);
+  if (withPhotos.length === 0) return employees;
+
+  const paths = withPhotos.map((e) => extractStoragePath(e.photo_url));
+
+  const { data: signedItems } = await supabase.storage
+    .from('employee-photos')
+    .createSignedUrls(paths, 3600);
+
+  if (!signedItems) return employees;
+
+  const pathToSignedUrl = new Map(
+    signedItems
+      .filter((item): item is typeof item & { signedUrl: string } => Boolean(item.signedUrl))
+      .map((item) => [item.path, item.signedUrl])
+  );
+
+  return employees.map((emp) => {
+    if (!emp.photo_url) return emp;
+    const cleanPath = extractStoragePath(emp.photo_url);
+    const signedUrl = pathToSignedUrl.get(cleanPath);
+    return signedUrl ? { ...emp, photo_url: signedUrl } : emp;
+  });
+}
+
+export async function getEmployeePhotoUrl(path: string): Promise<string | null> {
+  if (!path) return null;
+  const cleanPath = extractStoragePath(path);
+  const { data, error } = await supabase.storage
+    .from('employee-photos')
+    .createSignedUrl(cleanPath, 3600);
+  if (error) {
+    console.error('Error creating signed URL:', error);
+    return null;
+  }
+  return data.signedUrl;
+}
+
 export async function fetchEmployees(): Promise<Employee[]> {
   const fetching = supabase
     .from('employees')
@@ -60,7 +108,8 @@ export async function fetchEmployees(): Promise<Employee[]> {
 
   const { data, error } = await Promise.race([fetching, timeout]);
   if (error) throw error;
-  return formatDataForApp(data ?? []);
+  const employees = formatDataForApp(data ?? []);
+  return resolvePhotoUrls(employees);
 }
 
 export async function fetchOrganizations(): Promise<string[]> {
@@ -77,7 +126,7 @@ export async function createEmployee(formData: Employee): Promise<Employee> {
     .select(FIELDS)
     .single();
   if (error) throw error;
-  return formatDataForApp([data])[0];
+  return resolvePhotoUrls(formatDataForApp([data])).then((r) => r[0]);
 }
 
 export async function updateEmployee(formData: Employee): Promise<Employee> {
@@ -88,7 +137,7 @@ export async function updateEmployee(formData: Employee): Promise<Employee> {
     .select(FIELDS)
     .single();
   if (error) throw error;
-  return formatDataForApp([data])[0];
+  return resolvePhotoUrls(formatDataForApp([data])).then((r) => r[0]);
 }
 
 export async function deleteEmployee(id: string): Promise<void> {
@@ -105,7 +154,7 @@ export async function retrainEmployee(id: string): Promise<Employee> {
     .select(FIELDS)
     .single();
   if (error) throw error;
-  return formatDataForApp([data])[0];
+  return resolvePhotoUrls(formatDataForApp([data])).then((r) => r[0]);
 }
 
 export async function uploadEmployeePhoto(file: File): Promise<string> {
@@ -119,9 +168,8 @@ export async function uploadEmployeePhoto(file: File): Promise<string> {
 
   if (uploadError) throw uploadError;
 
-  const { data } = supabase.storage
-    .from('employee-photos')
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
+  // Return a signed URL so the upload preview works immediately in the form.
+  // mapFormToDb will extract the clean path before saving to DB.
+  const signedUrl = await getEmployeePhotoUrl(filePath);
+  return signedUrl ?? filePath;
 }

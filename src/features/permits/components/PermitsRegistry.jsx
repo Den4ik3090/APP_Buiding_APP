@@ -14,11 +14,9 @@ import {
   usePermitEmployeesQuery,
   useDeletePermitMutation,
 } from "@/features/permits/hooks/usePermits";
-import { useNotificationContext } from "../../../app/providers/NotificationProvider";
 import "./PermitsRegistry.css";
 
-export default function PermitsRegistry() {
-  const { addNotification } = useNotificationContext();
+export default function PermitsRegistry({ addNotification }) {
   const queryClient = useQueryClient();
 
   const { data: permits = [], isLoading: permitsLoading } = usePermitsQuery();
@@ -105,8 +103,6 @@ export default function PermitsRegistry() {
   };
 
   const handleDeletePermit = async (permitId) => {
-    if (!window.confirm("Вы уверены, что хотите удалить этот наряд?")) return;
-
     try {
       await deletePermitMutation.mutateAsync(permitId);
       addNotification("Наряд удален", TOAST_TYPES.SUCCESS, TOAST_DURATION.NORMAL);

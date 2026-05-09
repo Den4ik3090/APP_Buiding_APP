@@ -20,7 +20,7 @@ export function useOrdersQuery() {
 
 export function useOrderEmployeesQuery() {
   return useQuery<RegistryEmployee[], Error>({
-    queryKey: ['registry-employees'],
+    queryKey: ['registry-employees', 'orders'],
     queryFn: fetchRegistryEmployees,
     placeholderData: [],
     throwOnError: false,

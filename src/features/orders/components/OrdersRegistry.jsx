@@ -22,7 +22,6 @@ import {
   useOrderEmployeesQuery,
   useDeleteOrderMutation,
 } from "@/features/orders/hooks/useOrders";
-import { useNotificationContext } from "../../../app/providers/NotificationProvider";
 import OrderForm from "./OrderForm";
 import OrdersTable from "./OrdersTable";
 import "./OrdersRegistry.css";
@@ -34,8 +33,7 @@ const collator = new Intl.Collator("ru", {
 
 const normalizeText = (value = "") => String(value).trim().toLowerCase();
 
-export default function OrdersRegistry() {
-  const { addNotification } = useNotificationContext();
+export default function OrdersRegistry({ addNotification }) {
   const queryClient = useQueryClient();
 
   const { data: orders = [], isLoading: ordersLoading } = useOrdersQuery();
@@ -177,10 +175,6 @@ export default function OrdersRegistry() {
 
   const handleDeleteOrder = useCallback(
     async (orderId) => {
-      if (!window.confirm("Удалить этот приказ из реестра?")) {
-        return;
-      }
-
       try {
         await deleteOrderMutation.mutateAsync(orderId);
         addNotification(

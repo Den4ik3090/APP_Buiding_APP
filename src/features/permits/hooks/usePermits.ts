@@ -20,7 +20,7 @@ export function usePermitsQuery() {
 
 export function usePermitEmployeesQuery() {
   return useQuery<RegistryEmployee[], Error>({
-    queryKey: ['registry-employees'],
+    queryKey: ['registry-employees', 'permits'],
     queryFn: fetchRegistryEmployees,
     placeholderData: [],
     throwOnError: false,

@@ -111,7 +111,6 @@ export default function EmployeesPage() {
   }, [updateMutation, addNotification]);
 
   const deleteEmployee = useCallback(async (id: unknown) => {
-    if (!window.confirm("Удалить сотрудника?")) return;
     try {
       await deleteMutation.mutateAsync(id as string);
       addNotification(TOAST_MESSAGES.EMPLOYEE_DELETED, TOAST_TYPES.SUCCESS, TOAST_DURATION.NORMAL);

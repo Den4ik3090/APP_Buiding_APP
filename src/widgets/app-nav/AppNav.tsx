@@ -111,6 +111,10 @@ export function AppNav() {
           <span className="tab-btn__icon">ℹ️</span>
           <span className="tab-btn__label">О проекте</span>
         </NavLink>
+        <NavLink to="/newcomponent" className={navClass}>
+          <span className="tab-btn__icon"></span>
+          <span className="tab-btn__label">Тестовый React</span>
+        </NavLink>
       </nav>
     </div>
   );

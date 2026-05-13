@@ -7,6 +7,7 @@ import {
   type DocsStatus,
   type OrgDoc,
 } from "../services/organizationDocsService";
+import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import "./OrganizationManager.css";
 
 interface OrganizationManagerProps {
@@ -16,6 +17,8 @@ interface OrganizationManagerProps {
 export default function OrganizationManager({ employees = [] }: OrganizationManagerProps) {
   const [docsData, setDocsData] = useState<OrgDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const { addNotification } = useNotificationContext();
 
   const uniqueOrgs = useMemo(() => {
     if (!employees || !Array.isArray(employees)) return [];
@@ -34,6 +37,7 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
 
   const fetchDocs = async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const currentDbData = await fetchOrgDocs();
       const merged = uniqueOrgs.map((orgName) => {
@@ -43,6 +47,9 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
       setDocsData(merged);
     } catch (err) {
       console.error("Ошибка при загрузке:", err);
+      const msg = err instanceof Error ? err.message : "Неизвестная ошибка";
+      setFetchError(msg);
+      addNotification(`Не удалось загрузить данные: ${msg}`, "error");
     } finally {
       setLoading(false);
     }
@@ -56,9 +63,10 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
     const targetOrg = docsData.find((d) => d.org_name === orgName);
     if (!targetOrg) return;
 
+    const prevStatus = { ...targetOrg.docs_status };
     const updatedStatus: DocsStatus = {
-      ...targetOrg.docs_status,
-      [key]: !targetOrg.docs_status[key],
+      ...prevStatus,
+      [key]: !prevStatus[key],
     };
 
     setDocsData((prev) =>
@@ -67,7 +75,18 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
       )
     );
 
-    await upsertOrgDoc(orgName, updatedStatus);
+    try {
+      await upsertOrgDoc(orgName, updatedStatus);
+    } catch (err) {
+      console.error("Ошибка при сохранении:", err);
+      setDocsData((prev) =>
+        prev.map((d) =>
+          d.org_name === orgName ? { ...d, docs_status: prevStatus } : d
+        )
+      );
+      const msg = err instanceof Error ? err.message : "Неизвестная ошибка";
+      addNotification(`Не удалось сохранить: ${msg}`, "error");
+    }
   };
 
   const addColumn = () => {
@@ -106,6 +125,22 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
       setLoading(false);
     }
   };
+
+  if (!loading && fetchError) {
+    return (
+      <div className="org-manager" style={{ padding: "32px 24px", textAlign: "center" }}>
+        <p style={{ color: "var(--org-danger)", fontWeight: 600, marginBottom: "12px" }}>
+          Ошибка загрузки данных
+        </p>
+        <p style={{ color: "var(--org-text-muted)", fontSize: "0.875rem", marginBottom: "20px" }}>
+          {fetchError}
+        </p>
+        <button type="button" className="org-manager__btn-add" onClick={fetchDocs}>
+          Повторить
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

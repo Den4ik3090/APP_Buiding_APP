@@ -1,6 +1,7 @@
 import React from "react";
 import { Sun, Moon } from "lucide-react";
 import logo from "@/assets/img/logo_PUTEVI.jpg";
+import { LiveClock } from "./LiveClock";
 
 interface AppHeaderProps {
   onLogout: () => void;
@@ -17,6 +18,7 @@ export function AppHeader({ onLogout, onToggleTheme, isDark }: AppHeaderProps) {
       </div>
 
       <div className="header-main__right">
+        <LiveClock />
         {onToggleTheme && (
           <button
             type="button"

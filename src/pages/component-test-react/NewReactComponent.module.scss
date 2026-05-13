@@ -1,76 +1,87 @@
-/* NewReactComponent.module.css */
+// /* NewReactComponent.module.css */
 
-.header {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  /* Мягкий серо-голубой вместо lightgray */
-  border-radius: 12px;
-  /* Более скругленные углы выглядят современнее */
-  padding: 24px;
-  /* Больше воздуха */
-  height: 400px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  /* Легкая тень для объема */
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.2s ease;
-}
+// .header {
+//   background: #ffffff;
+//   border: 1px solid #e2e8f0;
+//   /* Мягкий серо-голубой вместо lightgray */
+//   border-radius: 12px;
+//   /* Более скругленные углы выглядят современнее */
+//   padding: 24px;
+//   /* Больше воздуха */
+//   height: 400px;
+//   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+//   /* Легкая тень для объема */
+//   display: flex;
+//   flex-direction: column;
+//   transition: transform 0.2s ease;
+// }
 
-.header:hover {
-  transform: translateY(-2px);
-  /* Эффект при наведении */
-}
+// .header:hover {
+//   transform: translateY(-2px);
+//   /* Эффект при наведении */
+// }
 
-.title {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  color: #1e293b;
-  /* Глубокий темно-синий вместо красного */
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-}
+// .title {
+//   display: flex;
+//   justify-content: flex-start;
+//   align-items: center;
+//   color: #1e293b;
+//   /* Глубокий темно-синий вместо красного */
+//   font-size: 1.5rem;
+//   font-weight: 700;
+//   margin: 0;
+// }
 
-/* Красный акцент лучше использовать точечно */
-.title::before {
-  content: "";
-  width: 4px;
-  height: 24px;
-  background-color: #ef4444;
-  /* Акцентная полоска вместо красного текста */
-  margin-right: 12px;
-  border-radius: 2px;
-}
+// /* Красный акцент лучше использовать точечно */
+// .title::before {
+//   content: "";
+//   width: 4px;
+//   height: 24px;
+//   background-color: #ef4444;
+//   /* Акцентная полоска вместо красного текста */
+//   margin-right: 12px;
+//   border-radius: 2px;
+// }
 
-.btn {
-  border: none;
-  /* Убираем черную рамку */
-  background-color: #ef4444;
-  /* Насыщенный красный (акцент) */
-  color: white;
-  padding: 5px 10px;
-  border-radius: 8px;
-  margin-top: auto;
-  /* Кнопка прижмется к низу хедера */
-  width: fit-content;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+// .btn {
+//   border: none;
+//   /* Убираем черную рамку */
+//   background-color: #ef4444;
+//   /* Насыщенный красный (акцент) */
+//   color: white;
+//   padding: 5px 10px;
+//   border-radius: 8px;
+//   margin-top: auto;
+//   /* Кнопка прижмется к низу хедера */
+//   width: fit-content;
+//   font-weight: 600;
+//   cursor: pointer;
+//   transition: all 0.2s ease;
+// }
 
-.btn:hover {
-  background-color: #dc2626;
-  /* Темнее при наведении */
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
+// .btn:hover {
+//   background-color: #dc2626;
+//   /* Темнее при наведении */
+//   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+// }
 
-.btn:active {
-  transform: scale(0.95);
-  /* Эффект нажатия */
-}
+// .btn:active {
+//   transform: scale(0.95);
+//   /* Эффект нажатия */
+// }
 
-.user__card {
-  border: 2px solid red;
-  margin: 20px;
+// .user__card {
+//   border: 2px solid red;
+//   margin: 20px;
+// }
+
+.btn__test {
+  border: 1px solid black;
+  border-radius: 10px;
+  height: 50px;
+  padding: 5px;
+
+  &:hover {
+    background-color: lightgreen;
+  }
 }

@@ -50,3 +50,5 @@ pnpm-debug.log*
 
 # Local History (расширения VS Code)
 .history/
+.vercel
+.env*.local

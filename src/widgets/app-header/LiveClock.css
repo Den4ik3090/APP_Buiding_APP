@@ -1,0 +1,142 @@
+/* ============================================
+   LiveClock — digital clock widget in header
+   ============================================ */
+
+.live-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.live-clock:hover {
+  background: rgba(102, 126, 234, 0.13);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* --- time row --- */
+.live-clock__time-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  line-height: 1;
+}
+
+.live-clock__digits {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.live-clock__sep {
+  font-size: 1.4rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: opacity 0.15s ease;
+  padding: 0 1px;
+}
+
+.live-clock__sep--dim {
+  opacity: 0.25;
+}
+
+.live-clock__sep--sm {
+  font-size: 1.1rem;
+  opacity: 0.6;
+  padding: 0 1px;
+}
+
+.live-clock__seconds {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.75;
+  align-self: flex-end;
+  margin-bottom: 1px;
+}
+
+/* --- date row --- */
+.live-clock__date {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+/* --- Dark mode --- */
+.dark .live-clock {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: rgba(167, 139, 250, 0.2);
+}
+
+.dark .live-clock:hover {
+  background: rgba(102, 126, 234, 0.18);
+  border-color: rgba(167, 139, 250, 0.35);
+}
+
+.dark .live-clock__digits,
+.dark .live-clock__sep,
+.dark .live-clock__seconds {
+  background: linear-gradient(135deg, #a8b3ff 0%, #d9a9ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.dark .live-clock__date {
+  color: #94a3b8;
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .live-clock {
+    padding: 6px 10px;
+    gap: 2px;
+  }
+
+  .live-clock__digits {
+    font-size: 1.2rem;
+  }
+
+  .live-clock__sep {
+    font-size: 1.1rem;
+  }
+
+  .live-clock__sep--sm,
+  .live-clock__seconds {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .live-clock__sep--sm,
+  .live-clock__seconds {
+    display: none;
+  }
+
+  .live-clock__digits {
+    font-size: 1.1rem;
+  }
+}

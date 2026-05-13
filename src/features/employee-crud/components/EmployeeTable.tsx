@@ -57,6 +57,9 @@ function EmployeeTable({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showOrgReport, setShowOrgReport] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [responsibleFilter, setResponsibleFilter] = useState('all');
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 400);
@@ -158,6 +161,20 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
       result = result.filter((e) => e.profession === professionFilter);
     }
 
+    if (responsibleFilter !== 'all') {
+      result = result.filter((e) => e.responsible === responsibleFilter);
+    }
+
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime();
+      result = result.filter((e) => new Date(e.trainingDate).getTime() >= from);
+    }
+
+    if (dateTo) {
+      const to = new Date(dateTo).getTime();
+      result = result.filter((e) => new Date(e.trainingDate).getTime() <= to);
+    }
+
     if (sortConfig.key) {
       result.sort((a, b) => {
         let aVal: number | string;
@@ -178,10 +195,15 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
     }
 
     return result;
-  }, [preparedEmployees, debouncedSearch, statusFilter, professionFilter, sortConfig]);
+  }, [preparedEmployees, debouncedSearch, statusFilter, professionFilter, responsibleFilter, dateFrom, dateTo, sortConfig]);
 
   const professions = useMemo(
     () => ['all', ...new Set(employees.map((e) => e.profession).filter(Boolean))],
+    [employees],
+  );
+
+  const responsibles = useMemo(
+    () => ['all', ...Array.from(new Set(employees.map((e) => e.responsible).filter(Boolean))).sort((a, b) => a.localeCompare(b))],
     [employees],
   );
 
@@ -278,6 +300,56 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
         </div>
       </div>
 
+      {/* Period + responsible filter row */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/50">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Период инструктажа
+          </span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="rounded-lg border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            title="Начало периода"
+          />
+          <span className="text-xs text-zinc-400">—</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="rounded-lg border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+            title="Конец периода"
+          />
+          {(dateFrom || dateTo) && (
+            <button
+              type="button"
+              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              className="rounded-lg border border-zinc-300 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            >
+              Сбросить даты
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            Ответственный
+          </span>
+          <select
+            value={responsibleFilter}
+            onChange={(e) => setResponsibleFilter(e.target.value)}
+            className="rounded-lg border border-zinc-200 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          >
+            <option value="all">Все</option>
+            {responsibles
+              .filter((r) => r !== 'all')
+              .map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+          </select>
+        </div>
+      </div>
+
       {/* Mobile card list — xs screens only */}
       <div className="block divide-y divide-zinc-100 dark:divide-zinc-800 sm:hidden">
         {sortedAndFilteredEmployees.map((employee) => {
@@ -312,6 +384,9 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
                     <StatusBadge tone={rowTone} days={employee.days} />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {employee.responsible && (
+                      <span>Отв.: {employee.responsible}</span>
+                    )}
                     <span>Инструктаж: {new Date(employee.trainingDate).toLocaleDateString('ru-RU')}</span>
                     <span>Следующий: {employee.nextDate.toLocaleDateString('ru-RU')}</span>
                     <span
@@ -391,6 +466,7 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
               <th className={`${thSortable} min-w-[200px]`} onClick={() => handleSort('profession')}>
                 Должность {getSortIcon('profession')}
               </th>
+              <th className={`${thBase} min-w-[160px]`}>Ответственный</th>
               <th className={`${thSortable} w-[140px]`} onClick={() => handleSort('trainingDate')}>
                 Инструктаж {getSortIcon('trainingDate')}
               </th>
@@ -431,6 +507,9 @@ ${newToday.length ? newToday.join('\n') : '— нет'}
                   </td>
                   <td className="px-3 py-2.5 text-zinc-600 dark:text-zinc-300">
                     {employee.profession}
+                  </td>
+                  <td className="px-3 py-2.5 text-zinc-600 dark:text-zinc-300">
+                    {employee.responsible || '—'}
                   </td>
                   <td className="px-3 py-2.5 text-zinc-600 dark:text-zinc-300">
                     {new Date(employee.trainingDate).toLocaleDateString('ru-RU')}

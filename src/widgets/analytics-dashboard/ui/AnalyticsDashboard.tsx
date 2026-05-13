@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import * as XLSX from "xlsx";
 import { List, RowComponentProps } from "react-window";
 import {
   PieChart,
@@ -32,6 +33,33 @@ const MANAGER_COLORS = [
 ];
 const ROW_HEIGHT = 62;
 const DROPDOWN_MAX_HEIGHT = 200;
+
+function exportGroupToExcel(group: ResponsibleGroup): void {
+  const rows = group.employees.map((emp) => ({
+    "ФИО": emp.name ?? "",
+    "Организация": emp.organization ?? "",
+    "Профессия": emp.professionLabel,
+    "Дата рождения": emp.birthDate
+      ? new Date(emp.birthDate).toLocaleDateString("ru-RU")
+      : "",
+    "Дата инструктажа": emp.trainingDate
+      ? new Date(emp.trainingDate).toLocaleDateString("ru-RU")
+      : "",
+    "Статус": emp.daysSinceTraining !== null && emp.daysSinceTraining >= DAYS_THRESHOLD
+      ? "Переподготовка"
+      : "Актуален",
+    "Дней с последней подготовки": emp.daysSinceTraining ?? "",
+    "Ответственный": emp.responsibleLabel,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Сотрудники");
+
+  const safeName = group.name.replace(/[\\/:*?"<>|]/g, "_").slice(0, 30);
+  const date = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(workbook, `${safeName}_${date}.xlsx`);
+}
 
 const formatDate = (value: string | null | undefined): string => {
   if (!value) return "—";
@@ -343,7 +371,7 @@ export default function AnalyticsDashboard({
                       : "hover:ring-1 hover:ring-indigo-200/80"
                   }`}
                 >
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300 pr-8">
                     {group.name}
                   </p>
                   <p className="mt-2 text-4xl font-bold">{group.count}</p>
@@ -354,6 +382,32 @@ export default function AnalyticsDashboard({
                       ? ""
                       : "ов"}
                   </p>
+                </button>
+                <button
+                  type="button"
+                  title="Скачать список в Excel"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    exportGroupToExcel(group);
+                  }}
+                  className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 transition-all duration-200 hover:bg-indigo-100 hover:text-indigo-700 hover:shadow-md dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-800/60 dark:hover:text-indigo-100"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
                 </button>
                 {active && (
                   <div

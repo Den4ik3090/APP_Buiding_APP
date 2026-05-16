@@ -4,9 +4,8 @@ import PermitsTable from "./PermitsTable";
 import PermitsDashboard from "./PermitsDashboard";
 import PermitForm from "./PermitForm";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/shared/api/supabase";
 import { TOAST_TYPES, TOAST_DURATION } from "@/shared/constants/toast";
-import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
+import { subscribeToPermits } from "@/features/permits/services/permitsService";
 import { PERMIT_STATUSES } from "@/entities/permit";
 import { isClosedStatus, getPermitStatus } from "@/entities/permit";
 import {
@@ -61,19 +60,11 @@ export default function PermitsRegistry({ addNotification }) {
 
 
   useEffect(() => {
-    const permitsSubscription = supabase
-      .channel(REALTIME_CHANNELS.PERMITS)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "permits" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['permits'] });
-        }
-      )
-      .subscribe();
-
+    const channel = subscribeToPermits(() => {
+      queryClient.invalidateQueries({ queryKey: ['permits'] });
+    });
     return () => {
-      permitsSubscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [queryClient]);
 

@@ -1,4 +1,6 @@
 import { supabase } from '@/shared/api/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { REALTIME_CHANNELS } from '@/shared/constants/realtimeChannels';
 import type { Order, OrderInsert, OrderUpdate } from '@/entities/order';
 
 export interface RegistryEmployee {
@@ -52,4 +54,18 @@ export async function updateOrder(id: string, payload: OrderUpdate): Promise<Ord
 export async function deleteOrder(id: string): Promise<void> {
   const { error } = await supabase.from('orders').delete().eq('id', id);
   if (error) throw new Error(error.message);
+}
+
+/**
+ * Subscribes to all postgres_changes on the `orders` table via the
+ * REALTIME_CHANNELS.ORDERS Supabase Realtime channel. The caller is
+ * responsible for calling .unsubscribe() on the returned channel during
+ * cleanup. Channel name 'orders_registry_changes' is preserved verbatim
+ * — renaming requires coordinated infrastructure changes (see CLAUDE.md).
+ */
+export function subscribeToOrders(onUpdate: () => void): RealtimeChannel {
+  return supabase
+    .channel(REALTIME_CHANNELS.ORDERS)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, onUpdate)
+    .subscribe();
 }

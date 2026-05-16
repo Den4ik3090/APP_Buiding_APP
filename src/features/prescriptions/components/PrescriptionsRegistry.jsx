@@ -17,9 +17,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
-import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
+import { subscribeToPrescriptions } from "@/features/prescriptions/services/prescriptionsService";
 import {
   usePrescriptionsQuery,
   usePrescriptionEmployeesQuery,
@@ -56,19 +55,11 @@ export default function PrescriptionsRegistry({ addNotification }) {
   const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
-    const prescriptionsSubscription = supabase
-      .channel(REALTIME_CHANNELS.PRESCRIPTIONS)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "prescriptions" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
-        }
-      )
-      .subscribe();
-
+    const channel = subscribeToPrescriptions(() => {
+      queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
+    });
     return () => {
-      prescriptionsSubscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [queryClient]);
 

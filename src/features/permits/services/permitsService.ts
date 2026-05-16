@@ -1,4 +1,6 @@
 import { supabase } from '@/shared/api/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { REALTIME_CHANNELS } from '@/shared/constants/realtimeChannels';
 import { PERMIT_STATUSES } from '@/entities/permit';
 import type { Permit, PermitInsert, PermitUpdate } from '@/entities/permit';
 
@@ -179,4 +181,18 @@ export async function deletePermit(permitId: string): Promise<void> {
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error('Наряд не удален. Возможны ограничения доступа (RLS) или отсутствует право DELETE.');
   }
+}
+
+/**
+ * Subscribes to all postgres_changes on the `permits` table via the
+ * REALTIME_CHANNELS.PERMITS Supabase Realtime channel. The caller must
+ * call .unsubscribe() on the returned channel during cleanup. Channel
+ * name 'permits_changes' is preserved verbatim — renaming requires
+ * coordinated infrastructure changes (see CLAUDE.md).
+ */
+export function subscribeToPermits(onUpdate: () => void): RealtimeChannel {
+  return supabase
+    .channel(REALTIME_CHANNELS.PERMITS)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'permits' }, onUpdate)
+    .subscribe();
 }

@@ -14,9 +14,8 @@ import {
   Search,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/shared/api/supabase";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
-import { REALTIME_CHANNELS } from "@/shared/constants/realtimeChannels";
+import { subscribeToOrders } from "@/features/orders/services/ordersService";
 import {
   useOrdersQuery,
   useOrderEmployeesQuery,
@@ -51,19 +50,11 @@ export default function OrdersRegistry({ addNotification }) {
   const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
-    const ordersSubscription = supabase
-      .channel(REALTIME_CHANNELS.ORDERS)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
-        }
-      )
-      .subscribe();
-
+    const channel = subscribeToOrders(() => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    });
     return () => {
-      ordersSubscription.unsubscribe();
+      channel.unsubscribe();
     };
   }, [queryClient]);
 

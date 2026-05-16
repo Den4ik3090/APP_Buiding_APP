@@ -29,7 +29,11 @@ Four sequenced phases eliminate the highest-risk production issues first (silent
   2. A runtime error thrown in any React component (or an unhandled promise rejection) appears in the Sentry dashboard within seconds
   3. Opening OrdersPage, PermitsPage, or PrescriptionsPage triggers no direct supabase import in the registry JSX files — all data flows through the feature service layer
   4. The additional-trainings xlsx export produces a valid .xlsx file after the migration to ExcelJS — xlsx 0.18.5 is gone from package.json
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 01-01-PLAN.md — is_dismissed fallback removal (PROD-01, PROD-02)
+- [ ] 01-02-PLAN.md — Sentry activation + DefinePlugin + ErrorBoundary wiring (PROD-03, PROD-04, PROD-05)
+- [ ] 01-03-PLAN.md — FSD registry refactor for orders/permits/prescriptions (PROD-06, PROD-07, PROD-08)
+- [ ] 01-04-PLAN.md — xlsx → ExcelJS migration (PROD-09, PROD-10)
 **UI hint**: no
 
 ### Scope

@@ -1,8 +1,11 @@
 import { supabase } from '@/shared/api/supabase';
 import type { Employee, AdditionalTraining } from '@/entities/employee';
 
-const FIELDS =
+// FIELDS_BASE: columns used for write-back selects after insert/update/retrain.
+// FIELDS: full read columns including is_dismissed + dismissed_at (column required in DB).
+const FIELDS_BASE =
   'id,name,profession,birth_date,training_date,responsible,comment,photo_url,organization,additional_trainings,created_at';
+const FIELDS = FIELDS_BASE + ',is_dismissed,dismissed_at';
 
 type DbRow = {
   id: string;
@@ -16,6 +19,8 @@ type DbRow = {
   organization?: string | null;
   additional_trainings?: AdditionalTraining[] | null;
   created_at?: string | null;
+  is_dismissed?: boolean | null;
+  dismissed_at?: string | null;
 };
 
 // Extracts the storage object path from any URL format (public URL, signed URL, or relative path).
@@ -53,6 +58,8 @@ function formatDataForApp(data: DbRow[]): Employee[] {
     organization: emp.organization ?? '',
     additionalTrainings: emp.additional_trainings ?? [],
     createdAt: emp.created_at ?? null,
+    isDismissed: emp.is_dismissed ?? false,
+    dismissedAt: emp.dismissed_at ?? null,
   }));
 }
 
@@ -97,36 +104,69 @@ export async function getEmployeePhotoUrl(path: string): Promise<string | null> 
 }
 
 export async function fetchEmployees(): Promise<Employee[]> {
-  const fetching = supabase
-    .from('employees')
-    .select(FIELDS)
-    .order('name', { ascending: true });
-
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('timeout')), 30000)
   );
 
-  const { data, error } = await Promise.race([fetching, timeout]);
+  const primary = supabase
+    .from('employees')
+    .select(FIELDS)
+    .eq('is_dismissed', false)
+    .order('name', { ascending: true });
+
+  const primaryResult = await Promise.race([primary, timeout]);
+
+  if (primaryResult.error) throw primaryResult.error;
+  return resolvePhotoUrls(formatDataForApp((primaryResult.data ?? []) as unknown as DbRow[]));
+}
+
+export async function fetchDismissedEmployees(): Promise<Employee[]> {
+  const { data, error } = await supabase
+    .from('employees')
+    .select(FIELDS)
+    .eq('is_dismissed', true)
+    .order('dismissed_at', { ascending: false });
   if (error) throw error;
-  const employees = formatDataForApp(data ?? []);
-  return resolvePhotoUrls(employees);
+  return resolvePhotoUrls(formatDataForApp((data ?? []) as unknown as DbRow[]));
+}
+
+export async function dismissEmployee(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('employees')
+    .update({ is_dismissed: true, dismissed_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function restoreEmployee(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('employees')
+    .update({ is_dismissed: false, dismissed_at: null })
+    .eq('id', id);
+  if (error) throw error;
 }
 
 export async function fetchOrganizations(): Promise<string[]> {
-  const { data, error } = await supabase.from('employees').select('organization');
-  if (error || !data) return [];
-  const unique = [...new Set(data.map((i: { organization: unknown }) => i.organization).filter(Boolean))];
-  return (unique as string[]).sort();
+  const toNames = (rows: { organization: unknown }[]) =>
+    [...new Set(rows.map((i) => i.organization).filter(Boolean))].sort() as string[];
+
+  const { data, error } = await supabase
+    .from('employees')
+    .select('organization')
+    .eq('is_dismissed', false);
+
+  if (error) throw new Error(error.message);
+  return toNames(data ?? []);
 }
 
 export async function createEmployee(formData: Employee): Promise<Employee> {
   const { data, error } = await supabase
     .from('employees')
     .insert([mapFormToDb(formData)])
-    .select(FIELDS)
+    .select(FIELDS_BASE)
     .single();
   if (error) throw error;
-  return resolvePhotoUrls(formatDataForApp([data])).then((r) => r[0]);
+  return resolvePhotoUrls(formatDataForApp([data as DbRow])).then((r) => r[0]);
 }
 
 export async function updateEmployee(formData: Employee): Promise<Employee> {
@@ -134,10 +174,10 @@ export async function updateEmployee(formData: Employee): Promise<Employee> {
     .from('employees')
     .update(mapFormToDb(formData))
     .eq('id', formData.id)
-    .select(FIELDS)
+    .select(FIELDS_BASE)
     .single();
   if (error) throw error;
-  return resolvePhotoUrls(formatDataForApp([data])).then((r) => r[0]);
+  return resolvePhotoUrls(formatDataForApp([data as DbRow])).then((r) => r[0]);
 }
 
 export async function deleteEmployee(id: string): Promise<void> {
@@ -151,10 +191,10 @@ export async function retrainEmployee(id: string): Promise<Employee> {
     .from('employees')
     .update({ training_date: today })
     .eq('id', id)
-    .select(FIELDS)
+    .select(FIELDS_BASE)
     .single();
   if (error) throw error;
-  return resolvePhotoUrls(formatDataForApp([data])).then((r) => r[0]);
+  return resolvePhotoUrls(formatDataForApp([data as DbRow])).then((r) => r[0]);
 }
 
 export async function uploadEmployeePhoto(file: File): Promise<string> {

@@ -1,41 +1,19 @@
 import React, { useState, useMemo } from "react";
 import {
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CCardTitle,
-  CRow,
-  CCol,
-  CFormInput,
-  CFormSelect,
-  CButton,
-  CBadge,
-  CTable,
-  CTableHead,
-  CTableRow,
-  CTableHeaderCell,
-  CTableDataCell,
-  CTableBody,
-  CSpinner,
-  CTabs,
-  CTabList,
-  CTab,
-  CTabContent,
-  CTabPanel,
-} from "@coreui/react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  BarElement,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   Legend,
-  Title,
-} from "chart.js";
-import { Bar, Line, Doughnut } from "react-chartjs-2";
+  ResponsiveContainer,
+} from "recharts";
 import {
   BarChart3,
   GraduationCap,
@@ -44,24 +22,10 @@ import {
   Users,
   Filter,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { ADDITIONAL_TRAINING_TYPES } from "@/entities/employee";
 import { isTrainingExpired } from "@/entities/employee";
 import type { Employee, AdditionalTraining } from "@/entities/employee";
 import "./AdditionalTrainingsManager.css";
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  BarElement,
-  Tooltip,
-  Legend,
-  Title
-);
 
 // AdditionalTraining has [key: string]: unknown — this alias surfaces the known runtime fields
 type TrainingData = AdditionalTraining & {
@@ -112,6 +76,20 @@ interface ByMonthItem {
 interface AdditionalTrainingsManagerProps {
   employees?: Employee[];
   loading?: boolean;
+}
+
+const PIE_COLORS = ["#10b981", "#ef4444"];
+
+function riskColor(expired: number): string {
+  if (expired > 2) return "#ef4444";
+  if (expired > 0) return "#f59e0b";
+  return "#10b981";
+}
+
+function riskLabel(expired: number): string {
+  if (expired > 2) return "Высокий";
+  if (expired > 0) return "Средний";
+  return "Низкий";
 }
 
 export default function AdditionalTrainingsManager({
@@ -279,99 +257,53 @@ export default function AdditionalTrainingsManager({
     return Array.from(types).sort();
   }, [employees]);
 
-  const trainingsByTypeChart = {
-    labels: analytics.byType.slice(0, 8).map((item) => item.label),
-    datasets: [
-      {
-        label: "Количество обучений",
-        data: analytics.byType.slice(0, 8).map((item) => item.value),
-        backgroundColor: "#3b82f6",
-        borderRadius: 8,
-      },
-    ],
-  };
-
-  const statusChart = {
-    labels: ["Действительные", "Просроченные"],
-    datasets: [
-      {
-        data: [analytics.valid, analytics.expired],
-        backgroundColor: ["#10b981", "#ef4444"],
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const monthlyTrendChart = {
-    labels: analytics.byMonth.map((item) => item.label),
-    datasets: [
-      {
-        label: "Обучения по месяцам",
-        data: analytics.byMonth.map((item) => item.value),
-        borderColor: "#8b5cf6",
-        backgroundColor: "rgba(139, 92, 246, 0.15)",
-        fill: true,
-        tension: 0.35,
-      },
-    ],
-  };
-
-  const topRiskChart = {
-    labels: analytics.byEmployee.slice(0, 8).map((item) => item.employeeName),
-    datasets: [
-      {
-        label: "Просроченные обучения",
-        data: analytics.byEmployee.slice(0, 8).map((item) => item.expired),
-        backgroundColor: "#f97316",
-        borderRadius: 8,
-      },
-    ],
-  };
-
-  const handleExportExcel = () => {
-    const rows = analytics.filtered.map((t) => ({
-      "ФИО сотрудника": t.employeeName,
-      Организация: t.organization,
-      Профессия: t.profession,
-      "Тип обучения": t.type,
-      "Дата получения": t.dateReceived
-        ? new Date(t.dateReceived).toLocaleDateString("ru-RU")
-        : "—",
-      "Срок действия (мес.)": t.expiryMonths || "—",
-      Часы: t.hours || "—",
-      Статус: t.expired ? "Просрочено" : "Действительно",
-      Сертификат: t.certificate || "",
-    }));
-
-    if (!rows.length) {
+  const handleExportExcel = async () => {
+    if (!analytics.filtered.length) {
       setExportError("Нет данных для экспорта");
       return;
     }
 
     setExportError(null);
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    worksheet["!cols"] = [
-      { wch: 28 },
-      { wch: 22 },
-      { wch: 22 },
-      { wch: 30 },
-      { wch: 18 },
-      { wch: 20 },
-      { wch: 12 },
-      { wch: 18 },
-      { wch: 40 },
+    const ExcelJS = await import("exceljs");
+
+    const workbook = new ExcelJS.default.Workbook();
+    const worksheet = workbook.addWorksheet("Обучения");
+
+    // Headers + widths in one declaration. Width numbers preserved from the
+    // previous xlsx wch values (28, 22, 22, 30, 18, 20, 12, 18, 40).
+    worksheet.columns = [
+      { header: "ФИО сотрудника",      key: "name",   width: 28 },
+      { header: "Организация",          key: "org",    width: 22 },
+      { header: "Профессия",            key: "prof",   width: 22 },
+      { header: "Тип обучения",         key: "type",   width: 30 },
+      { header: "Дата получения",       key: "date",   width: 18 },
+      { header: "Срок действия (мес.)", key: "expiry", width: 20 },
+      { header: "Часы",                 key: "hours",  width: 12 },
+      { header: "Статус",               key: "status", width: 18 },
+      { header: "Сертификат",           key: "cert",   width: 40 },
     ];
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Обучения");
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
+    analytics.filtered.forEach((t) => {
+      worksheet.addRow({
+        name:   t.employeeName,
+        org:    t.organization,
+        prof:   t.profession,
+        type:   t.type,
+        date:   t.dateReceived
+          ? new Date(t.dateReceived).toLocaleDateString("ru-RU")
+          : "—",
+        expiry: t.expiryMonths || "—",
+        hours:  t.hours || "—",
+        status: t.expired ? "Просрочено" : "Действительно",
+        cert:   t.certificate || "",
+      });
     });
 
-    const blob = new Blob([excelBuffer], {
+    // writeBuffer is async — handleExportExcel is already async, no signature change.
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    const blob = new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
     });
 
@@ -381,480 +313,392 @@ export default function AdditionalTrainingsManager({
 
   if (loading) {
     return (
-      <CCard className="mb-4">
-        <CCardBody>
-          <CRow className="g-3">
-            {[...Array(4)].map((_, i) => (
-              <CCol lg={3} key={i}>
-                <div className="p-4 bg-light rounded">
-                  <CSpinner />
-                </div>
-              </CCol>
-            ))}
-          </CRow>
-        </CCardBody>
-      </CCard>
+      <div className="trainings-manager">
+        <div className="stats-grid">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="stat-card" style={{ borderLeftColor: "#94a3b8" }}>
+              <div className="stat-icon">
+                <div className="spinner-border spinner-border-sm text-secondary" role="status" />
+              </div>
+              <div className="stat-content">
+                <div className="stat-value">—</div>
+                <div className="stat-title">Загрузка...</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
 
+  const byTypeData = analytics.byType.slice(0, 8);
+  const byMonthData = analytics.byMonth;
+  const statusData = [
+    { name: "Действительные", value: analytics.valid },
+    { name: "Просроченные", value: analytics.expired },
+  ];
+  const topRiskData = analytics.byEmployee
+    .slice(0, 8)
+    .map((e) => ({ name: e.employeeName, value: e.expired }));
+
   return (
-    <div className="c-app">
-      <CCard className="mb-4">
-        <CCardHeader className="d-flex align-items-center">
-          <BarChart3 size={24} className="me-2" />
-          <CCardTitle className="mb-0">
-            Дополнительные обучения
-          </CCardTitle>
-        </CCardHeader>
-        <CCardBody>
-          <CRow className="g-4">
-            <CCol lg={3}>
-              <CCard color="info" className="text-white">
-                <CCardBody className="p-4">
-                  <div className="d-flex align-items-center">
-                    <GraduationCap size={28} className="me-3" />
-                    <div>
-                      <div className="fs-4 fw-bold">{analytics.total}</div>
-                      <div className="text-white-50">Всего обучений</div>
-                    </div>
-                  </div>
-                </CCardBody>
-              </CCard>
-            </CCol>
-
-            <CCol lg={3}>
-              <CCard color="success" className="text-white">
-                <CCardBody className="p-4">
-                  <div className="d-flex align-items-center">
-                    <ShieldCheck size={28} className="me-3" />
-                    <div>
-                      <div className="fs-4 fw-bold">{analytics.valid}</div>
-                      <div className="text-white-50">Действительные</div>
-                    </div>
-                  </div>
-                </CCardBody>
-              </CCard>
-            </CCol>
-
-            <CCol lg={3}>
-              <CCard color="danger" className="text-white">
-                <CCardBody className="p-4">
-                  <div className="d-flex align-items-center">
-                    <AlertTriangle size={28} className="me-3" />
-                    <div>
-                      <div className="fs-4 fw-bold">{analytics.expired}</div>
-                      <div className="text-white-50">Просроченные</div>
-                    </div>
-                  </div>
-                </CCardBody>
-              </CCard>
-            </CCol>
-
-            <CCol lg={3}>
-              <CCard color="warning" className="text-white">
-                <CCardBody className="p-4">
-                  <div className="d-flex align-items-center">
-                    <Users size={28} className="me-3" />
-                    <div>
-                      <div className="fs-4 fw-bold">{analytics.compliance}%</div>
-                      <div className="text-white-50">Compliance</div>
-                    </div>
-                  </div>
-                </CCardBody>
-              </CCard>
-            </CCol>
-          </CRow>
-        </CCardBody>
-      </CCard>
-
-      <CCard className="mb-4">
-        <CCardHeader className="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div className="d-flex gap-2 flex-wrap">
-            <CFormInput
-              type="text"
-              placeholder="🔍 Поиск по ФИО сотрудника..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-auto"
-            />
-            <CFormSelect
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-auto"
-            >
-              <option value="all">Все типы</option>
-              {uniqueTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </CFormSelect>
-            <CFormSelect
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-auto"
-            >
-              <option value="all">Все статусы</option>
-              <option value="valid">✅ Действительные</option>
-              <option value="expired">⚠️ Просроченные</option>
-            </CFormSelect>
+    <div className="trainings-manager">
+      {/* ── Stat cards ──────────────────────────────────────── */}
+      <div className="trainings-stats">
+        <div className="stats-grid">
+          <div className="stat-card" style={{ borderLeftColor: "#3b82f6" }}>
+            <div className="stat-icon"><GraduationCap size={32} color="#3b82f6" /></div>
+            <div className="stat-content">
+              <div className="stat-title">Всего обучений</div>
+              <div className="stat-value" style={{ color: "#3b82f6" }}>{analytics.total}</div>
+            </div>
           </div>
 
-          <div className="d-flex gap-2">
-            <CButton color="secondary" variant="outline" onClick={resetFilters}>
-              <Filter size={16} className="me-1" />
-              Сбросить
-            </CButton>
-            <CButton color="primary" onClick={handleExportExcel}>
-              Экспорт Excel
-            </CButton>
-            {exportError && (
-              <span style={{ color: '#dc2626', fontSize: 13, alignSelf: 'center' }}>
-                ⚠️ {exportError}
-              </span>
-            )}
+          <div className="stat-card" style={{ borderLeftColor: "#10b981" }}>
+            <div className="stat-icon"><ShieldCheck size={32} color="#10b981" /></div>
+            <div className="stat-content">
+              <div className="stat-title">Действительные</div>
+              <div className="stat-value" style={{ color: "#10b981" }}>{analytics.valid}</div>
+            </div>
           </div>
-        </CCardHeader>
-      </CCard>
 
-      <CTabs activeItemKey={activeTab} onChange={(key) => setActiveTab(key as "list" | "analytics")}>
-        <CTabList variant="tabs">
-          <CTab itemKey="list">
-            Список ({analytics.groupedEmployees.length})
-          </CTab>
-          <CTab itemKey="analytics">
-            Аналитика ({analytics.total})
-          </CTab>
-        </CTabList>
+          <div className="stat-card" style={{ borderLeftColor: "#ef4444" }}>
+            <div className="stat-icon"><AlertTriangle size={32} color="#ef4444" /></div>
+            <div className="stat-content">
+              <div className="stat-title">Просроченные</div>
+              <div className="stat-value" style={{ color: "#ef4444" }}>{analytics.expired}</div>
+            </div>
+          </div>
 
-        <CTabContent>
-          <CTabPanel itemKey="list">
-            <CCard className="mb-0">
-              <CCardHeader>
-                <CCardTitle className="mb-0">
-                  Сотрудники с дополнительными обучениями
-                </CCardTitle>
-              </CCardHeader>
-              <CCardBody className="pt-0">
-                {analytics.groupedEmployees.length === 0 ? (
-                  <div className="text-center py-5">
-                    <GraduationCap
-                      size={64}
-                      className="text-muted mb-3 opacity-50"
-                    />
-                    <h5 className="text-muted">Нет данных</h5>
-                    <p className="text-muted mb-0">
-                      Попробуйте изменить фильтры или добавьте сотрудников с
-                      обучением
-                    </p>
-                  </div>
-                ) : (
-                  <div className="table-responsive">
-                    <CTable responsive hover align="middle">
-                      <CTableHead color="light">
-                        <CTableRow>
-                          <CTableHeaderCell style={{ width: "56px" }} />
-                          <CTableHeaderCell>Сотрудник</CTableHeaderCell>
-                          <CTableHeaderCell>Организация</CTableHeaderCell>
-                          <CTableHeaderCell>Профессия</CTableHeaderCell>
-                          <CTableHeaderCell>Всего</CTableHeaderCell>
-                          <CTableHeaderCell>Действ.</CTableHeaderCell>
-                          <CTableHeaderCell>Проср.</CTableHeaderCell>
-                          <CTableHeaderCell>Риск</CTableHeaderCell>
-                        </CTableRow>
-                      </CTableHead>
+          <div className="stat-card" style={{ borderLeftColor: "#f59e0b" }}>
+            <div className="stat-icon"><Users size={32} color="#f59e0b" /></div>
+            <div className="stat-content">
+              <div className="stat-title">Compliance</div>
+              <div className="stat-value" style={{ color: "#f59e0b" }}>{analytics.compliance}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                      <CTableBody>
-                        {analytics.groupedEmployees.map((emp) => (
-                          <React.Fragment key={emp.employeeId}>
-                            <CTableRow
-                              onClick={() => toggleRow(emp.employeeId)}
-                              style={{ cursor: "pointer" }}
-                              className={
-                                expandedRows[emp.employeeId]
-                                  ? "table-active"
-                                  : ""
-                              }
-                            >
-                              <CTableDataCell className="text-center fw-bold">
-                                {expandedRows[emp.employeeId] ? "▼" : "▶"}
-                              </CTableDataCell>
+      {/* ── Filters ─────────────────────────────────────────── */}
+      <div className="trainings-filters">
+        <input
+          type="text"
+          className="form-input search-input"
+          placeholder="🔍 Поиск по ФИО сотрудника..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <select
+          className="form-input status-filter"
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+        >
+          <option value="all">Все типы</option>
+          {uniqueTypes.map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
+        <select
+          className="form-input status-filter"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+        >
+          <option value="all">Все статусы</option>
+          <option value="valid">✅ Действительные</option>
+          <option value="expired">⚠️ Просроченные</option>
+        </select>
 
-                              <CTableDataCell className="fw-semibold">
-                                {emp.employeeName}
-                              </CTableDataCell>
+        <div style={{ display: "flex", gap: 8, marginLeft: "auto", alignItems: "center", flexWrap: "wrap" }}>
+          <button className="btn-cancel" onClick={resetFilters} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Filter size={16} />
+            Сбросить
+          </button>
+          <button className="btn-save" onClick={handleExportExcel}>
+            Экспорт Excel
+          </button>
+          {exportError && (
+            <span style={{ color: "#dc2626", fontSize: 13 }}>⚠️ {exportError}</span>
+          )}
+        </div>
+      </div>
 
-                              <CTableDataCell>{emp.organization}</CTableDataCell>
-                              <CTableDataCell>{emp.profession}</CTableDataCell>
-                              <CTableDataCell>{emp.total}</CTableDataCell>
+      {/* ── Tabs ────────────────────────────────────────────── */}
+      <div className="trainings-content">
+        <div style={{ display: "flex", gap: 4, borderBottom: "2px solid #e2e8f0", marginBottom: 20 }}>
+          {(["list", "analytics"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: "10px 20px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 14,
+                color: activeTab === tab ? "#3b82f6" : "#64748b",
+                borderBottom: activeTab === tab ? "2px solid #3b82f6" : "2px solid transparent",
+                marginBottom: -2,
+                transition: "color 0.2s",
+              }}
+            >
+              {tab === "list"
+                ? `Список (${analytics.groupedEmployees.length})`
+                : `Аналитика (${analytics.total})`}
+            </button>
+          ))}
+        </div>
 
-                              <CTableDataCell>
-                                <CBadge color="success" shape="rounded-pill">
-                                  {emp.valid}
-                                </CBadge>
-                              </CTableDataCell>
+        {/* ── List tab ──────────────────────────────────────── */}
+        {activeTab === "list" && (
+          <>
+            <h3 className="trainings-title">Сотрудники с дополнительными обучениями</h3>
 
-                              <CTableDataCell>
-                                <CBadge
-                                  color={
-                                    emp.expired > 0 ? "danger" : "secondary"
-                                  }
-                                  shape="rounded-pill"
+            {analytics.groupedEmployees.length === 0 ? (
+              <div className="empty-state">
+                <GraduationCap size={64} style={{ marginBottom: 12, opacity: 0.3 }} />
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>Нет данных</div>
+                <div>Попробуйте изменить фильтры или добавьте сотрудников с обучением</div>
+              </div>
+            ) : (
+              <div className="employees-list">
+                {analytics.groupedEmployees.map((emp) => (
+                  <div key={emp.employeeId} className="employee-card">
+                    <div
+                      className="employee-header"
+                      onClick={() => toggleRow(emp.employeeId)}
+                    >
+                      <div className="employee-info">
+                        <h4 className="employee-name">{emp.employeeName}</h4>
+                        <div className="employee-meta">
+                          <span className="meta-item">{emp.organization}</span>
+                          <span className="meta-divider">·</span>
+                          <span className="meta-item">{emp.profession}</span>
+                        </div>
+                      </div>
+
+                      <div className="employee-badges">
+                        <span className="badge badge-total">{emp.total} всего</span>
+                        <span className="badge badge-valid">{emp.valid} действ.</span>
+                        {emp.expired > 0 && (
+                          <span className="badge badge-expired-small">{emp.expired} проср.</span>
+                        )}
+                        <span
+                          className="badge"
+                          style={{
+                            background: emp.expired > 2 ? "#fee2e2" : emp.expired > 0 ? "#fef3c7" : "#dcfce7",
+                            color: riskColor(emp.expired),
+                          }}
+                        >
+                          {riskLabel(emp.expired)}
+                        </span>
+                      </div>
+
+                      <button className="expand-btn">
+                        {expandedRows[emp.employeeId] ? "▼" : "▶"}
+                      </button>
+                    </div>
+
+                    {expandedRows[emp.employeeId] && (
+                      <div className="trainings-list">
+                        {emp.trainings.map((training, idx) => (
+                          <div
+                            key={`${emp.employeeId}-${idx}`}
+                            className={`training-item ${training.expired ? "expired" : "valid"}`}
+                          >
+                            <div className="training-header">
+                              <span className="training-status-icon">
+                                {training.expired ? "⚠️" : "✅"}
+                              </span>
+                              <span className="training-type">{training.type}</span>
+                              <button className="btn-edit-training" title="Редактировать">
+                                ✏️
+                              </button>
+                              {training.certificate && (
+                                <a
+                                  className="certificate-link"
+                                  href={training.certificate}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                 >
-                                  {emp.expired}
-                                </CBadge>
-                              </CTableDataCell>
+                                  📄 Сертификат
+                                </a>
+                              )}
+                            </div>
 
-                              <CTableDataCell>
-                                <CBadge
-                                  color={
-                                    emp.expired > 2
-                                      ? "danger"
-                                      : emp.expired > 0
-                                        ? "warning"
-                                        : "success"
-                                  }
-                                >
-                                  {emp.expired > 2
-                                    ? "Высокий"
-                                    : emp.expired > 0
-                                      ? "Средний"
-                                      : "Низкий"}
-                                </CBadge>
-                              </CTableDataCell>
-                            </CTableRow>
-
-                            {expandedRows[emp.employeeId] && (
-                              <CTableRow>
-                                <CTableDataCell colSpan={8} className="bg-light">
-                                  <div className="p-3">
-                                    <div className="fw-semibold mb-3">
-                                      Обучения сотрудника: {emp.employeeName}
-                                    </div>
-
-                                    <div className="d-flex flex-column gap-3">
-                                      {emp.trainings.map((training, idx) => (
-                                        <div
-                                          key={`${emp.employeeId}-${idx}`}
-                                          className="border rounded p-3 bg-white"
-                                        >
-                                          <div className="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                                            <div className="fw-semibold">
-                                              {training.type}
-                                            </div>
-                                            <CBadge
-                                              color={
-                                                training.expired
-                                                  ? "danger"
-                                                  : "success"
-                                              }
-                                              shape="rounded-pill"
-                                            >
-                                              {training.expired
-                                                ? "Просрочено"
-                                                : "Действительно"}
-                                            </CBadge>
-                                          </div>
-
-                                          <CRow className="g-3">
-                                            <CCol md={3}>
-                                              <div className="text-muted small">
-                                                Дата получения
-                                              </div>
-                                              <div>
-                                                {training.dateReceived
-                                                  ? new Date(
-                                                    training.dateReceived
-                                                  ).toLocaleDateString(
-                                                    "ru-RU"
-                                                  )
-                                                  : "—"}
-                                              </div>
-                                            </CCol>
-
-                                            <CCol md={2}>
-                                              <div className="text-muted small">
-                                                Срок
-                                              </div>
-                                              <div>
-                                                {training.expiryMonths || "—"}{" "}
-                                                мес.
-                                              </div>
-                                            </CCol>
-
-                                            <CCol md={2}>
-                                              <div className="text-muted small">
-                                                Часы
-                                              </div>
-                                              <div>{training.hours || "—"}</div>
-                                            </CCol>
-
-                                            <CCol md={5}>
-                                              <div className="text-muted small">
-                                                Действия
-                                              </div>
-                                              <div className="d-flex gap-2 flex-wrap">
-                                                <CButton
-                                                  size="sm"
-                                                  color="primary"
-                                                  variant="ghost"
-                                                >
-                                                  ✏️ Редактировать
-                                                </CButton>
-
-                                                {training.certificate && (
-                                                  <CButton
-                                                    size="sm"
-                                                    color="info"
-                                                    variant="ghost"
-                                                    href={training.certificate}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                  >
-                                                    📄 Сертификат
-                                                  </CButton>
-                                                )}
-                                              </div>
-                                            </CCol>
-                                          </CRow>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </CTableDataCell>
-                              </CTableRow>
-                            )}
-                          </React.Fragment>
+                            <div className="training-details">
+                              <div className="detail-row">
+                                <span className="detail-label">Дата получения</span>
+                                <span className="detail-value">
+                                  {training.dateReceived
+                                    ? new Date(training.dateReceived).toLocaleDateString("ru-RU")
+                                    : "—"}
+                                </span>
+                              </div>
+                              <div className="detail-row">
+                                <span className="detail-label">Срок действия</span>
+                                <span className="detail-value">
+                                  {training.expiryMonths ? `${training.expiryMonths} мес.` : "—"}
+                                </span>
+                              </div>
+                              {training.hours && (
+                                <div className="detail-row">
+                                  <span className="detail-label">Часы</span>
+                                  <span className="detail-value">{training.hours}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         ))}
-                      </CTableBody>
-                    </CTable>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Analytics tab ─────────────────────────────────── */}
+        {activeTab === "analytics" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
+              {/* Line chart — monthly trend */}
+              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 20 }}>
+                <div style={{ fontWeight: 700, marginBottom: 16, color: "#1e293b" }}>
+                  Динамика обучений
+                </div>
+                {byMonthData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={byMonthData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        name="Обучений"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="empty-state" style={{ padding: "40px 0" }}>
+                    Нет данных для графика
                   </div>
                 )}
-              </CCardBody>
-            </CCard>
-          </CTabPanel>
+              </div>
 
-          <CTabPanel itemKey="analytics">
-            <div className="pt-3">
-              <CRow className="g-4 mb-4">
-                <CCol lg={8}>
-                  <CCard>
-                    <CCardHeader>
-                      <CCardTitle className="mb-0">
-                        Динамика обучений
-                      </CCardTitle>
-                    </CCardHeader>
-                    <CCardBody>
-                      {analytics.byMonth.length > 0 ? (
-                        <Line data={monthlyTrendChart} />
-                      ) : (
-                        <div className="text-center py-5 text-muted">
-                          Нет данных для графика
-                        </div>
-                      )}
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-
-                <CCol lg={4}>
-                  <CCard>
-                    <CCardHeader>
-                      <CCardTitle className="mb-0">Статусы</CCardTitle>
-                    </CCardHeader>
-                    <CCardBody>
-                      <Doughnut data={statusChart} />
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-              </CRow>
-
-              <CRow className="g-4 mb-4">
-                <CCol lg={7}>
-                  <CCard>
-                    <CCardHeader>
-                      <CCardTitle className="mb-0">
-                        Обучения по типам
-                      </CCardTitle>
-                    </CCardHeader>
-                    <CCardBody>
-                      <Bar data={trainingsByTypeChart} />
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-
-                <CCol lg={5}>
-                  <CCard>
-                    <CCardHeader>
-                      <CCardTitle className="mb-0">
-                        Топ сотрудников по риску
-                      </CCardTitle>
-                    </CCardHeader>
-                    <CCardBody>
-                      <Bar data={topRiskChart} />
-                    </CCardBody>
-                  </CCard>
-                </CCol>
-              </CRow>
-
-              <CCard>
-                <CCardHeader>
-                  <CCardTitle className="mb-0">
-                    Сводка по сотрудникам
-                  </CCardTitle>
-                </CCardHeader>
-                <CCardBody>
-                  <div className="table-responsive">
-                    <table className="table table-hover align-middle">
-                      <thead>
-                        <tr>
-                          <th>Сотрудник</th>
-                          <th>Профессия</th>
-                          <th>Всего</th>
-                          <th>Действительно</th>
-                          <th>Просрочено</th>
-                          <th>Риск</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {analytics.byEmployee.map((emp, idx) => (
-                          <tr key={`${emp.employeeId}-${idx}`}>
-                            <td>{emp.employeeName}</td>
-                            <td>{emp.profession}</td>
-                            <td>{emp.total}</td>
-                            <td className="text-success fw-semibold">
-                              {emp.valid}
-                            </td>
-                            <td className="text-danger fw-semibold">
-                              {emp.expired}
-                            </td>
-                            <td>
-                              <CBadge
-                                color={
-                                  emp.expired > 2
-                                    ? "danger"
-                                    : emp.expired > 0
-                                      ? "warning"
-                                      : "success"
-                                }
-                              >
-                                {emp.expired > 2
-                                  ? "Высокий"
-                                  : emp.expired > 0
-                                    ? "Средний"
-                                    : "Низкий"}
-                              </CBadge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CCardBody>
-              </CCard>
+              {/* Pie chart — status */}
+              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 20 }}>
+                <div style={{ fontWeight: 700, marginBottom: 16, color: "#1e293b" }}>
+                  Статусы
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      dataKey="value"
+                      nameKey="name"
+                    >
+                      {statusData.map((_, index) => (
+                        <Cell key={index} fill={PIE_COLORS[index]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </CTabPanel>
-        </CTabContent>
-      </CTabs>
+
+            <div style={{ display: "grid", gridTemplateColumns: "3fr 2fr", gap: 24 }}>
+              {/* Bar chart — by type */}
+              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 20 }}>
+                <div style={{ fontWeight: 700, marginBottom: 16, color: "#1e293b" }}>
+                  Обучения по типам
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={byTypeData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#3b82f6" name="Количество" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Bar chart — top risk */}
+              <div style={{ background: "#f8fafc", borderRadius: 12, padding: 20 }}>
+                <div style={{ fontWeight: 700, marginBottom: 16, color: "#1e293b" }}>
+                  Топ сотрудников по риску
+                </div>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={topRiskData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#f97316" name="Просроченных" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Summary table */}
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: 20 }}>
+              <div style={{ fontWeight: 700, marginBottom: 16, color: "#1e293b" }}>
+                Сводка по сотрудникам
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table className="table table-hover align-middle" style={{ marginBottom: 0 }}>
+                  <thead>
+                    <tr>
+                      <th>Сотрудник</th>
+                      <th>Профессия</th>
+                      <th>Всего</th>
+                      <th>Действительно</th>
+                      <th>Просрочено</th>
+                      <th>Риск</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analytics.byEmployee.map((emp, idx) => (
+                      <tr key={`${emp.employeeId}-${idx}`}>
+                        <td>{emp.employeeName}</td>
+                        <td>{emp.profession}</td>
+                        <td>{emp.total}</td>
+                        <td style={{ color: "#16a34a", fontWeight: 600 }}>{emp.valid}</td>
+                        <td style={{ color: "#dc2626", fontWeight: 600 }}>{emp.expired}</td>
+                        <td>
+                          <span
+                            className="badge"
+                            style={{
+                              background: emp.expired > 2 ? "#fee2e2" : emp.expired > 0 ? "#fef3c7" : "#dcfce7",
+                              color: riskColor(emp.expired),
+                            }}
+                          >
+                            {riskLabel(emp.expired)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

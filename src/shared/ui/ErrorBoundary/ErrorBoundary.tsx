@@ -27,6 +27,16 @@ export class ErrorBoundary extends React.Component<
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     console.error("[ErrorBoundary] Caught error:", error);
     console.error("[ErrorBoundary] Component stack:", info.componentStack);
+    // Forward to Sentry via dynamic import to keep shared/ui free of a static
+    // upward dependency on app/sentry.ts (FSD layering — shared/ has zero upward deps).
+    // The dynamic import is resolved at runtime; webpack splits it into a small chunk.
+    void import("@/app/sentry").then(({ captureSentryException }) => {
+      captureSentryException(error, {
+        componentStack: info.componentStack ?? "",
+      });
+    }).catch(() => {
+      // If the sentry chunk fails to load, do not crash the boundary itself.
+    });
   }
 
   private handleReload = () => {

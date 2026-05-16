@@ -72,6 +72,7 @@ module.exports = (env, argv) => {
       new webpack.DefinePlugin({
         "process.env.REACT_APP_SUPABASE_URL": JSON.stringify(process.env.REACT_APP_SUPABASE_URL),
         "process.env.REACT_APP_SUPABASE_KEY": JSON.stringify(process.env.REACT_APP_SUPABASE_KEY),
+        "process.env.REACT_APP_SENTRY_DSN": JSON.stringify(process.env.REACT_APP_SENTRY_DSN),
       }),
 
       new HtmlWebpackPlugin({
@@ -114,6 +115,12 @@ module.exports = (env, argv) => {
       splitChunks: isProduction ? {
         chunks: "all",
         cacheGroups: {
+          recharts: {
+            test: /[\\/]node_modules[\\/]recharts[\\/]/,
+            name: "recharts",
+            chunks: "all",
+            priority: 10,
+          },
           defaultVendors: {
             test: /[\\/]node_modules[\\/]/,
             name: "vendors",

@@ -31,7 +31,7 @@ Four sequenced phases eliminate the highest-risk production issues first (silent
   4. The additional-trainings xlsx export produces a valid .xlsx file after the migration to ExcelJS — xlsx 0.18.5 is gone from package.json
 **Plans**: 4 plans
 - [x] 01-01-PLAN.md — is_dismissed fallback removal (PROD-01, PROD-02)
-- [ ] 01-02-PLAN.md — Sentry activation + DefinePlugin + ErrorBoundary wiring (PROD-03, PROD-04, PROD-05)
+- [x] 01-02-PLAN.md — Sentry activation + DefinePlugin + ErrorBoundary wiring (PROD-03, PROD-04, PROD-05)
 - [ ] 01-03-PLAN.md — FSD registry refactor for orders/permits/prescriptions (PROD-06, PROD-07, PROD-08)
 - [ ] 01-04-PLAN.md — xlsx → ExcelJS migration (PROD-09, PROD-10)
 **UI hint**: no
@@ -202,7 +202,7 @@ Four sequenced phases eliminate the highest-risk production issues first (silent
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Production Safety | 1/4 | In Progress|  |
+| 1. Production Safety | 2/4 | In Progress|  |
 | 2. Type Safety | 0/TBD | Not started | - |
 | 3. Architecture Consistency | 0/TBD | Not started | - |
 | 4. Dependency Hygiene + CI | 0/TBD | Not started | - |

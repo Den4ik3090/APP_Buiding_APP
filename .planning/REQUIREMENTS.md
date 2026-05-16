@@ -12,9 +12,9 @@
 
 - [ ] **PROD-01**: The `is_dismissed` column exists in the `employees` Supabase table and `employeesService.ts` no longer uses the degraded fallback path
 - [ ] **PROD-02**: Production builds do not silently suppress `console.warn` for degraded-mode conditions — warning is either surfaced via Sentry or the fallback path is eliminated
-- [ ] **PROD-03**: `src/app/sentry.ts` initializes Sentry with a real DSN — `Sentry.init` is active, not commented out
-- [ ] **PROD-04**: Unhandled React errors caught by `ErrorBoundary` are reported to Sentry in production builds
-- [ ] **PROD-05**: Runtime JS errors (unhandled promise rejections, uncaught exceptions) are captured by Sentry in production
+- [x] **PROD-03**: `src/app/sentry.ts` initializes Sentry with a real DSN — `Sentry.init` is active, not commented out
+- [x] **PROD-04**: Unhandled React errors caught by `ErrorBoundary` are reported to Sentry in production builds
+- [x] **PROD-05**: Runtime JS errors (unhandled promise rejections, uncaught exceptions) are captured by Sentry in production
 - [ ] **PROD-06**: `OrdersRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `ordersService`
 - [ ] **PROD-07**: `PermitsRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `permitsService` (Realtime subscription included)
 - [ ] **PROD-08**: `PrescriptionsRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `prescriptionsService` (Realtime subscription included)
@@ -79,9 +79,9 @@
 |--------|-------|--------|
 | PROD-01 | Phase 1 | Pending |
 | PROD-02 | Phase 1 | Pending |
-| PROD-03 | Phase 1 | Pending |
-| PROD-04 | Phase 1 | Pending |
-| PROD-05 | Phase 1 | Pending |
+| PROD-03 | Phase 1 | Complete |
+| PROD-04 | Phase 1 | Complete |
+| PROD-05 | Phase 1 | Complete |
 | PROD-06 | Phase 1 | Pending |
 | PROD-07 | Phase 1 | Pending |
 | PROD-08 | Phase 1 | Pending |

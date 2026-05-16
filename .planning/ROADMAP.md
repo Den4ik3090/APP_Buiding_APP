@@ -11,7 +11,7 @@ Four sequenced phases eliminate the highest-risk production issues first (silent
 
 ## Phases
 
-- [ ] **Phase 1: Production Safety** — Eliminate silent degraded mode, activate Sentry error monitoring, move 3 registry JSX components to the services layer, replace xlsx with ExcelJS
+- [x] **Phase 1: Production Safety** — Eliminate silent degraded mode, activate Sentry error monitoring, move 3 registry JSX components to the services layer, replace xlsx with ExcelJS (completed 2026-05-16)
 - [ ] **Phase 2: Type Safety** — Convert 16 legacy .jsx files to strict .tsx, add unit/integration test coverage for 9 untested feature slices
 - [ ] **Phase 3: Architecture Consistency** — Migrate OrganizationManager to TanStack Query, add services/ layer to employee-retrain and additional-trainings skeletal slices
 - [ ] **Phase 4: Dependency Hygiene + CI** — Remove unused @coreui/* packages, audit framer-motion, add npm test to CI, document GitHub secrets, write Playwright E2E tests
@@ -32,8 +32,8 @@ Four sequenced phases eliminate the highest-risk production issues first (silent
 **Plans**: 4 plans
 - [x] 01-01-PLAN.md — is_dismissed fallback removal (PROD-01, PROD-02)
 - [x] 01-02-PLAN.md — Sentry activation + DefinePlugin + ErrorBoundary wiring (PROD-03, PROD-04, PROD-05)
-- [ ] 01-03-PLAN.md — FSD registry refactor for orders/permits/prescriptions (PROD-06, PROD-07, PROD-08)
-- [ ] 01-04-PLAN.md — xlsx → ExcelJS migration (PROD-09, PROD-10)
+- [x] 01-03-PLAN.md — FSD registry refactor for orders/permits/prescriptions (PROD-06, PROD-07, PROD-08)
+- [x] 01-04-PLAN.md — xlsx → ExcelJS migration (PROD-09, PROD-10)
 **UI hint**: no
 
 ### Scope
@@ -202,7 +202,7 @@ Four sequenced phases eliminate the highest-risk production issues first (silent
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Production Safety | 2/4 | In Progress|  |
+| 1. Production Safety | 4/4 | Complete   | 2026-05-16 |
 | 2. Type Safety | 0/TBD | Not started | - |
 | 3. Architecture Consistency | 0/TBD | Not started | - |
 | 4. Dependency Hygiene + CI | 0/TBD | Not started | - |

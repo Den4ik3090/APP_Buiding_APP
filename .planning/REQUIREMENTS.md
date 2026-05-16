@@ -15,9 +15,9 @@
 - [x] **PROD-03**: `src/app/sentry.ts` initializes Sentry with a real DSN — `Sentry.init` is active, not commented out
 - [x] **PROD-04**: Unhandled React errors caught by `ErrorBoundary` are reported to Sentry in production builds
 - [x] **PROD-05**: Runtime JS errors (unhandled promise rejections, uncaught exceptions) are captured by Sentry in production
-- [ ] **PROD-06**: `OrdersRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `ordersService`
-- [ ] **PROD-07**: `PermitsRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `permitsService` (Realtime subscription included)
-- [ ] **PROD-08**: `PrescriptionsRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `prescriptionsService` (Realtime subscription included)
+- [x] **PROD-06**: `OrdersRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `ordersService`
+- [x] **PROD-07**: `PermitsRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `permitsService` (Realtime subscription included)
+- [x] **PROD-08**: `PrescriptionsRegistry.jsx` no longer imports `supabase` directly — all Supabase calls route through `prescriptionsService` (Realtime subscription included)
 - [ ] **PROD-09**: The `xlsx` package is removed from `package.json` and replaced with `exceljs`
 - [ ] **PROD-10**: The `additional-trainings` xlsx export continues to work correctly after the migration to ExcelJS
 
@@ -82,9 +82,9 @@
 | PROD-03 | Phase 1 | Complete |
 | PROD-04 | Phase 1 | Complete |
 | PROD-05 | Phase 1 | Complete |
-| PROD-06 | Phase 1 | Pending |
-| PROD-07 | Phase 1 | Pending |
-| PROD-08 | Phase 1 | Pending |
+| PROD-06 | Phase 1 | Complete |
+| PROD-07 | Phase 1 | Complete |
+| PROD-08 | Phase 1 | Complete |
 | PROD-09 | Phase 1 | Pending |
 | PROD-10 | Phase 1 | Pending |
 | TYPE-01 | Phase 2 | Pending |

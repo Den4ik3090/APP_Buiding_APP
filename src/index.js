@@ -6,7 +6,6 @@ import { NotificationProvider } from "./app/providers/NotificationProvider";
 import { initSentry } from "./app/sentry";
 
 initSentry();
-import '@coreui/coreui/dist/css/coreui.min.css'
 import "./auth/auth.css";
 import "./index.css";
 import "./shared/styles/modal.css";

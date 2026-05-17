@@ -15,6 +15,7 @@ interface VirtualEmployeeTableProps {
   onRetrain: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (emp: Employee) => void;
+  onDismiss: (id: string) => void;
   addNotification: (message: string, type: NotificationType, duration?: number) => void;
 }
 
@@ -25,11 +26,13 @@ function VirtualEmployeeTable({
   onRetrain,
   onDelete,
   onEdit,
+  onDismiss,
   addNotification,
 }: VirtualEmployeeTableProps) {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [responsibleFilter, setResponsibleFilter] = useState('all');
+  const [confirmDismissId, setConfirmDismissId] = useState<string | null>(null);
 
   const responsibles = useMemo(
     () => ['all', ...Array.from(new Set(employees.map((e) => e.responsible).filter(Boolean))).sort((a, b) => a.localeCompare(b))],
@@ -43,11 +46,17 @@ function VirtualEmployeeTable({
     }
     if (dateFrom) {
       const from = new Date(dateFrom).getTime();
-      result = result.filter((e) => new Date(e.trainingDate).getTime() >= from);
+      result = result.filter((e) => {
+        if (!e.trainingDate) return true;
+        return new Date(e.trainingDate).getTime() >= from;
+      });
     }
     if (dateTo) {
       const to = new Date(dateTo).getTime();
-      result = result.filter((e) => new Date(e.trainingDate).getTime() <= to);
+      result = result.filter((e) => {
+        if (!e.trainingDate) return true;
+        return new Date(e.trainingDate).getTime() <= to;
+      });
     }
     return result;
   }, [employees, responsibleFilter, dateFrom, dateTo]);
@@ -64,9 +73,8 @@ function VirtualEmployeeTable({
       return (
         <div style={style} {...ariaAttributes}>
           <div
-            className={`virtual-row ${isExpired ? "expired" : "valid"}${
-              additionalExpired ? " additional-expired" : ""
-            }`}
+            className={`virtual-row ${isExpired ? "expired" : "valid"}${additionalExpired ? " additional-expired" : ""
+              }`}
           >
             <div className="virtual-cell name">{emp?.name || "—"}</div>
             <div className="virtual-cell org">{emp?.organization || "—"}</div>
@@ -79,6 +87,33 @@ function VirtualEmployeeTable({
                 workerName={emp?.name}
                 addNotification={addNotification}
               />
+              {confirmDismissId === emp?.id ? (
+                <>
+                  <button
+                    className="btn-dismiss"
+                    onClick={() => { onDismiss(emp.id); setConfirmDismissId(null); }}
+                    type="button"
+                  >
+                    ✓ Уволить
+                  </button>
+                  <button
+                    className="btn-cancel"
+                    onClick={() => setConfirmDismissId(null)}
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="btn-dismiss"
+                  onClick={() => setConfirmDismissId(emp?.id ?? null)}
+                  type="button"
+                  title="Уволить сотрудника"
+                >
+                  Уволить
+                </button>
+              )}
               <button
                 className="btn-retrain"
                 onClick={() => onRetrain(emp.id)}
@@ -111,7 +146,7 @@ function VirtualEmployeeTable({
         </div>
       );
     },
-    [filteredEmployees, getDaysDifference, onDelete, onEdit, onRetrain, addNotification]
+    [filteredEmployees, getDaysDifference, onDelete, onEdit, onRetrain, onDismiss, addNotification, confirmDismissId]
   );
 
   if (!employees || employees.length === 0) {
@@ -184,19 +219,25 @@ function VirtualEmployeeTable({
       </div>
 
       <div className="virtual-body">
-        <AutoSizer
-          renderProp={({ height, width }) => (
-            <List
-              defaultHeight={height ?? 0}
-              rowCount={filteredEmployees.length}
-              rowHeight={ROW_HEIGHT}
-              rowComponent={RowComponent}
-              rowProps={{}}
-              overscanCount={6}
-              style={{ width: width ?? "100%" }}
-            />
-          )}
-        />
+        {filteredEmployees.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-sm text-zinc-400 dark:text-zinc-500">
+            Нет сотрудников, соответствующих фильтрам
+          </div>
+        ) : (
+          <AutoSizer
+            renderProp={({ height, width }) => (
+              <List
+                defaultHeight={height ?? 0}
+                rowCount={filteredEmployees.length}
+                rowHeight={ROW_HEIGHT}
+                rowComponent={RowComponent}
+                rowProps={{}}
+                overscanCount={6}
+                style={{ width: width ?? "100%" }}
+              />
+            )}
+          />
+        )}
       </div>
     </div>
   );

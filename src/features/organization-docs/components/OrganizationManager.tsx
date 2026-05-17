@@ -1,89 +1,78 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Employee } from "@/entities/employee";
+import type { DocsStatus, OrgDoc } from "../services/organizationDocsService";
 import {
-  fetchOrgDocs,
-  upsertOrgDoc,
-  upsertManyOrgDocs,
-  type DocsStatus,
-  type OrgDoc,
-} from "../services/organizationDocsService";
-import { useNotificationContext } from "@/app/providers/NotificationProvider";
+  useOrgDocsQuery,
+  useUpsertOrgDocMutation,
+  useUpsertManyOrgDocsMutation,
+} from "../hooks/useOrganizationDocs";
+import type { NotificationType } from "@/shared/constants/toast";
 import "./OrganizationManager.css";
+
+type AddNotification = (message: string, type: NotificationType, duration?: number) => void;
 
 interface OrganizationManagerProps {
   employees?: Employee[];
+  addNotification: AddNotification;
 }
 
-export default function OrganizationManager({ employees = [] }: OrganizationManagerProps) {
-  const [docsData, setDocsData] = useState<OrgDoc[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const { addNotification } = useNotificationContext();
+const DEFAULT_DOCS: DocsStatus = {
+  "Акт допуск": false,
+  Приказы: false,
+  Удостоверения: false,
+  "Проектная док.": false,
+  Инструкции: false,
+  Журналы: false,
+  "Обучения сотрудников": false,
+};
+
+const ORG_DOCS_KEY = ['org-docs'];
+
+export default function OrganizationManager({ employees = [], addNotification }: OrganizationManagerProps) {
+  const queryClient = useQueryClient();
+  const { data: rawDocs = [], isLoading, isError, error } = useOrgDocsQuery();
+  const upsertOne = useUpsertOrgDocMutation();
+  const upsertMany = useUpsertManyOrgDocsMutation();
 
   const uniqueOrgs = useMemo(() => {
-    if (!employees || !Array.isArray(employees)) return [];
+    if (!Array.isArray(employees)) return [];
     return [...new Set(employees.map((e) => e.organization).filter(Boolean))];
   }, [employees]);
 
-  const getDefaultDocs = (): DocsStatus => ({
-    "Акт допуск": false,
-    Приказы: false,
-    Удостоверения: false,
-    "Проектная док.": false,
-    Инструкции: false,
-    Журналы: false,
-    "Обучения сотрудников": false,
-  });
-
-  const fetchDocs = async () => {
-    setLoading(true);
-    setFetchError(null);
-    try {
-      const currentDbData = await fetchOrgDocs();
-      const merged = uniqueOrgs.map((orgName) => {
-        const existing = currentDbData.find((d) => d.org_name === orgName);
-        return existing || { org_name: orgName, docs_status: getDefaultDocs() };
-      });
-      setDocsData(merged);
-    } catch (err) {
-      console.error("Ошибка при загрузке:", err);
-      const msg = err instanceof Error ? err.message : "Неизвестная ошибка";
-      setFetchError(msg);
-      addNotification(`Не удалось загрузить данные: ${msg}`, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDocs();
-  }, [uniqueOrgs]);
+  const docsData = useMemo((): OrgDoc[] => {
+    return uniqueOrgs.map((orgName) => {
+      const existing = rawDocs.find((d) => d.org_name === orgName);
+      return existing ?? { org_name: orgName, docs_status: { ...DEFAULT_DOCS } };
+    });
+  }, [uniqueOrgs, rawDocs]);
 
   const handleCheck = async (orgName: string, key: string) => {
     const targetOrg = docsData.find((d) => d.org_name === orgName);
     if (!targetOrg) return;
 
-    const prevStatus = { ...targetOrg.docs_status };
+    const prevDocs = rawDocs;
     const updatedStatus: DocsStatus = {
-      ...prevStatus,
-      [key]: !prevStatus[key],
+      ...targetOrg.docs_status,
+      [key]: !targetOrg.docs_status[key],
     };
 
-    setDocsData((prev) =>
-      prev.map((d) =>
-        d.org_name === orgName ? { ...d, docs_status: updatedStatus } : d
-      )
-    );
+    // Optimistic update
+    queryClient.setQueryData<OrgDoc[]>(ORG_DOCS_KEY, (prev = []) => {
+      const exists = prev.some((d) => d.org_name === orgName);
+      if (exists) {
+        return prev.map((d) =>
+          d.org_name === orgName ? { ...d, docs_status: updatedStatus } : d
+        );
+      }
+      return [...prev, { org_name: orgName, docs_status: updatedStatus }];
+    });
 
     try {
-      await upsertOrgDoc(orgName, updatedStatus);
+      await upsertOne.mutateAsync({ orgName, status: updatedStatus });
     } catch (err) {
-      console.error("Ошибка при сохранении:", err);
-      setDocsData((prev) =>
-        prev.map((d) =>
-          d.org_name === orgName ? { ...d, docs_status: prevStatus } : d
-        )
-      );
+      // Roll back on error
+      queryClient.setQueryData(ORG_DOCS_KEY, prevDocs);
       const msg = err instanceof Error ? err.message : "Неизвестная ошибка";
       addNotification(`Не удалось сохранить: ${msg}`, "error");
     }
@@ -92,7 +81,7 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
   const addColumn = () => {
     const name = prompt("Введите название нового документа:");
     if (!name) return;
-    setDocsData((prev) =>
+    queryClient.setQueryData<OrgDoc[]>(ORG_DOCS_KEY, (prev = []) =>
       prev.map((d) => ({
         ...d,
         docs_status: { ...d.docs_status, [name]: false },
@@ -101,48 +90,44 @@ export default function OrganizationManager({ employees = [] }: OrganizationMana
   };
 
   const removeColumn = async (columnName: string) => {
-    if (
-      !window.confirm(
-        `Удалить колонку «${columnName}» для всех организаций?`
-      )
-    )
-      return;
+    if (!window.confirm(`Удалить колонку «${columnName}» для всех организаций?`)) return;
 
-    setLoading(true);
+    const updated: OrgDoc[] = docsData.map((org) => {
+      const newStatus = { ...org.docs_status };
+      delete newStatus[columnName];
+      return { org_name: org.org_name, docs_status: newStatus };
+    });
+
     try {
-      const updated: OrgDoc[] = docsData.map((org) => {
-        const newStatus = { ...org.docs_status };
-        delete newStatus[columnName];
-        return { org_name: org.org_name, docs_status: newStatus };
-      });
-
-      await upsertManyOrgDocs(updated);
-      setDocsData(updated);
+      await upsertMany.mutateAsync(updated);
     } catch (err) {
       console.error("Ошибка при удалении:", err);
       alert("Не удалось удалить параметр. Проверьте подключение.");
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (!loading && fetchError) {
+  if (!isLoading && isError) {
+    const msg = error instanceof Error ? error.message : "Неизвестная ошибка";
     return (
       <div className="org-manager" style={{ padding: "32px 24px", textAlign: "center" }}>
         <p style={{ color: "var(--org-danger)", fontWeight: 600, marginBottom: "12px" }}>
           Ошибка загрузки данных
         </p>
         <p style={{ color: "var(--org-text-muted)", fontSize: "0.875rem", marginBottom: "20px" }}>
-          {fetchError}
+          {msg}
         </p>
-        <button type="button" className="org-manager__btn-add" onClick={fetchDocs}>
+        <button
+          type="button"
+          className="org-manager__btn-add"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ORG_DOCS_KEY })}
+        >
           Повторить
         </button>
       </div>
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="org-manager org-manager--loading">
         <div className="org-manager__skeleton">

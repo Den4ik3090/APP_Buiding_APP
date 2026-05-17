@@ -24,3 +24,9 @@ export interface TaskResolution {
 export type TaskInsert = Omit<Task, 'id' | 'created_at'>;
 export type TaskUpdate = Partial<Omit<Task, 'id' | 'created_at'>>;
 export type ResolutionInsert = Omit<TaskResolution, 'id' | 'completed_at'>;
+
+export interface TaskFilters {
+  status?: TaskStatus;
+  siteId?: string;
+  assignedTo?: string;
+}

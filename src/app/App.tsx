@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/shared/api/supabase";
@@ -25,7 +26,7 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
-  const [session, setSession] = useState<any>(null); // Типизация сессии Supabase
+  const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
 
   // Состояние темы

@@ -17,7 +17,9 @@ export interface Employee {
   organization: string;
   additionalTrainings: AdditionalTraining[];
   createdAt: string | null;
+  isDismissed: boolean;
+  dismissedAt: string | null;
 }
 
-export type EmployeeInsert = Omit<Employee, 'id' | 'createdAt'>;
+export type EmployeeInsert = Omit<Employee, 'id' | 'createdAt' | 'isDismissed' | 'dismissedAt'>;
 export type EmployeeUpdate = Partial<EmployeeInsert>;

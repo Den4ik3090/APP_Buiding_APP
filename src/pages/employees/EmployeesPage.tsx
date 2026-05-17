@@ -9,6 +9,8 @@ import { getDaysDifference, getStatusKey, hasExpiredAdditional } from "@/entitie
 import type { Employee } from "@/entities/employee";
 import { useNotificationContext } from "@/app/providers/NotificationProvider";
 import { exportToCSV } from "@/features/employee-export/exportToCSV";
+import DismissedEmployeesTable from "@/features/employee-crud/components/DismissedEmployeesTable";
+import { EmployeesTabIcon, DismissedTabIcon } from "@/shared/ui/AnimatedStateIcons";
 import {
   useEmployeesQuery,
   useOrganizationsQuery,
@@ -16,6 +18,9 @@ import {
   useUpdateEmployeeMutation,
   useDeleteEmployeeMutation,
   useRetrainEmployeeMutation,
+  useDismissedEmployeesQuery,
+  useDismissEmployeeMutation,
+  useRestoreEmployeeMutation,
 } from "@/features/employee-crud/hooks/useEmployees";
 
 const EmployeeTable = lazy(() => import("@/features/employee-crud/components/EmployeeTable"));
@@ -31,8 +36,12 @@ export default function EmployeesPage() {
   const updateMutation = useUpdateEmployeeMutation();
   const deleteMutation = useDeleteEmployeeMutation();
   const retrainMutation = useRetrainEmployeeMutation();
-
+  const dismissMutation = useDismissEmployeeMutation();
+  const restoreMutation = useRestoreEmployeeMutation();
+  const [activeTab, setActiveTab] = useState<'active' | 'dismissed'>('active');
   const [showForm, setShowForm] = useState(false);
+
+  const { data: dismissedEmployees = [] } = useDismissedEmployeesQuery(activeTab === 'dismissed');
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   const selectedOrg = searchParams.get("org") ?? "Все";
@@ -128,6 +137,24 @@ export default function EmployeesPage() {
     }
   }, [retrainMutation, addNotification]);
 
+  const handleDismiss = useCallback(async (id: string) => {
+    try {
+      await dismissMutation.mutateAsync(id);
+      addNotification('Сотрудник переведён в уволенные', TOAST_TYPES.SUCCESS, TOAST_DURATION.NORMAL);
+    } catch {
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+    }
+  }, [dismissMutation, addNotification]);
+
+  const handleRestore = useCallback(async (id: string) => {
+    try {
+      await restoreMutation.mutateAsync(id);
+      addNotification('Сотрудник восстановлен', TOAST_TYPES.SUCCESS, TOAST_DURATION.NORMAL);
+    } catch {
+      addNotification(TOAST_MESSAGES.DB_ERROR, TOAST_TYPES.ERROR);
+    }
+  }, [restoreMutation, addNotification]);
+
   if (loading) return <SkeletonLoader rows={8} />;
 
   if (loadError && employees.length === 0) {
@@ -145,6 +172,43 @@ export default function EmployeesPage() {
 
   return (
     <>
+      {/* Tabs */}
+      <div className="mb-4 flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-800/50" style={{ width: 'fit-content' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('active')}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${
+            activeTab === 'active'
+              ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+              : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+          }`}
+        >
+          <EmployeesTabIcon size={16} active={activeTab === 'active'} />
+          Сотрудники
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('dismissed')}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${
+            activeTab === 'dismissed'
+              ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+              : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+          }`}
+        >
+          <DismissedTabIcon size={16} active={activeTab === 'dismissed'} />
+          Уволенные
+          {dismissedEmployees.length > 0 && (
+            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+              {dismissedEmployees.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'dismissed' ? (
+        <DismissedEmployeesTable employees={dismissedEmployees} onRestore={handleRestore} />
+      ) : (
+      <>
       <div className="form-actions" style={{ marginBottom: 15 }}>
         <ButtonGlow text="Добавить сотрудника" onClick={handleAddNew} />
         <ButtonGlow
@@ -186,6 +250,7 @@ export default function EmployeesPage() {
             onRetrain={retrainEmployee}
             onDelete={deleteEmployee}
             onEdit={handleEdit}
+            onDismiss={handleDismiss}
             addNotification={addNotification}
           />
         ) : (
@@ -195,12 +260,15 @@ export default function EmployeesPage() {
             onRetrain={retrainEmployee}
             onDelete={deleteEmployee}
             onEdit={handleEdit}
+            onDismiss={handleDismiss}
             addNotification={addNotification}
             statusFilterValue={tableStatusFilter}
             onStatusFilterChange={onStatusFilterChange}
           />
         )}
       </Suspense>
+      </>
+      )}
     </>
   );
 }

@@ -15,16 +15,14 @@ export const useNotification = () => {
   const addNotification = useCallback(
     (message: string, type: NotificationType = 'success', duration: number = 4000): number => {
       const id = Date.now();
-      const notification: Notification = { id, message, type, duration };
-
-      setNotifications((prev) => [...prev, notification]);
 
       if (duration > 0) {
         const timer = setTimeout(() => {
           removeNotification(id);
         }, duration);
-
-        notification.timer = timer;
+        setNotifications((prev) => [...prev, { id, message, type, duration, timer }]);
+      } else {
+        setNotifications((prev) => [...prev, { id, message, type, duration }]);
       }
 
       return id;

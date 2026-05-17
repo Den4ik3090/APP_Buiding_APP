@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import { HashRouter } from "react-router-dom";
 import App from "./app/App";
 import { NotificationProvider } from "./app/providers/NotificationProvider";
+import { initSentry } from "./app/sentry";
+
+initSentry();
 import '@coreui/coreui/dist/css/coreui.min.css'
 import "./auth/auth.css";
 import "./index.css";

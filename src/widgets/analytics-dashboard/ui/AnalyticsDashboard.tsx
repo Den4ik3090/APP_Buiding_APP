@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import * as XLSX from "xlsx";
 import { List, RowComponentProps } from "react-window";
 import {
   PieChart,
@@ -34,31 +33,51 @@ const MANAGER_COLORS = [
 const ROW_HEIGHT = 62;
 const DROPDOWN_MAX_HEIGHT = 200;
 
-function exportGroupToExcel(group: ResponsibleGroup): void {
-  const rows = group.employees.map((emp) => ({
-    "ФИО": emp.name ?? "",
-    "Организация": emp.organization ?? "",
-    "Профессия": emp.professionLabel,
-    "Дата рождения": emp.birthDate
-      ? new Date(emp.birthDate).toLocaleDateString("ru-RU")
-      : "",
-    "Дата инструктажа": emp.trainingDate
-      ? new Date(emp.trainingDate).toLocaleDateString("ru-RU")
-      : "",
-    "Статус": emp.daysSinceTraining !== null && emp.daysSinceTraining >= DAYS_THRESHOLD
-      ? "Переподготовка"
-      : "Актуален",
-    "Дней с последней подготовки": emp.daysSinceTraining ?? "",
-    "Ответственный": emp.responsibleLabel,
-  }));
+async function exportGroupToExcel(group: ResponsibleGroup): Promise<void> {
+  const ExcelJS = await import("exceljs");
+  const { saveAs } = await import("file-saver");
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Сотрудники");
+  const workbook = new ExcelJS.default.Workbook();
+  const worksheet = workbook.addWorksheet("Сотрудники");
+
+  worksheet.columns = [
+    { header: "ФИО",                         key: "name",     width: 28 },
+    { header: "Организация",                  key: "org",      width: 22 },
+    { header: "Профессия",                    key: "prof",     width: 22 },
+    { header: "Дата рождения",                key: "birth",    width: 18 },
+    { header: "Дата инструктажа",             key: "training", width: 18 },
+    { header: "Статус",                       key: "status",   width: 18 },
+    { header: "Дней с последней подготовки",  key: "days",     width: 28 },
+    { header: "Ответственный",                key: "resp",     width: 24 },
+  ];
+
+  group.employees.forEach((emp) => {
+    worksheet.addRow({
+      name:     emp.name ?? "",
+      org:      emp.organization ?? "",
+      prof:     emp.professionLabel,
+      birth:    emp.birthDate
+        ? new Date(emp.birthDate).toLocaleDateString("ru-RU")
+        : "",
+      training: emp.trainingDate
+        ? new Date(emp.trainingDate).toLocaleDateString("ru-RU")
+        : "",
+      status:   emp.daysSinceTraining !== null && emp.daysSinceTraining >= DAYS_THRESHOLD
+        ? "Переподготовка"
+        : "Актуален",
+      days:     emp.daysSinceTraining ?? "",
+      resp:     emp.responsibleLabel,
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+  });
 
   const safeName = group.name.replace(/[\\/:*?"<>|]/g, "_").slice(0, 30);
   const date = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(workbook, `${safeName}_${date}.xlsx`);
+  saveAs(blob, `${safeName}_${date}.xlsx`);
 }
 
 const formatDate = (value: string | null | undefined): string => {
@@ -388,7 +407,7 @@ export default function AnalyticsDashboard({
                   title="Скачать список в Excel"
                   onClick={(e) => {
                     e.stopPropagation();
-                    exportGroupToExcel(group);
+                    void exportGroupToExcel(group);
                   }}
                   className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 transition-all duration-200 hover:bg-indigo-100 hover:text-indigo-700 hover:shadow-md dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-800/60 dark:hover:text-indigo-100"
                 >
@@ -464,7 +483,7 @@ export default function AnalyticsDashboard({
                   cy="50%"
                   outerRadius={110}
                   innerRadius={60}
-                  paddingAngle={4}
+                  paddingAngle={managerPieData.length > 1 ? 4 : 0}
                   labelLine={false}
                   label={({ percent }: { percent?: number }) =>
                     percent ? `${(percent * 100).toFixed(0)}%` : ""

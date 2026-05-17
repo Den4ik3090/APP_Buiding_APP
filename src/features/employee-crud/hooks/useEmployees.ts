@@ -2,11 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Employee } from '@/entities/employee';
 import {
   fetchEmployees,
+  fetchDismissedEmployees,
   fetchOrganizations,
   createEmployee,
   updateEmployee,
   deleteEmployee,
   retrainEmployee,
+  dismissEmployee,
+  restoreEmployee,
 } from '../services/employeesService';
 
 export function useEmployeesQuery() {
@@ -66,6 +69,36 @@ export function useRetrainEmployeeMutation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => retrainEmployee(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useDismissedEmployeesQuery(enabled = false) {
+  return useQuery<Employee[], Error>({
+    queryKey: ['employees', 'dismissed'],
+    queryFn: fetchDismissedEmployees,
+    placeholderData: [],
+    throwOnError: false,
+    enabled,
+  });
+}
+
+export function useDismissEmployeeMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => dismissEmployee(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['employees'] });
+    },
+  });
+}
+
+export function useRestoreEmployeeMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => restoreEmployee(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['employees'] });
     },

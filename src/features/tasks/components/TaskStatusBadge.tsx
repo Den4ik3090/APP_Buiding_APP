@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle, Clock, AlertTriangle, HelpCircle } from 'lucide-react';
-import type { TaskStatus } from '../types';
+import type { TaskStatus } from '../model';
 
 type KnownStatus = TaskStatus | 'open';
 

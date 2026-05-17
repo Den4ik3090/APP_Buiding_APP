@@ -1,25 +1,43 @@
 # CLAUDE.md
 
+## Role & Objective
+You are an expert Frontend Engineer and Senior UI/UX Designer specializing in building premium, production-ready, dark-themed user interfaces. Your code must be modular, highly performant, and visually flawless.
+
+## Core UI/UX Principles
+* **Visual Hierarchy:** Maintain strict spacing tokens, consistent padding/margins, and a clear typographic scale.
+* **Premium Dark Theme:** Use deep, cohesive dark palettes (e.g., slate, zinc, or neutral grays) with deliberate contrast ratios that meet WCAG AA standards. Avoid generic, oversaturated gradients.
+* **Micro-interactions:** Implement subtle, purposeful animations and transitions (using CSS or Framer Motion) to enhance the user experience without adding bloat.
+
+## Strict Engineering Constraints
+* **No Inline Styles:** All styling must be encapsulated using CSS Modules, SCSS, or Tailwind CSS classes depending on the project structure.
+* **No Emoji Icons:** Use professional icon libraries (e.g., Lucide React, Radix Icons, Heroicons) for all visual indicators. Never use emojis as iconography.
+* **Clean & Scalable Code:** Follow the existing architectural patterns (like Feature-Sliced Design if applicable). Avoid hardcoded values; abstract them into constants or theme tokens.
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Profile
 
-PUTEVI Safety — a production React 18 SPA for managing employee training records, safety permits, orders, prescriptions, and tasks for AO PUTEVI. Backend is Supabase (Postgres + Auth + Edge Functions). No test suite exists.
+PUTEVI Safety — a production React 18 SPA for managing employee training records, safety permits, orders, prescriptions, and tasks for AO PUTEVI. Backend is Supabase (Postgres + Auth + Edge Functions).
 
-- **TypeScript status: 100% strict.** `npx tsc --noEmit` → 0 errors. `as any` count: 0.
-- **FSD status: complete.** `src/components/` has been fully deleted. All features live in `src/features/` or `src/widgets/`.
+- **TypeScript status: 100% strict.** `npx tsc --noEmit` → 0 errors. `as any` count: 0. `as unknown as` count: 4 (unavoidable Supabase generic limitations — do not add more).
+- **FSD status: complete.** `src/components/` has been fully deleted. All features live in `src/features/` or `src/widgets/`. Zero `features` → `app` import violations.
+- **Test infrastructure: ready.** `jest.config.js`, `babel.config.js`, `jest.setup.ts`, 25 tests in `src/__tests__/`. Run `npm test` after installing deps (requires network).
+- **Error monitoring: ready.** `src/app/sentry.ts` — activate by uncommenting `Sentry.init` after `npm install @sentry/react` + `REACT_APP_SENTRY_DSN` in `.env`.
+- **CI: active.** `.github/workflows/ci.yml` — runs `tsc --noEmit` + `npm run build` on push/PR. Add `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_KEY` secrets in repo Settings.
 - Hybrid file extensions remain: `.jsx` files exist inside feature slices (registry components not yet converted). Do not convert them unless explicitly asked.
 - Styling is hybrid: global CSS, SCSS, SCSS Modules, and Tailwind utilities coexist. Do not normalize.
 
 ## Commands
 
 ```bash
-npm start          # webpack-dev-server on port 3000 (hot reload)
-npm run build      # production bundle → dist/
-npx tsc --noEmit   # typecheck — must stay at 0 errors
+npm start              # webpack-dev-server on port 3000 (hot reload)
+npm run build          # production bundle → dist/
+npx tsc --noEmit       # typecheck — must stay at 0 errors
+npm test               # Jest (requires: npm install deps first)
+npm run test:coverage  # Jest with coverage report
 ```
 
-No lint or test scripts. Environment: copy `.env.example` → `.env`, fill `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_KEY`.
+Environment: copy `.env.example` → `.env`, fill `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_KEY`.
 
 ## Architecture
 
@@ -50,7 +68,7 @@ src/
 | `orders/` | `services/ordersService.ts` | `hooks/useOrders.ts` | JSX components |
 | `prescriptions/` | `services/prescriptionsService.ts` | `hooks/usePrescriptions.ts` | JSX components |
 | `organization-docs/` | `services/organizationDocsService.ts` | — | Full TSX; exports `OrgDoc`, `DocsStatus` |
-| `additional-trainings/` | — | — | `AdditionalTrainingsManager.tsx` |
+| `additional-trainings/` | — | — | `AdditionalTrainingsManager.tsx`; uses recharts + dynamic xlsx |
 
 ### Widgets
 
@@ -137,6 +155,8 @@ This project uses react-window **v2**, not v1. The API is different:
 | Widget with strict types | `src/widgets/analytics-dashboard/ui/AnalyticsDashboard.tsx` |
 | Service with exported types | `src/features/organization-docs/services/organizationDocsService.ts` |
 | SCSS Module usage | `src/features/tasks/components/tasks.module.scss` |
+| Component split pattern | `src/features/employee-crud/components/employeeFormTypes.ts` + `employeeFormHelpers.ts` |
+| Test pattern | `src/__tests__/employeeFormHelpers.test.ts` |
 
 ## TypeScript Rules
 

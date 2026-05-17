@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Calendar } from 'lucide-react';
-import type { TaskStatus } from '../types';
+import type { TaskStatus } from '../model';
 
 const STATUS_OPTIONS: { value: TaskStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Все статусы' },

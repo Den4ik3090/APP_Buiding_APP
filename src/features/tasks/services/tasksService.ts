@@ -1,6 +1,7 @@
 import { supabase } from '@/shared/api/supabase';
 import type {
   Task,
+  TaskFilters,
   TaskInsert,
   TaskUpdate,
   TaskResolution,
@@ -90,11 +91,18 @@ function sanitizeTaskInsert(payload: TaskInsert): TaskInsert {
   return next;
 }
 
-export async function fetchTasks(): Promise<Task[]> {
-  const { data, error } = await supabase
+export async function fetchTasks(filters: TaskFilters = {}): Promise<Task[]> {
+  let query = supabase
     .from('tasks')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (filters.status)     query = query.eq('status', filters.status);
+  if (filters.siteId)     query = query.eq('site_id', filters.siteId);
+  if (filters.assignedTo) query = query.eq('assigned_to', filters.assignedTo);
+
+  const { data, error } = await query;
 
   if (error) {
     if (isTableMissing(error)) return [];

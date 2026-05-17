@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { uploadResolutionPhoto } from '../services/storageService';
 import { createResolution, updateTask } from '../services/tasksService';
-import type { TaskResolution } from '../types';
+import type { TaskResolution } from '../model';
 
 export interface ResolveTaskPayload {
   taskId: string;

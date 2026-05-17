@@ -13,332 +13,22 @@ import {
   GraduationCap,
   Image as ImageIcon,
   Plus,
-  Trash2,
   User,
   Users,
   X,
 } from "lucide-react";
 import { uploadEmployeePhoto } from "../services/employeesService";
-import { ADDITIONAL_TRAINING_TYPES } from "@/entities/employee";
 import type { Employee } from "@/entities/employee";
+import type { EmployeeFormData, EmployeeFormProps } from "./employeeFormTypes";
+import {
+  createInitialFormData,
+  mapEmployeeToFormData,
+  GENERAL_FIELDS,
+  checkTrainingStatus,
+} from "./employeeFormHelpers";
+import { TrainingRow } from "./EmployeeFormTrainingRow";
+import { GeneralField } from "./EmployeeFormGeneralField";
 import "./EmployeeForm.scss";
-
-// ---------------------------------------------------------------------------
-// Local types
-// ---------------------------------------------------------------------------
-
-interface FormAdditionalTraining {
-  id: number;
-  type: string;
-  dateReceived: string;
-  expiryMonths: number | string;
-}
-
-interface EmployeeFormData {
-  name: string;
-  profession: string;
-  birthDate: string;
-  trainingDate: string;
-  responsible: string;
-  comment: string;
-  photo_url: string;
-  organization: string;
-  additionalTrainings: FormAdditionalTraining[];
-}
-
-interface FieldConfig {
-  label: string;
-  name: keyof Omit<EmployeeFormData, "additionalTrainings">;
-  type: string;
-  placeholder: string;
-  required: boolean;
-}
-
-interface TrainingStatusResult {
-  isExpired: boolean;
-  isSoon: boolean;
-  daysLeft: number;
-}
-
-interface EmployeeFormProps {
-  onAddEmployee: (data: Employee) => Promise<void>;
-  editingEmployee: Employee | null;
-  onUpdateEmployee: (data: Employee) => Promise<void>;
-  onCancelEdit: () => void;
-  existingOrganizations?: string[];
-  onPhotoUpload?: () => void;
-  onPhotoError?: (error: Error) => void;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const getTodayDateValue = (): string => {
-  const now = new Date();
-  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return localDate.toISOString().slice(0, 10);
-};
-
-const createInitialFormData = (): EmployeeFormData => ({
-  name: "",
-  profession: "",
-  birthDate: "",
-  trainingDate: getTodayDateValue(),
-  responsible: "",
-  comment: "",
-  photo_url: "",
-  organization: "",
-  additionalTrainings: [],
-});
-
-const mapEmployeeToFormData = (employee: Employee): EmployeeFormData => ({
-  name: employee?.name || "",
-  profession: employee?.profession || "",
-  birthDate: employee?.birthDate || "",
-  trainingDate: employee?.trainingDate || getTodayDateValue(),
-  responsible: employee?.responsible || "",
-  comment: employee?.comment || "",
-  photo_url: employee?.photo_url || "",
-  organization: employee?.organization || "",
-  additionalTrainings: Array.isArray(employee?.additionalTrainings)
-    ? (employee.additionalTrainings as unknown as FormAdditionalTraining[])
-    : [],
-});
-
-const GENERAL_FIELDS: FieldConfig[] = [
-  {
-    label: "ФИО",
-    name: "name",
-    type: "text",
-    placeholder: "Иван Петров",
-    required: true,
-  },
-  {
-    label: "Должность",
-    name: "profession",
-    type: "text",
-    placeholder: "Инженер по охране труда",
-    required: true,
-  },
-  {
-    label: "Дата рождения",
-    name: "birthDate",
-    type: "date",
-    placeholder: "",
-    required: false,
-  },
-  {
-    label: "Дата инструктажа",
-    name: "trainingDate",
-    type: "date",
-    placeholder: "",
-    required: true,
-  },
-  {
-    label: "Ответственное лицо",
-    name: "responsible",
-    type: "text",
-    placeholder: "ФИО ответственного",
-    required: false,
-  },
-];
-
-const checkTrainingStatus = (
-  dateReceived: string | undefined,
-  months: number | string | undefined
-): TrainingStatusResult => {
-  if (!dateReceived || !months) {
-    return { isExpired: false, isSoon: false, daysLeft: 0 };
-  }
-
-  const start = new Date(dateReceived);
-  const expiryDate = new Date(start);
-  expiryDate.setMonth(expiryDate.getMonth() + parseInt(String(months), 10));
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const daysLeft = Math.ceil(
-    (expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  return {
-    isExpired: daysLeft <= 0,
-    isSoon: daysLeft > 0 && daysLeft <= 30,
-    daysLeft,
-  };
-};
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-const TrainingStatus = memo(function TrainingStatus({
-  training,
-}: {
-  training: FormAdditionalTraining;
-}) {
-  const { isExpired, isSoon, daysLeft } = useMemo(
-    () => checkTrainingStatus(training.dateReceived, training.expiryMonths),
-    [training.dateReceived, training.expiryMonths]
-  );
-
-  if (!training.dateReceived || !training.expiryMonths) {
-    return (
-      <span className="employees-status employees-status--neutral">
-        Не заполнено
-      </span>
-    );
-  }
-
-  if (isExpired) {
-    return (
-      <span className="employees-status employees-status--expired">
-        Истекло ({Math.abs(daysLeft)} дн.)
-      </span>
-    );
-  }
-
-  if (isSoon) {
-    return (
-      <span className="employees-status employees-status--warning">
-        Скоро истекает ({daysLeft} дн.)
-      </span>
-    );
-  }
-
-  return (
-    <span className="employees-status employees-status--actual">
-      Актуально ({daysLeft} дн.)
-    </span>
-  );
-});
-
-const TrainingRow = memo(function TrainingRow({
-  training,
-  onUpdate,
-  onRemove,
-}: {
-  training: FormAdditionalTraining;
-  onUpdate: (
-    id: number,
-    field: keyof FormAdditionalTraining,
-    value: string
-  ) => void;
-  onRemove: (id: number) => void;
-}) {
-  const handleTypeChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) =>
-      onUpdate(training.id, "type", event.target.value),
-    [onUpdate, training.id]
-  );
-
-  const handleDateChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) =>
-      onUpdate(training.id, "dateReceived", event.target.value),
-    [onUpdate, training.id]
-  );
-
-  const handleExpiryChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) =>
-      onUpdate(training.id, "expiryMonths", event.target.value),
-    [onUpdate, training.id]
-  );
-
-  const handleRemove = useCallback(() => {
-    onRemove(training.id);
-  }, [onRemove, training.id]);
-
-  const rowStatus = useMemo(
-    () => checkTrainingStatus(training.dateReceived, training.expiryMonths),
-    [training.dateReceived, training.expiryMonths]
-  );
-
-  return (
-    <tr className={rowStatus.isExpired ? "employees-training-row-expired" : ""}>
-      <td>
-        <select
-          value={training.type}
-          onChange={handleTypeChange}
-        >
-          {ADDITIONAL_TRAINING_TYPES.map((t: string) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td>
-        <input
-          type="date"
-          value={training.dateReceived}
-          onChange={handleDateChange}
-        />
-      </td>
-      <td>
-        <input
-          type="number"
-          value={training.expiryMonths}
-          onChange={handleExpiryChange}
-          min={1}
-          max={120}
-        />
-      </td>
-      <td>
-        <TrainingStatus training={training} />
-      </td>
-      <td>
-        <button
-          type="button"
-          className="employees-icon-button employees-icon-button--danger"
-          onClick={handleRemove}
-          aria-label="Удалить обучение"
-        >
-          <Trash2 size={16} />
-        </button>
-      </td>
-    </tr>
-  );
-});
-
-const GeneralField = memo(function GeneralField({
-  field,
-  value,
-  error,
-  onChange,
-}: {
-  field: FieldConfig;
-  value: string;
-  error?: string;
-  onChange: React.ChangeEventHandler<HTMLInputElement>;
-}) {
-  return (
-    <div className="employees-form-group">
-      <label htmlFor={field.name}>
-        {field.label}{" "}
-        {field.required && <span className="required">*</span>}
-      </label>
-
-      <input
-        id={field.name}
-        name={field.name}
-        type={field.type}
-        value={value || ""}
-        onChange={onChange}
-        placeholder={field.placeholder || ""}
-        className={error ? "input-error" : ""}
-        aria-invalid={Boolean(error)}
-      />
-
-      {error && <p className="employees-error">{error}</p>}
-    </div>
-  );
-});
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
 
 function EmployeeForm({
   onAddEmployee,
@@ -359,9 +49,7 @@ function EmployeeForm({
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<EmployeeFormData>(() =>
-    editingEmployee
-      ? mapEmployeeToFormData(editingEmployee)
-      : createInitialFormData()
+    editingEmployee ? mapEmployeeToFormData(editingEmployee) : createInitialFormData()
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -369,119 +57,80 @@ function EmployeeForm({
   const abortRef = useRef<AbortController | null>(null);
 
   const organizations = useMemo(() => {
-    const uniqueOrganizations = new Set(
-      existingOrganizations.filter(Boolean).map((item) => item.trim())
-    );
-
-    if (editingEmployee?.organization) {
-      uniqueOrganizations.add(editingEmployee.organization);
-    }
-
-    return Array.from(uniqueOrganizations).sort();
-  }, [existingOrganizations, editingEmployee?.organization]);
+    const base = Array.isArray(existingOrganizations) ? existingOrganizations : [];
+    const current = formData.organization.trim();
+    if (current && !base.includes(current)) return [...base, current].sort();
+    return base;
+  }, [existingOrganizations, formData.organization]);
 
   const trainingStats = useMemo(() => {
-    const trainings = formData.additionalTrainings || [];
+    let actual = 0;
+    let soon = 0;
+    let expired = 0;
 
-    return trainings.reduce(
-      (acc, training) => {
-        const { isExpired, isSoon } = checkTrainingStatus(
-          training.dateReceived,
-          training.expiryMonths
-        );
+    formData.additionalTrainings.forEach((t) => {
+      const { isExpired, isSoon } = checkTrainingStatus(
+        t.dateReceived,
+        t.expiryMonths
+      );
+      if (isExpired) expired += 1;
+      else if (isSoon) soon += 1;
+      else actual += 1;
+    });
 
-        if (isExpired) acc.expired += 1;
-        else if (isSoon) acc.soon += 1;
-        else if (training.dateReceived && training.expiryMonths) acc.actual += 1;
-        else acc.unfilled += 1;
-
-        return acc;
-      },
-      { expired: 0, soon: 0, actual: 0, unfilled: 0 }
-    );
+    return { actual, soon, expired };
   }, [formData.additionalTrainings]);
 
   useEffect(() => {
-    setFormData(
-      editingEmployee
-        ? mapEmployeeToFormData(editingEmployee)
-        : createInitialFormData()
-    );
-    setErrors({});
-    setActiveTab("general");
-  }, [editingEmployee]);
-
-  // Escape key to close
-  useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !saving && !uploading) {
-        onCancelEdit();
-      }
+      if (event.key === "Escape" && !saving && !uploading) onCancelEdit();
     };
-
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [onCancelEdit, saving, uploading]);
 
-  // Scroll lock
   useEffect(() => {
-    const scrollY = window.scrollY;
-    document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow-y: scroll;`;
     return () => {
-      document.body.style.cssText = "";
-      window.scrollTo(0, scrollY);
+      abortRef.current?.abort();
     };
   }, []);
 
-  // Auto-focus first focusable element; trap Tab inside modal
   useEffect(() => {
     const modal = modalRef.current;
     if (!modal) return;
 
-    const getFocusable = (): HTMLElement[] =>
-      Array.from(
-        modal.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      );
-
-    getFocusable()[0]?.focus();
-
     const handleTab = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
-      const els = getFocusable();
-      const first = els[0];
-      const last = els[els.length - 1];
+      const focusable = modal.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
       if (event.shiftKey) {
         if (document.activeElement === first) {
           event.preventDefault();
-          last?.focus();
+          last.focus();
         }
       } else {
         if (document.activeElement === last) {
           event.preventDefault();
-          first?.focus();
+          first.focus();
         }
       }
     };
-
     document.addEventListener("keydown", handleTab);
     return () => document.removeEventListener("keydown", handleTab);
   }, []);
 
-  // Abort any in-flight save request on unmount
-  useEffect(() => () => { abortRef.current?.abort(); }, []);
-
   const setFieldValue = useCallback(
-    <K extends keyof EmployeeFormData>(field: K, value: EmployeeFormData[K]) => {
-      setFormData((prev) => {
-        if (prev[field] === value) return prev;
-        return { ...prev, [field]: value };
-      });
-
+    (name: keyof EmployeeFormData, value: string) => {
+      setFormData((prev) => ({ ...prev, [name]: value }));
       setErrors((prev) => {
-        if (!prev[field as string]) return prev;
-        return { ...prev, [field as string]: "" };
+        if (!prev[name as string]) return prev;
+        const next = { ...prev };
+        delete next[name as string];
+        return next;
       });
     },
     []
@@ -494,33 +143,30 @@ function EmployeeForm({
       >
     ) => {
       const { name, value } = event.target;
-      setFieldValue(
-        name as keyof Omit<EmployeeFormData, "additionalTrainings">,
-        value
-      );
+      setFieldValue(name as keyof EmployeeFormData, value);
     },
     [setFieldValue]
   );
 
   const handleAddNewOrg = useCallback(() => {
-    const newOrg = window.prompt("Введите название новой организации:");
-    if (!newOrg?.trim()) return;
-
-    const trimmed = newOrg.trim();
-    setFieldValue("organization", trimmed);
+    const name = window.prompt("Название новой организации:");
+    if (name?.trim()) {
+      setFieldValue("organization", name.trim());
+    }
   }, [setFieldValue]);
 
   const addTrainingRow = useCallback(() => {
-    const newTraining: FormAdditionalTraining = {
-      id: Date.now(),
-      type: ADDITIONAL_TRAINING_TYPES[0] || "Прочее",
-      dateReceived: getTodayDateValue(),
-      expiryMonths: 12,
-    };
-
     setFormData((prev) => ({
       ...prev,
-      additionalTrainings: [...prev.additionalTrainings, newTraining],
+      additionalTrainings: [
+        ...prev.additionalTrainings,
+        {
+          id: Date.now(),
+          type: "Пожарно-технический минимум",
+          dateReceived: "",
+          expiryMonths: 12,
+        },
+      ],
     }));
   }, []);
 
@@ -534,7 +180,11 @@ function EmployeeForm({
   }, []);
 
   const updateTrainingRow = useCallback(
-    (id: number, field: keyof FormAdditionalTraining, value: string) => {
+    (
+      id: number,
+      field: keyof import("./employeeFormTypes").FormAdditionalTraining,
+      value: string
+    ) => {
       setFormData((prev) => ({
         ...prev,
         additionalTrainings: prev.additionalTrainings.map((item) =>
@@ -711,8 +361,7 @@ function EmployeeForm({
             <div className="employees-tabs">
               <button
                 type="button"
-                className={`employees-tab ${activeTab === "general" ? "is-active" : ""
-                  }`}
+                className={`employees-tab ${activeTab === "general" ? "is-active" : ""}`}
                 onClick={handleTabGeneral}
               >
                 Основные данные
@@ -720,8 +369,7 @@ function EmployeeForm({
 
               <button
                 type="button"
-                className={`employees-tab ${activeTab === "trainings" ? "is-active" : ""
-                  }`}
+                className={`employees-tab ${activeTab === "trainings" ? "is-active" : ""}`}
                 onClick={handleTabTrainings}
               >
                 Дополнительное обучение
@@ -763,8 +411,7 @@ function EmployeeForm({
                       <div className="employees-photo-actions">
                         <label
                           htmlFor={photoInputId}
-                          className={`employees-upload-button ${uploading ? "is-disabled" : ""
-                            }`}
+                          className={`employees-upload-button ${uploading ? "is-disabled" : ""}`}
                         >
                           {uploading ? "Загрузка..." : "Загрузить фото"}
                         </label>
@@ -974,4 +621,4 @@ function EmployeeForm({
   );
 }
 
-export default EmployeeForm;
+export default memo(EmployeeForm);

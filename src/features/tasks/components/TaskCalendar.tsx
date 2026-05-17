@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
-import type { Task } from '../types';
+import type { Task } from '../model';
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();

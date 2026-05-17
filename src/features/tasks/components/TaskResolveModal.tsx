@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Upload } from 'lucide-react';
 import Compressor from 'compressorjs';
 import { useTaskResolution } from '../hooks/useTaskResolution';
-import type { Task } from '../types';
+import type { Task } from '../model';
 
 interface TaskResolveModalProps {
   task: Task;

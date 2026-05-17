@@ -1,30 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TaskStatus, Task, TaskInsert, TaskUpdate } from '../model';
+import type { Task, TaskInsert, TaskUpdate } from '../model';
+import type { TaskFilters } from '../model';
 import { fetchTasks, createTask, updateTask, deleteTask, fetchRegistryEmployees } from '../services/tasksService';
 import type { RegistryEmployee } from '../services/tasksService';
 
-export interface TaskFilters {
-  status?: TaskStatus;
-  siteId?: string;
-  assignedTo?: string;
-}
-
-function applyFilters(tasks: Task[], filters: TaskFilters): Task[] {
-  return tasks.filter((t) => {
-    if (filters.status && t.status !== filters.status) return false;
-    if (filters.siteId && t.site_id !== filters.siteId) return false;
-    if (filters.assignedTo && t.assigned_to !== filters.assignedTo) return false;
-    return true;
-  });
-}
+export type { TaskFilters };
 
 export function useTasks(filters: TaskFilters = {}) {
   return useQuery<Task[], Error>({
     queryKey: ['tasks', filters],
-    queryFn: async () => {
-      const all = await fetchTasks();
-      return applyFilters(all, filters);
-    },
+    queryFn: () => fetchTasks(filters),
     // Never retry on 404 — table may not exist yet
     retry: (failureCount, error) => {
       if (error.message.includes('404') || error.message.includes('does not exist')) return false;

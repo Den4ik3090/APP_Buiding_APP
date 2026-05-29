@@ -195,7 +195,6 @@ export default function PermitsTable({
           type="button"
           className="btn-export"
           onClick={onRefresh}
-          style={{ whiteSpace: "nowrap" }}
         >
           🔄 Обновить
         </button>

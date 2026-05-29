@@ -1,3 +1,16 @@
+---
+name: sbt-supabase-rls
+description: >
+  Supabase and RLS compliance review for PUTEVI Safety. Use when reviewing data
+  access patterns, validating that UI assumptions match RLS policies, designing
+  secure queries, auditing storage/file access, or discussing auth-bound behavior.
+  Activates on: "RLS", "row level security", "data access", "storage policy",
+  "authenticated", "Supabase query", "who can access". NOT for full security scan
+  — use security-audit for that.
+allowed-tools:
+  - Read
+  - Grep
+---
 
 # Safety Briefing Tracker — Supabase and RLS
 
@@ -12,16 +25,16 @@ Use this skill when:
 ## Project assumptions
 
 - Supabase is the backend for auth, database, storage, and edge functions.
-- RLS is enabled and must be treated as real production behavior.[web:30][web:36]
-- Queries must be evaluated in authenticated context, not only anon context.[web:30]
+- RLS is enabled and must be treated as real production behavior.
+- Queries must be evaluated in authenticated context, not only anon context.
 - Telegram functions are operational code and protected.
 - Photo evidence and file flows may involve storage and task closure flows.
 
 ## Security rules
 
-- Never assume frontend checks replace RLS.[web:30][web:51]
-- Distinguish UI visibility from actual authorization.[web:30]
-- Consider storage policies separately from table policies.[web:51]
+- Never assume frontend checks replace RLS.
+- Distinguish UI visibility from actual authorization.
+- Consider storage policies separately from table policies.
 - Be explicit about the difference between authenticated user, role, site scope, and admin assumptions.
 - If a proposed change affects data access, list impacted tables, policies, and UI flows.
 

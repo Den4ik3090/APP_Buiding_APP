@@ -177,11 +177,10 @@ export default function EmployeesPage() {
         <button
           type="button"
           onClick={() => setActiveTab('active')}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${
-            activeTab === 'active'
-              ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-              : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${activeTab === 'active'
+            ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+            : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
         >
           <EmployeesTabIcon size={16} active={activeTab === 'active'} />
           Сотрудники
@@ -189,11 +188,10 @@ export default function EmployeesPage() {
         <button
           type="button"
           onClick={() => setActiveTab('dismissed')}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${
-            activeTab === 'dismissed'
-              ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
-              : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-          }`}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${activeTab === 'dismissed'
+            ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-100'
+            : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
         >
           <DismissedTabIcon size={16} active={activeTab === 'dismissed'} />
           Уволенные
@@ -208,66 +206,66 @@ export default function EmployeesPage() {
       {activeTab === 'dismissed' ? (
         <DismissedEmployeesTable employees={dismissedEmployees} onRestore={handleRestore} />
       ) : (
-      <>
-      <div className="form-actions" style={{ marginBottom: 15 }}>
-        <ButtonGlow text="Добавить сотрудника" onClick={handleAddNew} />
-        <ButtonGlow
-          text="Экспорт CSV"
-          onClick={() => exportToCSV(filteredEmployees)}
-        />
-      </div>
+        <>
+          <div className="form-actions " style={{ marginBottom: 15 }}>
+            <ButtonGlow text="Добавить сотрудника" onClick={handleAddNew} />
+            <ButtonGlow
+              text="Экспорт CSV"
+              onClick={() => exportToCSV(filteredEmployees)}
+            />
+          </div>
 
-      {showForm && (
-        <EmployeeForm
-          onAddEmployee={addEmployee}
-          editingEmployee={editingEmployee}
-          onUpdateEmployee={updateEmployee}
-          onCancelEdit={cancelEdit}
-          existingOrganizations={organizations}
-          onPhotoUpload={() =>
-            addNotification(
-              TOAST_MESSAGES.PHOTO_UPLOADED,
-              TOAST_TYPES.SUCCESS,
-              TOAST_DURATION.NORMAL
-            )
-          }
-          onPhotoError={() =>
-            addNotification(
-              TOAST_MESSAGES.PHOTO_UPLOAD_ERROR,
-              TOAST_TYPES.ERROR,
-              TOAST_DURATION.NORMAL
-            )
-          }
-        />
-      )}
+          {showForm && (
+            <EmployeeForm
+              onAddEmployee={addEmployee}
+              editingEmployee={editingEmployee}
+              onUpdateEmployee={updateEmployee}
+              onCancelEdit={cancelEdit}
+              existingOrganizations={organizations}
+              onPhotoUpload={() =>
+                addNotification(
+                  TOAST_MESSAGES.PHOTO_UPLOADED,
+                  TOAST_TYPES.SUCCESS,
+                  TOAST_DURATION.NORMAL
+                )
+              }
+              onPhotoError={() =>
+                addNotification(
+                  TOAST_MESSAGES.PHOTO_UPLOAD_ERROR,
+                  TOAST_TYPES.ERROR,
+                  TOAST_DURATION.NORMAL
+                )
+              }
+            />
+          )}
 
-      <Suspense fallback={<SkeletonLoader rows={8} />}>
-        {filteredEmployees.length > 1000 ? (
-          <VirtualEmployeeTable
-            employees={tableEmployees}
-            getDaysDifference={getDaysDifference}
-            emptyText="Сотрудников не найдено"
-            onRetrain={retrainEmployee}
-            onDelete={deleteEmployee}
-            onEdit={handleEdit}
-            onDismiss={handleDismiss}
-            addNotification={addNotification}
-          />
-        ) : (
-          <EmployeeTable
-            employees={tableEmployees}
-            getDaysDifference={getDaysDifference}
-            onRetrain={retrainEmployee}
-            onDelete={deleteEmployee}
-            onEdit={handleEdit}
-            onDismiss={handleDismiss}
-            addNotification={addNotification}
-            statusFilterValue={tableStatusFilter}
-            onStatusFilterChange={onStatusFilterChange}
-          />
-        )}
-      </Suspense>
-      </>
+          <Suspense fallback={<SkeletonLoader rows={8} />}>
+            {filteredEmployees.length > 1000 ? (
+              <VirtualEmployeeTable
+                employees={tableEmployees}
+                getDaysDifference={getDaysDifference}
+                emptyText="Сотрудников не найдено"
+                onRetrain={retrainEmployee}
+                onDelete={deleteEmployee}
+                onEdit={handleEdit}
+                onDismiss={handleDismiss}
+                addNotification={addNotification}
+              />
+            ) : (
+              <EmployeeTable
+                employees={tableEmployees}
+                getDaysDifference={getDaysDifference}
+                onRetrain={retrainEmployee}
+                onDelete={deleteEmployee}
+                onEdit={handleEdit}
+                onDismiss={handleDismiss}
+                addNotification={addNotification}
+                statusFilterValue={tableStatusFilter}
+                onStatusFilterChange={onStatusFilterChange}
+              />
+            )}
+          </Suspense>
+        </>
       )}
     </>
   );

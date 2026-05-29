@@ -67,7 +67,6 @@ export function TaskDashboard() {
           <BarChart2 size={18} className="text-blue-600" />
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-700">Аналитика</h2>
         </div>
-        <button className={styles['task-new-btn']}><Plus size={16} /> Новая задача</button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

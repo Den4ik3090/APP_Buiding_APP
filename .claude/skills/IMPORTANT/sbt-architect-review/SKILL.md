@@ -1,3 +1,18 @@
+---
+name: sbt-architect-review
+description: >
+  Architecture review for PUTEVI Safety. Use when evaluating module boundaries,
+  FSD layer compliance, technical debt prioritization, risk assessment before
+  refactoring, or designing new features. Activates on: "architecture", "module
+  boundary", "tech debt", "design", "risk", "refactor", "fits the project".
+  NOT for bug fixes — use sbt-bugfix-investigator. NOT for new FSD slices — use
+  sbt-feature-architect.
+allowed-tools:
+  - Read
+  - Bash
+  - Grep
+  - Glob
+---
 
 # Safety Briefing Tracker — Architecture Review
 

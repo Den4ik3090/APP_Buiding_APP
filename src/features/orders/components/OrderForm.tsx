@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Building2, FileText, Upload, Users, X } from "lucide-react";
 import { createOrder, updateOrder } from "../services/ordersService";
 import { TOAST_DURATION, TOAST_TYPES } from "@/shared/constants/toast";
@@ -270,7 +271,7 @@ export default function OrderForm({
     [addNotification, form, isEdit, onSave, order, validateForm]
   );
 
-  return (
+  return createPortal(
     <div className="orders-modal-overlay" onClick={handleOverlayClick}>
       <div
         className="orders-modal"
@@ -543,6 +544,7 @@ export default function OrderForm({
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

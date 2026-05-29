@@ -1,3 +1,14 @@
+---
+name: sbt-telegram-boundary
+description: >
+  Hard boundary guard for Telegram Edge Functions in PUTEVI Safety. Activates on:
+  "telegram", "notification", "webhook", "telegram-notify", "telegram-webhook",
+  "edge function", "alert". STOP — do not modify supabase/functions/telegram-*
+  without explicit user approval. Safe changes are UI representation, observability,
+  and retry logic only.
+allowed-tools:
+  - Read
+---
 
 # Safety Briefing Tracker — Telegram Boundary
 
@@ -6,6 +17,13 @@ Use this skill when:
 - reviewing alert-related frontend behavior;
 - integrating UI with notification status;
 - analyzing operational risk around edge-function-connected features.
+
+## STOP — Protected Resources
+
+`supabase/functions/telegram-notify/` and `supabase/functions/telegram-webhook/`
+are protected operational code. **Do not modify them** unless the user explicitly
+says "yes, change the edge function". If the task touches these files, halt and
+confirm before proceeding.
 
 ## Hard boundary
 

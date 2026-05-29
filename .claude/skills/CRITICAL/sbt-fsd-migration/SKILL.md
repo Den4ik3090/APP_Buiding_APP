@@ -1,3 +1,17 @@
+---
+name: sbt-fsd-migration
+description: >
+  FSD migration protocol for PUTEVI Safety legacy code. Use when moving JSX
+  registries into FSD slices, restructuring imports, defining public API barrels,
+  or deciding which layer (shared/entities/features/widgets/pages) a module belongs
+  to. Activates on: "move to FSD", "migrate", "restructure", "which layer", "barrel",
+  "public API", "slice layout". NOT for new features — use sbt-feature-architect.
+allowed-tools:
+  - Read
+  - Bash
+  - Grep
+  - Glob
+---
 
 # Safety Briefing Tracker — FSD Migration
 
@@ -10,9 +24,9 @@ Use this skill when:
 
 ## FSD principles to enforce
 
-- Organize by business meaning, not by file type.[web:29][web:35]
-- Expose slice functionality through a public API entry point.[web:44][web:47]
-- Avoid direct deep imports across slices.[web:44][web:47]
+- Organize by business meaning, not by file type.
+- Expose slice functionality through a public API entry point.
+- Avoid direct deep imports across slices.
 - Keep dependencies flowing in one direction.
 - Prefer incremental migration over big-bang rewrites.
 

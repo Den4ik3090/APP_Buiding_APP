@@ -16,7 +16,7 @@ import {
   usePermitEmployeesQuery,
   useDeletePermitMutation,
 } from "@/features/permits/hooks/usePermits";
-import "./PermitsRegistry.css";
+import "./PermitsRegistry.scss";
 
 type AddNotificationFn = (message: string, type?: NotificationType, duration?: number) => void;
 

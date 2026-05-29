@@ -1,0 +1,339 @@
+@use '../../../shared/styles' as s;
+
+// ─── Registry Shell ───────────────────────────────────────────────────────────
+
+.permits-registry {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: s.$radius-xl;
+  background: s.$surface-1;
+  border: 1px solid s.$border-std;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.permits-header {
+  margin-bottom: 16px;
+}
+
+.permits-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.permits-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+  }
+}
+
+.btn-create-permit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+
+.permits-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+
+  .tab {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid s.$border-std;
+    background: s.$surface-0;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+    &.active {
+      background: s.$status-info;
+      color: s.$surface-0;
+      border-color: s.$status-info;
+    }
+  }
+}
+
+// ─── Table Wrapper ────────────────────────────────────────────────────────────
+
+.permits-table-wrapper {
+  margin-top: 12px;
+}
+
+// ─── Filters ─────────────────────────────────────────────────────────────────
+
+.permits-filters {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.permits-filters-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.permits-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid s.$border-std;
+  background: s.$surface-0;
+
+  input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    min-width: 200px;
+  }
+}
+
+.permits-filter-selects {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.permits-filter-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid s.$border-std;
+  background: s.$surface-0;
+  font-size: 12px;
+
+  select {
+    border: none;
+    outline: none;
+    font-size: 12px;
+    background: transparent;
+  }
+}
+
+// Scoped override for btn-export in filters row (avoids inline style)
+.permits-filters .btn-export {
+  white-space: nowrap;
+}
+
+// ─── Table ────────────────────────────────────────────────────────────────────
+
+.permits-table-container {
+  border-radius: s.$radius-md;
+  overflow: hidden;
+  border: 1px solid s.$border-std;
+  background: s.$surface-0;
+}
+
+.permits-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 10px 8px;
+    font-size: 13px;
+    border-bottom: 1px solid s.$surface-2;
+  }
+
+  th {
+    background: s.$surface-1;
+    font-weight: 600;
+    color: #4b5563;
+    user-select: none;
+    white-space: nowrap;
+
+    svg {
+      margin-left: 4px;
+    }
+  }
+
+  tr:nth-child(even) {
+    background: s.$surface-1;
+  }
+
+  tr:hover {
+    background: #eff6ff;
+  }
+
+  tr.permit-row-expired {
+    background: #fef2f2;
+
+    &:hover {
+      background: #fee2e2;
+    }
+  }
+}
+
+.permit-actions,
+.permit-actions button {
+  pointer-events: auto;
+}
+
+.permits-empty {
+  text-align: center;
+  padding: 20px 8px;
+  color: #6b7280;
+}
+
+// ─── Loading State ────────────────────────────────────────────────────────────
+// Previously missing — loading state in PermitsRegistry.tsx rendered unstyled.
+
+.permits-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  padding: 32px;
+  border: 1px dashed rgba(148, 163, 184, 0.28);
+  border-radius: s.$radius-lg;
+  color: #6b7280;
+  text-align: center;
+
+  .spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(148, 163, 184, 0.22);
+    border-top-color: s.$status-info;
+    border-radius: 999px;
+    animation: permits-spin 0.7s linear infinite;
+    margin-bottom: 12px;
+  }
+}
+
+@keyframes permits-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Modal ───────────────────────────────────────────────────────────────────
+// z-index corrected: was 9999 ($z-toast), now $z-modal (1000).
+// Toast layer must always render above modal overlay.
+
+.permits-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: s.$z-modal;
+}
+
+.permits-modal {
+  background: s.$surface-0;
+  padding: 20px;
+  border-radius: s.$radius-xl;
+  max-width: 560px;
+  width: 95%;
+  box-shadow: s.$shadow-modal;
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 14px;
+  }
+}
+
+// ─── Form (inside modal) ──────────────────────────────────────────────────────
+
+.permits-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permits-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.permits-form-group {
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  input,
+  select,
+  textarea {
+    width: 100%;
+    border-radius: s.$radius-sm;
+    border: 1px solid s.$border-std;
+    padding: 7px 9px;
+    font-size: 13px;
+    box-sizing: border-box;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+.permits-error {
+  font-size: 11px;
+  color: s.$status-expired;
+  margin-top: 2px;
+}
+
+.permits-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+
+@media (max-width: 640px) {
+  .permits-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .permits-search input {
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .permits-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .permits-filter-selects {
+    flex-direction: column;
+  }
+}

@@ -1,3 +1,16 @@
+---
+name: sbt-release-readiness
+description: >
+  Pre-release validation checklist for PUTEVI Safety. Use before any merge,
+  deploy, or “is this done?” question. Checks regressions, RLS, cache, routing,
+  shared UI contracts, file flows, and environment assumptions. Activates on:
+  “release”, “deploy”, “merge”, “ready to ship”, “production”, “done?”, “release
+  notes”. Escalates automatically on StatusBadge, auth/RLS, or Telegram changes.
+allowed-tools:
+  - Read
+  - Bash
+  - Grep
+---
 
 # Safety Briefing Tracker — Release Readiness
 

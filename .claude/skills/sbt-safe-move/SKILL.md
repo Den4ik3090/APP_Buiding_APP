@@ -16,9 +16,10 @@ Before physically moving any file:
 When executing the `mv` command or its analogues:
 * **Relative Path Correction:** Automatically update relative paths (`../`, `./`) inside the moved file, so that they point to the current position of the dependencies.
 * **External Reference Update:** Update the paths in all the consumer files that import the moved component.
-* **FSD Import Rules:** 
-    * Use relative paths inside a single slice (for example, inside `features/permissions').
-    * Between layers (from `pages` to `features`), use absolute aliases via `@/'.
+* **FSD Import Rules:**
+    * Use relative paths inside a single slice (e.g. inside `features/permits/`).
+    * Between layers (from `pages` to `features`), use `@/` aliases in TypeScript files only.
+    * SCSS files must ALWAYS use relative paths — `@/` is NOT resolved by sass-loader.
 
 ## 3. Saving styles and related files (Co-location)
 * **Style Binding:** Always move `.scss`, `.module.scss` or `.css` files along with their `.tsx/'.jsx` components.
